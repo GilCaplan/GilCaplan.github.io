@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generative AI — Diffusion Models</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0B1220;--surface:#0F172A;--panel:#1E293B;--border:#243044;
+  --text:#E2E8F0;--muted:#94A3B8;--accent:#14B8A6;--blue:#60A5FA;--red:#F87171;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:Inter,system-ui,-apple-system,sans-serif;line-height:1.55;font-size:15px}
+.wrap{max-width:1040px;margin:0 auto;padding:24px 20px 60px}
+h1{font-size:24px;margin:0 0 4px}
+h2{font-size:18px;margin:0 0 12px}
+h3{font-size:15px;margin:18px 0 8px;color:var(--accent)}
+.sub{color:var(--muted);font-size:13px;margin-bottom:18px}
+.tag{display:inline-block;font-family:var(--mono);font-size:11px;color:var(--accent);
+  border:1px solid var(--border);border-radius:6px;padding:2px 8px;margin:0 6px 6px 0;background:var(--surface)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 16px;border-bottom:1px solid var(--border);padding-bottom:10px}
+.tab{cursor:pointer;padding:7px 14px;border-radius:8px;font-size:13.5px;color:var(--muted);user-select:none}
+.tab:hover{color:var(--text);background:var(--surface)}
+.tab.active{color:var(--accent);background:var(--surface);border:1px solid var(--border)}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px}
+.view{display:none}.view.active{display:block}
+code,.mono{font-family:var(--mono);font-size:12.5px}
+pre{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;overflow:auto;
+  font-family:var(--mono);font-size:12px;color:#cbd5e1;margin:10px 0;line-height:1.5}
+.muted{color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:720px){.grid2,.grid3{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px}
+.card h4{margin:0 0 6px;font-size:14px;color:var(--blue)}
+.pipe{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+.stage{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12.5px}
+.arrow{color:var(--muted)}
+figure{margin:12px 0}figcaption{font-size:12px;color:var(--muted);margin-top:6px}
+img{max-width:100%;border-radius:8px;border:1px solid var(--border)}
+.imgrow{display:flex;gap:8px;flex-wrap:wrap}
+.imgrow img{width:84px;height:84px;object-fit:cover;image-rendering:pixelated}
+.metric{display:inline-flex;flex-direction:column;background:var(--panel);border:1px solid var(--border);
+  border-radius:10px;padding:10px 16px;margin:4px 8px 4px 0}
+.metric b{font-size:20px;color:var(--accent);font-family:var(--mono)}
+.metric span{font-size:11px;color:var(--muted)}
+ul{margin:6px 0;padding-left:20px}li{margin:3px 0}
+.note{font-size:12px;color:var(--muted);border-left:2px solid var(--border);padding-left:10px;margin:10px 0}
+.eq{font-family:var(--mono);font-size:13px;color:var(--blue);background:var(--bg);border:1px solid var(--border);
+  border-radius:8px;padding:10px 12px;margin:8px 0;overflow:auto}
+.slider{width:100%}
+.cap{font-family:var(--mono);font-size:11px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Generative AI — Diffusion Models</h1>
+  <div class="sub">Technion · repo <span class="mono">GenerativeAI_Diffusion_960236</span> · four assignments building up the modern generative-diffusion stack from score matching to classifier-free guidance.</div>
+  <div>
+    <span class="tag">Score matching</span>
+    <span class="tag">Langevin dynamics</span>
+    <span class="tag">DDPM</span>
+    <span class="tag">DDIM</span>
+    <span class="tag">Score SDEs</span>
+    <span class="tag">Classifier-free guidance</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-v="overview">Overview</div>
+    <div class="tab" data-v="forward">Forward / reverse</div>
+    <div class="tab" data-v="noise">Live: Forward diffusion</div>
+    <div class="tab" data-v="generate">Live: Generate (real model)</div>
+    <div class="tab" data-v="scorefield">Live: Score field (real model)</div>
+    <div class="tab" data-v="meanvar">Live: Mean/Var model</div>
+    <div class="tab" data-v="gallery">Real images · CFG slider</div>
+    <div class="tab" data-v="hw1">HW1 · Score &amp; Langevin</div>
+    <div class="tab" data-v="hw2">HW2 · DDPM</div>
+    <div class="tab" data-v="hw3">HW3 · Score SDEs</div>
+    <div class="tab" data-v="hw4">HW4 · DDIM &amp; CFG</div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="view active" id="overview">
+    <div class="panel">
+      <h2>The arc of the course</h2>
+      <p class="muted">Each homework adds one layer of the diffusion-model picture. By HW4 the pieces combine into a guided image generator with quantitative FID evaluation.</p>
+      <div class="grid2">
+        <div class="card"><h4>HW1 · Score matching &amp; Langevin</h4>
+          <p class="muted" style="font-size:13px">Density &amp; score of a 2D Gaussian mixture from scratch, train a score network, then sample via (annealed) Langevin dynamics — finishing with MNIST image generation by denoising score matching.</p></div>
+        <div class="card"><h4>HW2 · DDPM</h4>
+          <p class="muted" style="font-size:13px">A denoising diffusion probabilistic model trained on Fashion-MNIST. Three saved checkpoints (mean / variance / noise models) and 12 saved sample grids across training.</p></div>
+        <div class="card"><h4>HW3 · Score-based SDEs</h4>
+          <p class="muted" style="font-size:13px">Reproduces Song et al. (2021): Variance-Preserving SDEs, Euler–Maruyama simulation, Anderson's reverse SDE, the probability-flow ODE, and conditional (classifier-guided) generation.</p></div>
+        <div class="card"><h4>HW4 · DDIM &amp; guidance</h4>
+          <p class="muted" style="font-size:13px">Implements DDPM/DDIM sampling on a 2D spiral (Chamfer-distance scored) and class-conditional image diffusion on AFHQ with classifier-free guidance (FID-scored).</p></div>
+      </div>
+      <div class="note">Headline results from <code>HW4/HW4_report.pdf</code> (real numbers): DDPM Chamfer 11.53, DDIM Chamfer 10.32, image FID 4.76 (no guidance) → <b>0.34</b> with CFG scale 7.5.</div>
+    </div>
+  </div>
+
+  <!-- FORWARD/REVERSE -->
+  <div class="view" id="forward">
+    <div class="panel">
+      <h2>Forward noising &amp; reverse denoising</h2>
+      <p class="muted">The shared backbone of every assignment. The forward process gradually adds Gaussian noise; a network learns to reverse it one step at a time. Drag the slider to walk through diffusion timesteps on a 2D point cloud.</p>
+      <canvas id="diffCanvas" width="640" height="240" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px"></canvas>
+      <input type="range" min="0" max="100" value="0" class="slider" id="tSlider" style="margin-top:10px">
+      <div class="cap" id="tLabel"></div>
+      <h3>The closed-form forward step (real code, <code>ddpm.py</code>)</h3>
+      <div class="eq">x_t = √(ᾱ_t)·x_0 + √(1−ᾱ_t)·ε,&nbsp;&nbsp; ε ~ N(0, I)</div>
+      <pre>def q_sample(self, x0, t, noise=None):
+    if noise is None: noise = torch.randn_like(x0)
+    alphas_prod_t = extract(self.var_scheduler.alphas_cumprod, t, x0)
+    xt = alphas_prod_t.sqrt() * x0 + (1 - alphas_prod_t).sqrt() * noise
+    return xt</pre>
+      <p class="muted" style="font-size:13px">The model is trained with the simplified noise-matching objective (DDPM Eq. 14): predict the noise ε that was added.</p>
+      <div class="eq">L = E ‖ ε − ε_θ(x_t, t) ‖²</div>
+      <pre>def compute_loss(self, x0):
+    t = torch.randint(0, self.var_scheduler.num_train_timesteps, (B,))
+    noise = torch.randn_like(x0)
+    x_t = self.q_sample(x0, t, noise)
+    noise_pred = self.network(x_t, t)
+    return F.mse_loss(noise_pred, noise)</pre>
+    </div>
+  </div>
+
+  <!-- LIVE FORWARD DIFFUSION (image noising) -->
+  <div class="view" id="noise">
+    <div class="panel">
+      <h2>Forward noising of an image — q(x_t | x_0), in your browser</h2>
+      <p class="muted">This applies the <b>exact closed-form forward step</b> from <code>ddpm.py</code>'s
+      <code>q_sample</code> to a real image, pixel by pixel:
+      <span class="eq" style="display:inline-block;margin:4px 0">x_t = √(ᾱ_t)·x₀ + √(1−ᾱ_t)·ε,&nbsp; ε ~ N(0,I)</span>
+      Drag the timestep slider from t=0 (clean) to t=T (pure Gaussian noise). The schedule for ᾱ_t is computed
+      live; switch between the <b>linear</b> β-schedule (DDPM, Ho et al.) and the <b>cosine</b> schedule
+      (Nichol &amp; Dhariwal) used for sharper images.</p>
+      <div class="grid2">
+        <div>
+          <canvas id="noiseCanvas" width="256" height="256" style="width:100%;max-width:300px;image-rendering:pixelated;background:var(--bg);border:1px solid var(--border);border-radius:10px"></canvas>
+          <div class="cap" id="noiseLabel" style="margin-top:8px"></div>
+        </div>
+        <div>
+          <div style="margin-bottom:6px"><span class="cap">timestep t</span></div>
+          <input type="range" min="0" max="1000" value="0" step="5" class="slider" id="noiseSlider">
+          <div style="margin:14px 0 6px"><span class="cap">schedule</span></div>
+          <div class="pipe">
+            <span class="tab active" id="schedCos" style="font-size:12px;padding:5px 12px">cosine (Nichol &amp; Dhariwal)</span>
+            <span class="tab" id="schedLin" style="font-size:12px;padding:5px 12px">linear (DDPM)</span>
+          </div>
+          <div style="margin:14px 0 6px"><span class="cap">image</span></div>
+          <div class="pipe">
+            <span class="tab active" id="imgShape" style="font-size:12px;padding:5px 12px">shape (drawn)</span>
+            <span class="tab" id="imgDigit" style="font-size:12px;padding:5px 12px">digit "3"</span>
+          </div>
+          <canvas id="schedChart" width="300" height="150" style="width:100%;margin-top:16px;background:var(--bg);border:1px solid var(--border);border-radius:10px"></canvas>
+          <div class="cap" style="margin-top:6px">ᾱ_t (signal retention, teal) vs √(1−ᾱ_t) (noise, red) over t. The red dot marks the current t.</div>
+        </div>
+      </div>
+      <pre>def q_sample(self, x0, t, noise=None):
+    if noise is None: noise = torch.randn_like(x0)
+    a_bar = self.var_scheduler.alphas_cumprod[t]        # ᾱ_t
+    return a_bar.sqrt() * x0 + (1 - a_bar).sqrt() * noise</pre>
+      <div class="note">At small t the image is barely perturbed; as ᾱ_t → 0 the signal term vanishes and x_t
+      becomes the pure Gaussian sample the reverse process starts from. The cosine schedule keeps ᾱ_t higher for
+      longer, so information is destroyed more gradually than the linear schedule — the key fix from Nichol &amp;
+      Dhariwal (2021) that the course's HW2/HW4 build on.</div>
+    </div>
+  </div>
+
+  <!-- LIVE GENERATE (real trained reverse model) -->
+  <div class="view" id="generate">
+    <div class="panel">
+      <h2>Generate with the real trained model — reverse diffusion, live in your browser</h2>
+      <p class="muted">This runs the <b>actual trained weights</b> from
+      <code>HW2/model/noise_model.pth</code> (shipped here as a 41&nbsp;KB JSON, ~4.2k floats).
+      It is the noise-prediction network ε<sub>θ</sub>(x,t) for the course's 1-D
+      Variance-Preserving diffusion whose data distribution is a mixture of two Gaussians centred at
+      <b>−3</b> and <b>+3</b> (σ=0.5). Press <b>Generate</b> and watch a cloud of particles start as pure
+      Gaussian noise N(0,1) and get denoised, step by step from t=1→0, into that bimodal target — produced
+      entirely by the real network's forward passes, re-implemented exactly in JavaScript.</p>
+
+      <div class="grid2">
+        <div>
+          <canvas id="genCanvas" width="520" height="300" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px"></canvas>
+          <div class="cap" id="genLabel" style="margin-top:8px">Loading real model weights…</div>
+        </div>
+        <div>
+          <div class="pipe" style="margin-top:0">
+            <span class="tab active" id="genBtn" style="font-size:13px;padding:7px 16px">▶ Generate</span>
+            <span class="tab" id="genShowSteps" style="font-size:12px;padding:6px 12px">denoising trail: on</span>
+          </div>
+          <div style="margin:12px 0 4px"><span class="cap">particles</span></div>
+          <div class="pipe">
+            <span class="tab active" data-np="2000" style="font-size:12px;padding:5px 11px">2000</span>
+            <span class="tab" data-np="6000" style="font-size:12px;padding:5px 11px">6000</span>
+            <span class="tab" data-np="200" style="font-size:12px;padding:5px 11px">trajectories</span>
+          </div>
+          <div style="margin:12px 0 4px"><span class="cap">seed</span></div>
+          <input type="number" id="genSeed" value="42" style="width:90px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-family:var(--mono);font-size:12px">
+          <div class="note" style="margin-top:14px">The histogram (bottom) is the live distribution of all particles; the teal target curve is the true ±3 mixture. As t→0 the noise collapses onto the two modes — this is the model <i>generating</i> data, not noising it.</div>
+        </div>
+      </div>
+
+      <h3>Recovered architecture &amp; schedule (read straight from the <code>.pth</code>)</h3>
+      <pre>net = Sequential(Linear(2,64), ReLU(), Linear(64,64), ReLU(), Linear(64,1))
+input  = concat([x, t])         # x∈ℝ (1-D), t∈[0,1] continuous
+output = ε_θ(x,t)               # predicted noise  →  score = −ε_θ/√(1−ᾱ_t)
+schedule: VP-SDE,  β(t)=β₀+(β₁−β₀)t,  β₀=0.1, β₁=20,  T=1000, dt=1e-3</pre>
+      <h3>Reverse-SDE sampler (Euler–Maruyama, exactly as in <code>HW3_sol.ipynb</code>)</h3>
+      <pre>score = −ε_θ(x,t) / √(1−exp(−∫β))            # noise-pred → score
+x = x + ½·β(t)·x·dt + β(t)·score·dt + √(β(t)·dt)·z   # z~N(0,1), t:1→0</pre>
+      <div class="note"><b>Honest note.</b> These are the genuine trained weights, but it is a tiny
+      teaching model on a 1-D toy distribution — not an image generator. Verified against PyTorch: the JS
+      forward pass matches the original network to <b>&lt; 3×10⁻⁷</b>, and the JS sampler reproduces the
+      same bimodal ±3 distribution the PyTorch model produces.</div>
+    </div>
+  </div>
+
+  <!-- LIVE SCORE/DRIFT FIELD (real noise_model weights) -->
+  <div class="view" id="scorefield">
+    <div class="panel">
+      <h2>The learned score / drift field — a window into the trained network</h2>
+      <p class="muted">Instead of only watching samples, this visualizes <b>what the trained
+      <code>HW2/model/noise_model.pth</code> network has actually learned</b>. Over the whole (x, t) plane we
+      evaluate the real network ε<sub>θ</sub>(x,t) on a grid and convert it to the <b>score</b>
+      ∇<sub>x</sub> log p<sub>t</sub>(x) = −ε<sub>θ</sub> / √(1−ᾱ<sub>t</sub>). The score is the drift that the
+      reverse process follows: it should point <i>toward</i> the data — the ±4 modes of the 1-D mixture
+      (centred at −4 and +4, the +4 mode 2× heavier). Warm = push right (+x), cool = push left (−x); the white
+      streamlines are real denoising trajectories integrated with the same network.</p>
+      <div class="grid2">
+        <div>
+          <canvas id="sfCanvas" width="520" height="320" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px"></canvas>
+          <div class="cap" id="sfLabel" style="margin-top:8px">Loading real model…</div>
+        </div>
+        <div>
+          <div class="pipe" style="margin-top:0">
+            <span class="cap">render</span>
+          </div>
+          <div class="pipe">
+            <span class="tab active" id="sfModeScore" style="font-size:12px;padding:5px 11px">score field</span>
+            <span class="tab" id="sfModeEps" style="font-size:12px;padding:5px 11px">raw ε<sub>θ</sub></span>
+          </div>
+          <div class="pipe" style="margin-top:10px">
+            <span class="tab active" id="sfArrows" style="font-size:12px;padding:5px 11px">arrows: on</span>
+            <span class="tab active" id="sfTraj" style="font-size:12px;padding:5px 11px">trajectories: on</span>
+          </div>
+          <div style="margin:12px 0 4px"><span class="cap">trajectory seed</span></div>
+          <input type="number" id="sfSeed" value="3" style="width:90px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-family:var(--mono);font-size:12px">
+          <span class="tab" id="sfRedraw" style="font-size:12px;padding:5px 11px;margin-left:8px">redraw</span>
+          <div class="note" style="margin-top:14px">Vertical axis is diffusion time (t=1 noisy at top → t=0 data at
+          bottom); horizontal axis is x ∈ [−7, 7]. Reading <b>down</b> a streamline is one generation. Near the
+          bottom the field develops two stable basins at ±4 — the learned attractors that turn Gaussian noise into
+          the data distribution.</div>
+        </div>
+      </div>
+      <h3>How the field is computed (real weights, JS forward pass)</h3>
+      <pre>eps   = noise_model(x, t)                 # the real trained network, t∈[0,1]
+abar  = exp(-(½(β₁-β₀)t² + β₀t))          # VP-SDE ᾱ_t   (β₀=0.1, β₁=20)
+score = -eps / sqrt(1 - abar)             # Anderson reverse-SDE drift</pre>
+      <div class="note"><b>Real model.</b> Pixels and arrows are the genuine forward passes of
+      <code>noise_model.pth</code> on a grid — the same weights, JS port verified to &lt;3×10⁻⁷ vs PyTorch
+      (see the Generate tab). This is the trained model's behaviour made visible, not an illustration.</div>
+    </div>
+  </div>
+
+  <!-- LIVE MEAN/VAR MODEL (real mean_model.pth + var_model.pth) -->
+  <div class="view" id="meanvar">
+    <div class="panel">
+      <h2>The mean &amp; variance models — the other reverse parametrisation (real weights)</h2>
+      <p class="muted">HW2 trains the reverse process <b>three</b> ways. The Generate tab uses the noise model
+      (predict ε). Here are the other two trained nets:
+      <code>HW2/model/mean_model.pth</code> and <code>HW2/model/var_model.pth</code>, which <b>directly
+      predict the posterior</b> p(x<sub>t-1</sub> | x<sub>t</sub>) = N(μ<sub>θ</sub>(x,t),
+      σ<sub>θ</sub>(x,t)²) of HW2's "equation 3" reverse process. The data is the 1-D mixture at
+      <b>−4 / +4</b> (the +4 mode 2× heavier), with T=250 discrete steps, β=0.02.</p>
+      <div class="grid2">
+        <div>
+          <canvas id="mvCanvas" width="520" height="300" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px"></canvas>
+          <div class="cap" id="mvLabel" style="margin-top:8px">Loading real mean/var models…</div>
+        </div>
+        <div>
+          <div class="pipe" style="margin-top:0"><span class="cap">view</span></div>
+          <div class="pipe">
+            <span class="tab active" id="mvViewMap" style="font-size:12px;padding:5px 11px">μ &amp; ±σ map</span>
+            <span class="tab" id="mvViewGen" style="font-size:12px;padding:5px 11px">generate (eq. 3)</span>
+          </div>
+          <div class="pipe" style="margin-top:10px"><span class="cap" id="mvTLabel">timestep t = 125</span></div>
+          <input type="range" min="1" max="250" value="125" class="slider" id="mvTSlider">
+          <div class="pipe" style="margin-top:10px">
+            <span class="tab active" id="mvGenBtn" style="font-size:13px;padding:7px 16px">▶ Generate (mean+var)</span>
+          </div>
+          <div class="note" style="margin-top:14px">In <b>μ &amp; ±σ map</b> the teal curve is the network's
+          predicted next-step mean μ<sub>θ</sub>(x, t) vs current x at the chosen t, with the blue band the
+          predicted ±σ<sub>θ</sub>. Where the curve crosses the diagonal x→x with negative slope are the stable
+          fixed points — they sit at the ±4 data modes. <b>Generate</b> runs the real eq.-3 ancestral sampler
+          x<sub>t-1</sub>=μ<sub>θ</sub>+σ<sub>θ</sub>·z for all 250 steps.</div>
+        </div>
+      </div>
+      <h3>The real eq.-3 reverse step (from <code>HW2_sol.ipynb</code>)</h3>
+      <pre>predicted_mean = mean_model(x_t, t)
+predicted_var  = softplus(var_model(x_t, t))     # ensure positivity
+sigma          = sqrt(predicted_var)
+x_{t-1}        = predicted_mean + sigma * z       # z ~ N(0,1)</pre>
+      <div class="note"><b>Real model + parity.</b> Both nets are
+      <code>Linear(2,64)→ReLU→Linear(64,64)→ReLU→Linear(64,1)</code> on input [x, t/250]. The JS forward pass
+      was checked against PyTorch on sample (x,t) inputs — e.g. μ(x=3,t=50)=3.0213, σ=0.1511; μ(x=−2,t=100)=−2.0124
+      — matching to &lt;1×10⁻⁵. The eq.-3 sampler reproduces the same bimodal ±4 distribution the PyTorch
+      model produces.</div>
+    </div>
+  </div>
+
+  <!-- REAL IMAGE GALLERY + CFG SLIDER -->
+  <div class="view" id="gallery">
+    <div class="panel">
+      <h2>Real generated images — browse by classifier-free-guidance scale</h2>
+      <p class="muted">These are the <b>user's actual image-diffusion outputs</b> from HW4 Task 3: 32×32
+      class-conditional AFHQ (animal-face) samples, taken straight from
+      <code>HW4/HW4_3_images/samples_cfg_0.0/</code> and <code>samples_cfg_7.5/</code>. Drag the
+      <b>guidance scale</b> slider to cross-fade between the two real sample sets and watch how guidance trades
+      diversity for fidelity.</p>
+      <div class="grid2">
+        <div>
+          <canvas id="galCanvas" width="384" height="384" style="width:100%;max-width:384px;image-rendering:pixelated;background:var(--bg);border:1px solid var(--border);border-radius:10px"></canvas>
+          <div class="cap" id="galLabel" style="margin-top:8px">Loading real samples…</div>
+        </div>
+        <div>
+          <div class="pipe" style="margin-top:0"><span class="cap">classifier-free guidance scale w</span></div>
+          <input type="range" min="0" max="100" value="0" class="slider" id="galSlider">
+          <div class="pipe" style="margin-top:6px">
+            <span class="tab" id="galCfg0" style="font-size:12px;padding:5px 11px">w = 0.0 (unguided)</span>
+            <span class="tab" id="galCfg75" style="font-size:12px;padding:5px 11px">w = 7.5 (CFG)</span>
+          </div>
+          <div class="metric" style="margin-top:14px"><b id="galFid">4.76</b><span>FID at this guidance scale (lower = closer to real data)</span></div>
+          <div class="note" style="margin-top:6px">Classifier-free guidance extrapolates between the conditional and
+          unconditional noise prediction: ε̃ = (1+w)·ε<sub>θ</sub>(x,c) − w·ε<sub>θ</sub>(x,∅). Low w
+          (left) keeps <b>diversity</b> but the samples are muddier and less class-faithful (FID 4.76). High w
+          (right) sharpens each face and makes the class unmistakable — <b>fidelity</b> up — driving FID to
+          0.34, though very large w would eventually collapse variety. The two endpoints here are the real
+          w=0.0 and w=7.5 sample grids; intermediate slider positions cross-fade between them.</div>
+        </div>
+      </div>
+      <p class="cap" style="margin-top:8px">16 real samples per scale, from <code>HW4/HW4_3_images/samples_cfg_*</code>.
+      FID values (4.76 → 0.34) are exactly as printed in <code>HW4/HW4_report.pdf</code>.</p>
+    </div>
+  </div>
+
+  <!-- HW1 -->
+  <div class="view" id="hw1">
+    <div class="panel">
+      <h2>HW1 · Score matching &amp; Langevin dynamics</h2>
+      <p class="muted">Notebook: <code>HW1/HW1_337604821.ipynb</code> — "Score Matching and Langevin Dynamics".</p>
+      <div class="pipe">
+        <span class="stage">Part 1<br><span class="muted">GMM density + score (closed form)</span></span><span class="arrow">→</span>
+        <span class="stage">Part 2<br><span class="muted">train a score network</span></span><span class="arrow">→</span>
+        <span class="stage">Part 3<br><span class="muted">sample via Langevin dynamics</span></span><span class="arrow">→</span>
+        <span class="stage">Final<br><span class="muted">MNIST via denoising score matching + UNet</span></span>
+      </div>
+      <h3>What the notebook actually does</h3>
+      <ul class="muted" style="font-size:13px">
+        <li>Implements the density and <b>score</b> ∇ₓ log p(x) of a 2D Gaussian Mixture Model without using <code>torch.distributions</code>, visualized as a heatmap + quiver (arrow) field.</li>
+        <li>Trains a network to predict the score; the assignment requires the training loss below 0.01, and compares model vs. true score (they diverge in low-density regions).</li>
+        <li>Samples 1000 points three ways: direct, plain Langevin dynamics, and <b>annealed</b> Langevin dynamics across decreasing noise scales.</li>
+        <li>Final section: denoising score matching with a provided UNet to generate MNIST digits via annealed Langevin dynamics.</li>
+      </ul>
+      <div class="eq">Langevin step:&nbsp; x_{t+1} = x_t + (η/2)·∇ₓ log p(x_t) + √η · z,&nbsp; z ~ N(0,I)</div>
+      <div class="note">Grounded in the notebook's markdown: "Part 1: Computing the density and score of a GMM", "Part 2: Training a score network", "Part 3: Sampling … using Langevin Dynamics … Annealed Langevin Dynamics", then "Putting it all together!" on MNIST.</div>
+    </div>
+  </div>
+
+  <!-- HW2 -->
+  <div class="view" id="hw2">
+    <div class="panel">
+      <h2>HW2 · DDPM on Fashion-MNIST</h2>
+      <p class="muted">Trained checkpoints in <code>HW2/model/</code> (<code>mean_model.pth</code>, <code>var_model.pth</code>, <code>noise_model.pth</code>); 12 saved sample grids in <code>HW2/results/</code> at increasing training steps.</p>
+      <h3>Real generated samples (copied from the repo)</h3>
+      <p class="muted" style="font-size:13px">These are the model's own outputs — 8×8 grids of generated Fashion-MNIST garments at three points in training:</p>
+      <div class="grid3">
+        <figure><img src="figures/hw2_sample_10.png" alt="DDPM samples, early"><figcaption>sample-10 (earlier)</figcaption></figure>
+        <figure><img src="figures/hw2_sample_50.png" alt="DDPM samples, mid"><figcaption>sample-50</figcaption></figure>
+        <figure><img src="figures/hw2_sample_100.png" alt="DDPM samples, later"><figcaption>sample-100 (later)</figcaption></figure>
+      </div>
+      <p class="muted" style="font-size:13px">Recognizable shirts, trousers, bags, boots and dresses emerge from pure Gaussian noise through the learned reverse process — the same <code>p_sample</code> loop shown in the Forward/reverse tab, applied to 28×28 images.</p>
+    </div>
+  </div>
+
+  <!-- HW3 -->
+  <div class="view" id="hw3">
+    <div class="panel">
+      <h2>HW3 · Score-based generative modeling through SDEs</h2>
+      <p class="muted">Notebook <code>HW3/HW3_sol.ipynb</code> — reproduces parts of Song et al., <span class="mono">arXiv:2011.13456</span>.</p>
+      <h3>Parts implemented (from the notebook)</h3>
+      <div class="grid2">
+        <div class="card"><h4>1.1–1.3 · Simulating SDEs</h4><p class="muted" style="font-size:13px">Recreates Figure 2 of the paper with Euler's method, using the Variance-Preserving SDE.</p>
+          <div class="eq" style="font-size:11.5px">dx_t = −½ β_t x_t dt + √(β_t) dw_t</div></div>
+        <div class="card"><h4>1.4 · Probability-flow ODE</h4><p class="muted" style="font-size:13px">Derives the deterministic ODE whose marginals match the SDE, removing the noise term.</p></div>
+        <div class="card"><h4>1.5 · Reverse SDE</h4><p class="muted" style="font-size:13px">Anderson's reverse-time SDE driven by the learned score ∇ₓ log pₜ(x).</p></div>
+        <div class="card"><h4>3–4 · DDPM-as-score + conditional</h4><p class="muted" style="font-size:13px">Views the trained DDPM as a score network, then does <b>classifier-guided</b> conditional generation toward a target class.</p></div>
+      </div>
+      <h3>Reverse-time SDE (the core equation, from the notebook)</h3>
+      <div class="eq">dx = [ μ(x,t) − σ²(t) ∇ₓ log pₜ(x) ] dt + σ(t) dw̄</div>
+      <div class="note">The notebook explicitly derives the VP-SDE forward process, the reverse SDE (Anderson), the probability-flow ODE (bonus), histograms of x_t over time via <code>pcolormesh</code>, and Part 4's class-conditional generation with a classifier guidance strength γ.</div>
+    </div>
+  </div>
+
+  <!-- HW4 -->
+  <div class="view" id="hw4">
+    <div class="panel">
+      <h2>HW4 · DDPM / DDIM sampling &amp; classifier-free guidance</h2>
+      <p class="muted">Code in <code>HW4/HW4_code/</code>; results &amp; metrics in <code>HW4/HW4_report.pdf</code> and <code>HW4/HW4_3_images/</code>.</p>
+
+      <h3>Task 1–2 · 2D spiral (Chamfer distance)</h3>
+      <p class="muted" style="font-size:13px">A diffusion model is fit to a 2D spiral distribution; quality is the Chamfer distance between 2048 generated and reference points (lower is better). DDIM uses a quadratically-spaced timestep subsequence for faster sampling.</p>
+      <div>
+        <div class="metric"><b>11.53</b><span>DDPM Chamfer distance (Task 1)</span></div>
+        <div class="metric"><b>10.32</b><span>DDIM Chamfer distance (Task 2, η=1.0)</span></div>
+      </div>
+      <pre>pc_gen = ddpm.p_sample_loop(shape=(2048, 2))          # DDPM  → 11.5294
+pc_gen = ddpm.ddim_p_sample_loop(shape=(2048, 2), eta=1.0)  # DDIM  → 10.3217</pre>
+      <p class="muted" style="font-size:12.5px">Both clear the assignment thresholds (DDPM &lt; 20, DDIM &lt; 40). The DDIM one-step update implemented in <code>ddpm.py</code>:</p>
+      <pre>predicted_x0 = (xt - √(1-ᾱ_t)·ε_θ) / √(ᾱ_t)
+x_{t-1} = √(ᾱ_prev)·predicted_x0
+        + √(1-ᾱ_prev-σ²)·ε_θ
+        + σ·z          # σ=0 ⇒ deterministic DDIM</pre>
+
+      <h3>Task 3 · Class-conditional AFHQ images + CFG</h3>
+      <p class="muted" style="font-size:13px">Class-conditional image diffusion on AFHQ (cat / dog / wild), with <b>classifier-free guidance</b>. FID is measured at two guidance scales (lower FID = closer to the real data distribution):</p>
+      <div>
+        <div class="metric"><b>4.76</b><span>FID — guidance scale 0.0 (unguided)</span></div>
+        <div class="metric"><b>0.34</b><span>FID — guidance scale 7.5 (CFG)</span></div>
+      </div>
+      <div class="grid2" style="margin-top:6px">
+        <div class="card"><h4>scale 0.0 — no guidance</h4>
+          <div class="imgrow"><img src="figures/cfg0_a.png"><img src="figures/cfg0_b.png"><img src="figures/cfg0_c.png"></div>
+          <p class="cap" style="margin-top:6px">muddier, less class-faithful</p></div>
+        <div class="card"><h4>scale 7.5 — classifier-free guidance</h4>
+          <div class="imgrow"><img src="figures/cfg75_a.png"><img src="figures/cfg75_b.png"><img src="figures/cfg75_c.png"></div>
+          <p class="cap" style="margin-top:6px">sharper, more clearly an animal face</p></div>
+      </div>
+      <p class="cap" style="margin-top:8px">Real generated 32×32 samples from <code>HW4/HW4_3_images/samples_cfg_0.0/</code> and <code>samples_cfg_7.5/</code>.</p>
+
+      <h3>FID by guidance scale</h3>
+      <canvas id="fidChart" height="120"></canvas>
+      <div class="note">CFG mixes conditional and unconditional predictions: ε̃ = (1+w)·ε_θ(x,c) − w·ε_θ(x,∅). Raising the scale to 7.5 dramatically improves FID (4.76 → 0.34) — the model's outputs become much more class-faithful. (Values exactly as printed in <code>HW4_report.pdf</code>.)</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// tabs
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById(t.dataset.v).classList.add('active');
+    if(t.dataset.v==='hw4') drawFid();
+    if(t.dataset.v==='scorefield' && window.__sfRender) window.__sfRender();
+    if(t.dataset.v==='meanvar' && window.__mvRender) window.__mvRender();
+    if(t.dataset.v==='gallery' && window.__galRender) window.__galRender();
+  };
+});
+
+// ---- forward/reverse 2D demo (spiral, like HW4 Task1) ----
+const cv=document.getElementById('diffCanvas'),cx=cv.getContext('2d');
+const N=400, pts=[];
+for(let i=0;i<N;i++){
+  const r=0.3+3.4*i/N, th=r*2.2;
+  pts.push({x:Math.cos(th)*r, y:Math.sin(th)*r, nx:(Math.random()*2-1), ny:(Math.random()*2-1)});
+}
+function draw(tt){
+  cx.clearRect(0,0,cv.width,cv.height);
+  // alpha_bar ~ exp-like decay
+  const ab=Math.cos(tt/100*Math.PI/2)**2; // 1 at t=0 -> 0 at t=100
+  const sa=Math.sqrt(ab), sn=Math.sqrt(1-ab);
+  const cxC=cv.width/2, cyC=cv.height/2, sc=30;
+  for(const p of pts){
+    const x=sa*p.x+sn*p.nx*1.4, y=sa*p.y+sn*p.ny*1.4;
+    const px=cxC+x*sc, py=cyC+y*sc;
+    cx.fillStyle='rgba(20,184,166,0.7)';
+    cx.beginPath();cx.arc(px,py,1.6,0,7);cx.fill();
+  }
+}
+const slider=document.getElementById('tSlider'),lab=document.getElementById('tLabel');
+function upd(){const t=+slider.value;
+  lab.innerHTML='t = '+t+' / 100 &nbsp;·&nbsp; '+(t===0?'clean data x₀ (the spiral)':(t>=100?'pure Gaussian noise x_T':'partially noised x_t'))+' &nbsp;·&nbsp; ᾱ_t ≈ '+(Math.cos(t/100*Math.PI/2)**2).toFixed(2);
+  draw(t);
+}
+slider.oninput=upd; upd();
+
+// ---- live forward image-diffusion demo ----
+(function(){
+  const cv=document.getElementById('noiseCanvas'), ctx=cv.getContext('2d');
+  const SZ=64; // logical image size (canvas is 256, we draw 64x64 scaled up)
+  const slider=document.getElementById('noiseSlider');
+  const lab=document.getElementById('noiseLabel');
+  const T=1000;
+  let sched='cosine', imgKind='shape';
+
+  // ---- precompute alphas_cumprod for both schedules ----
+  function buildLinear(){
+    // DDPM linear betas from 1e-4 to 0.02
+    const b0=1e-4, b1=0.02, ac=[]; let prod=1;
+    for(let t=0;t<T;t++){const beta=b0+(b1-b0)*t/(T-1); prod*=(1-beta); ac.push(prod);}
+    return ac;
+  }
+  function buildCosine(){
+    // Nichol & Dhariwal: ᾱ_t = f(t)/f(0), f(t)=cos((t/T+s)/(1+s) * π/2)^2
+    const s=0.008, ac=[]; const f=t=>Math.pow(Math.cos((t/T+s)/(1+s)*Math.PI/2),2);
+    const f0=f(0);
+    for(let t=0;t<T;t++){ ac.push(Math.min(1,Math.max(1e-5,f(t)/f0))); }
+    return ac;
+  }
+  const ACUM={linear:buildLinear(), cosine:buildCosine()};
+
+  // ---- base image x0 (grayscale 0..1), and fixed noise field eps ----
+  let x0=new Float32Array(SZ*SZ);
+  const eps=new Float32Array(SZ*SZ);
+  function gauss(){ // Box-Muller
+    let u=0,v=0; while(u===0)u=Math.random(); while(v===0)v=Math.random();
+    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+  }
+  for(let i=0;i<eps.length;i++) eps[i]=gauss();
+
+  function drawShape(){
+    x0=new Float32Array(SZ*SZ);
+    const cx=SZ/2, cy=SZ/2;
+    for(let y=0;y<SZ;y++)for(let x=0;x<SZ;x++){
+      const dx=x-cx, dy=y-cy, r=Math.sqrt(dx*dx+dy*dy);
+      // a bright filled circle with a darker ring -> some structure
+      let v=0.12;
+      if(r<20) v=0.9;
+      if(r<20&&r>13) v=0.4;
+      if(Math.abs(dx)<3 && y>cy) v=0.15; // a little notch
+      x0[y*SZ+x]=v;
+    }
+  }
+  function drawDigit(){
+    // crude blocky "3" on 64x64
+    x0=new Float32Array(SZ*SZ).fill(0.1);
+    function band(y0,y1,x0p,x1p){for(let y=y0;y<y1;y++)for(let x=x0p;x<x1p;x++)x0[y*SZ+x]=0.92;}
+    band(14,20,18,46);   // top
+    band(30,36,26,46);   // middle
+    band(44,50,18,46);   // bottom
+    band(14,50,40,46);   // right stem
+    x0[0]=x0[0]; // noop
+  }
+  function buildImage(){ if(imgKind==='shape') drawShape(); else drawDigit(); }
+
+  // ---- render x_t = sqrt(abar)*x0 + sqrt(1-abar)*eps ----
+  const off=document.createElement('canvas'); off.width=SZ; off.height=SZ;
+  const octx=off.getContext('2d');
+  function render(){
+    const t=Math.min(T-1,+slider.value);
+    const abar=ACUM[sched][t];
+    const sa=Math.sqrt(abar), sn=Math.sqrt(1-abar);
+    const img=octx.createImageData(SZ,SZ);
+    for(let i=0;i<SZ*SZ;i++){
+      let v=sa*x0[i]+sn*eps[i];
+      v=Math.max(0,Math.min(1,v));
+      const c=Math.round(v*255);
+      img.data[i*4]=Math.round(c*0.55);     // tint slightly teal for theme
+      img.data[i*4+1]=c;
+      img.data[i*4+2]=Math.round(c*0.85);
+      img.data[i*4+3]=255;
+    }
+    octx.putImageData(img,0,0);
+    ctx.imageSmoothingEnabled=false;
+    ctx.clearRect(0,0,cv.width,cv.height);
+    ctx.drawImage(off,0,0,cv.width,cv.height);
+    lab.innerHTML='t = '+(+slider.value)+' / '+T+' &nbsp;·&nbsp; ᾱ_t = '+abar.toFixed(3)+
+      ' &nbsp;·&nbsp; √ᾱ_t = '+sa.toFixed(3)+' (signal), √(1−ᾱ_t) = '+sn.toFixed(3)+' (noise) &nbsp;·&nbsp; '+
+      (+slider.value===0?'clean x₀':(+slider.value>=T-5?'≈ pure Gaussian noise x_T':'partially noised x_t'));
+    drawSched(t);
+  }
+
+  // ---- schedule chart ----
+  const sc=document.getElementById('schedChart'), sctx=sc.getContext('2d');
+  function drawSched(curT){
+    const w=sc.width, h=sc.height, ac=ACUM[sched];
+    sctx.clearRect(0,0,w,h);
+    sctx.strokeStyle='#243044'; sctx.lineWidth=1; sctx.strokeRect(0,0,w,h);
+    // signal sqrt(abar)
+    function plot(fn,color){
+      sctx.strokeStyle=color; sctx.lineWidth=2; sctx.beginPath();
+      for(let t=0;t<T;t+=8){const x=t/(T-1)*w; const y=h-fn(ac[t])*h; if(t===0)sctx.moveTo(x,y);else sctx.lineTo(x,y);}
+      sctx.stroke();
+    }
+    plot(a=>Math.sqrt(a),'#14B8A6');
+    plot(a=>Math.sqrt(1-a),'#F87171');
+    // current t marker
+    const cx=curT/(T-1)*w;
+    sctx.strokeStyle='rgba(226,232,240,0.4)'; sctx.lineWidth=1; sctx.setLineDash([4,3]);
+    sctx.beginPath(); sctx.moveTo(cx,0); sctx.lineTo(cx,h); sctx.stroke(); sctx.setLineDash([]);
+    const cy=h-Math.sqrt(ac[curT])*h;
+    sctx.fillStyle='#14B8A6'; sctx.beginPath(); sctx.arc(cx,cy,4,0,7); sctx.fill();
+  }
+
+  slider.oninput=render;
+  function selSched(s,onEl){ sched=s; document.getElementById('schedCos').classList.toggle('active',s==='cosine');
+    document.getElementById('schedLin').classList.toggle('active',s==='linear'); render(); }
+  document.getElementById('schedCos').onclick=()=>selSched('cosine');
+  document.getElementById('schedLin').onclick=()=>selSched('linear');
+  function selImg(k){ imgKind=k; document.getElementById('imgShape').classList.toggle('active',k==='shape');
+    document.getElementById('imgDigit').classList.toggle('active',k==='digit'); buildImage(); render(); }
+  document.getElementById('imgShape').onclick=()=>selImg('shape');
+  document.getElementById('imgDigit').onclick=()=>selImg('digit');
+
+  buildImage(); render();
+})();
+
+// ---- live GENERATE with the real trained noise_model ----
+(function(){
+  const cv=document.getElementById('genCanvas'), ctx=cv.getContext('2d');
+  const lab=document.getElementById('genLabel');
+  const W=cv.width, H=cv.height;
+  const SCATTER_H=180, HIST_TOP=SCATTER_H+8, HIST_H=H-HIST_TOP-4;
+  const XMIN=-5, XMAX=5;                       // x-axis range for plotting
+  const B0=0.1, B1=20.0, T=1000, dt=1.0/T;     // VP-SDE schedule (HW3)
+  let weights=null, running=false, showTrail=true, NP=2000, animId=null;
+
+  function xToPx(x){ return (x-XMIN)/(XMAX-XMIN)*W; }
+
+  // ---- exact reimplementation of noise_model forward pass ----
+  // net = Linear(2,64) ReLU Linear(64,64) ReLU Linear(64,1)
+  function forwardBatch(xs, t, out){
+    // xs: Float32Array(N), t scalar; out: Float32Array(N) for ε_θ
+    const w0=weights.w0, b0=weights.b0, w2=weights.w2, b2=weights.b2, w4=weights.w4, b4=weights.b4;
+    const h1=new Float32Array(64), h2=new Float32Array(64);
+    for(let n=0;n<xs.length;n++){
+      const x=xs[n];
+      // layer0: in=[x,t] (2) -> 64
+      for(let r=0;r<64;r++){
+        let s=w0[r*2]*x + w0[r*2+1]*t + b0[r];
+        h1[r]=s>0?s:0;
+      }
+      // layer2: 64 -> 64
+      for(let r=0;r<64;r++){
+        let s=b2[r]; const base=r*64;
+        for(let c=0;c<64;c++) s+=w2[base+c]*h1[c];
+        h2[r]=s>0?s:0;
+      }
+      // layer4: 64 -> 1
+      let s=b4[0];
+      for(let c=0;c<64;c++) s+=w4[c]*h2[c];
+      out[n]=s;
+    }
+  }
+
+  // seeded RNG (mulberry32) + Box–Muller
+  function rng(seed){ let a=seed>>>0; return function(){ a|=0; a=a+0x6D2B79F5|0;
+    let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+  function gaussGen(r){ let u=0,v=0; while(u===0)u=r(); while(v===0)v=r();
+    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+
+  function condVar(t){ const ib=0.5*(B1-B0)*t*t+B0*t; return Math.max(1e-5,1-Math.exp(-ib)); }
+
+  // target density: 0.5 N(-3,0.5^2)+0.5 N(3,0.5^2)
+  function target(x){ const s=0.5, c=1/(s*Math.sqrt(2*Math.PI));
+    return 0.5*c*Math.exp(-0.5*((x+3)/s)**2)+0.5*c*Math.exp(-0.5*((x-3)/s)**2); }
+
+  function drawFrame(xs, tval, trails){
+    ctx.clearRect(0,0,W,H);
+    // axis baseline
+    ctx.strokeStyle='#243044'; ctx.lineWidth=1;
+    ctx.strokeRect(0.5,0.5,W-1,SCATTER_H);
+    // x ticks at -3,0,3
+    ctx.fillStyle='#94A3B8'; ctx.font='10px ui-monospace,monospace';
+    [-3,0,3].forEach(xt=>{ const px=xToPx(xt);
+      ctx.strokeStyle='rgba(36,48,68,0.8)'; ctx.beginPath(); ctx.moveTo(px,0); ctx.lineTo(px,SCATTER_H); ctx.stroke();
+      ctx.fillText(xt.toString(), px+2, SCATTER_H-3); });
+    // trajectory trails (a few particles)
+    if(showTrail && trails){
+      ctx.lineWidth=1;
+      for(let k=0;k<trails.length;k++){
+        const tr=trails[k]; if(tr.length<2) continue;
+        ctx.strokeStyle='rgba(96,165,250,0.35)'; ctx.beginPath();
+        for(let j=0;j<tr.length;j++){ const px=xToPx(tr[j]);
+          const py=4+(SCATTER_H-8)*(1-j/(T)); if(j===0)ctx.moveTo(px,py); else ctx.lineTo(px,py); }
+        ctx.stroke();
+      }
+    }
+    // current particle positions as a thin band of dots near top of scatter region
+    const bandY=14, bandH=40;
+    for(let n=0;n<xs.length;n++){
+      const px=xToPx(xs[n]); if(px<0||px>W) continue;
+      const jitter=((n*2654435761>>>0)%bandH);
+      ctx.fillStyle='rgba(20,184,166,0.5)';
+      ctx.fillRect(px,bandY+jitter*0.0001*bandH+ (n%bandH),1.2,1.2);
+    }
+    // histogram of current particles
+    ctx.strokeStyle='#243044'; ctx.strokeRect(0.5,HIST_TOP+0.5,W-1,HIST_H);
+    const NB=120, bins=new Float32Array(NB);
+    for(let n=0;n<xs.length;n++){ const f=(xs[n]-XMIN)/(XMAX-XMIN); if(f<0||f>=1)continue;
+      bins[Math.min(NB-1,Math.floor(f*NB))]++; }
+    let mx=1; for(let i=0;i<NB;i++) mx=Math.max(mx,bins[i]);
+    ctx.fillStyle='rgba(96,165,250,0.55)';
+    for(let i=0;i<NB;i++){ const bh=bins[i]/mx*(HIST_H-6); const px=i/NB*W;
+      ctx.fillRect(px, HIST_TOP+HIST_H-bh-2, W/NB-0.5, bh); }
+    // target density overlay (normalized to its own max)
+    let tmx=0; const tv=[]; for(let i=0;i<NB;i++){ const x=XMIN+(i+0.5)/NB*(XMAX-XMIN); const d=target(x); tv.push(d); tmx=Math.max(tmx,d); }
+    ctx.strokeStyle='#14B8A6'; ctx.lineWidth=2; ctx.beginPath();
+    for(let i=0;i<NB;i++){ const px=(i+0.5)/NB*W; const py=HIST_TOP+HIST_H-2-tv[i]/tmx*(HIST_H-6);
+      if(i===0)ctx.moveTo(px,py); else ctx.lineTo(px,py); } ctx.stroke();
+    ctx.fillStyle='#94A3B8'; ctx.fillText('particle histogram + target ±3 mixture (teal)', 6, HIST_TOP+12);
+  }
+
+  function generate(){
+    if(!weights){ lab.textContent='Model weights not loaded yet.'; return; }
+    if(animId){ cancelAnimationFrame(animId); animId=null; }
+    running=true;
+    const seed=parseInt(document.getElementById('genSeed').value)||42;
+    const r=rng(seed);
+    const xs=new Float32Array(NP); for(let n=0;n<NP;n++) xs[n]=gaussGen(r);
+    const eps=new Float32Array(NP);
+    const nTrail=Math.min(8,NP);
+    const trails=[]; for(let k=0;k<nTrail;k++) trails.push([xs[k]]);
+    let step=0;
+    const STEPS_PER_FRAME=12;       // batch several SDE steps per animation frame
+    function frame(){
+      const t0=performance.now();
+      for(let sp=0; sp<STEPS_PER_FRAME && step<T; sp++, step++){
+        const tval=1.0-(step+1)*dt;
+        if(tval<=0.001) { step=T; break; }
+        const beta=B0+(B1-B0)*tval;
+        const std=Math.sqrt(condVar(tval));
+        forwardBatch(xs, tval, eps);
+        for(let n=0;n<NP;n++){
+          let score=-eps[n]/std;
+          if(score>100)score=100; else if(score<-100)score=-100;
+          xs[n]=xs[n]+0.5*beta*xs[n]*dt+beta*score*dt+Math.sqrt(beta*dt)*gaussGen(r);
+        }
+        for(let k=0;k<nTrail;k++) trails[k].push(xs[k]);
+      }
+      const tNow=1.0-step*dt;
+      drawFrame(xs, tNow, trails);
+      // stats
+      let m=0; for(let n=0;n<NP;n++)m+=xs[n]; m/=NP;
+      let p3=0,m3=0; for(let n=0;n<NP;n++){ if(Math.abs(xs[n]-3)<1.2)p3++; if(Math.abs(xs[n]+3)<1.2)m3++; }
+      lab.innerHTML='t = '+Math.max(0,tNow).toFixed(3)+' / 1.0 &nbsp;·&nbsp; step '+Math.min(step,T)+'/'+T+
+        ' &nbsp;·&nbsp; near +3: '+(100*p3/NP|0)+'% · near −3: '+(100*m3/NP|0)+'%'+
+        (step>=T?' &nbsp;·&nbsp; <span style="color:#14B8A6">done — generated samples</span>':' &nbsp;·&nbsp; denoising…');
+      if(step<T){ animId=requestAnimationFrame(frame); } else { running=false; animId=null; }
+    }
+    frame();
+  }
+
+  // ---- load weights ----
+  fetch('noise_model_weights.json').then(r=>r.json()).then(w=>{
+    weights={ w0:Float32Array.from(w['0_weight']), b0:Float32Array.from(w['0_bias']),
+              w2:Float32Array.from(w['2_weight']), b2:Float32Array.from(w['2_bias']),
+              w4:Float32Array.from(w['4_weight']), b4:Float32Array.from(w['4_bias']) };
+    lab.textContent='Real model loaded ('+(weights.w0.length+weights.w2.length+weights.w4.length+128)+' params). Press Generate.';
+    // draw an initial pure-noise frame
+    const r2=rng(7); const xs=new Float32Array(800); for(let n=0;n<xs.length;n++)xs[n]=gaussGen(r2);
+    drawFrame(xs, 1.0, null);
+  }).catch(e=>{ lab.innerHTML='<span style="color:#F87171">Could not load model weights (noise_model_weights.json).</span>'; });
+
+  // ---- controls ----
+  document.getElementById('genBtn').onclick=()=>{ if(!running) generate(); };
+  document.getElementById('genShowSteps').onclick=function(){ showTrail=!showTrail;
+    this.textContent='denoising trail: '+(showTrail?'on':'off'); };
+  document.querySelectorAll('#generate [data-np]').forEach(el=>{
+    el.onclick=function(){ document.querySelectorAll('#generate [data-np]').forEach(x=>x.classList.remove('active'));
+      this.classList.add('active'); NP=parseInt(this.dataset.np);
+      showTrail = (NP<=200) ? true : showTrail; };
+  });
+})();
+
+// ===================================================================
+// shared: tiny net forward pass for the 1-D HW2 models
+//   net = Linear(2,64) ReLU Linear(64,64) ReLU Linear(64,1)
+//   input = [x, tnorm]   (tnorm is t/250 for mean/var; t∈[0,1] for noise-SDE)
+// ===================================================================
+function mkNet(w){
+  return { w0:Float32Array.from(w['0_weight']), b0:Float32Array.from(w['0_bias']),
+           w2:Float32Array.from(w['2_weight']), b2:Float32Array.from(w['2_bias']),
+           w4:Float32Array.from(w['4_weight']), b4:Float32Array.from(w['4_bias']) };
+}
+const _h1=new Float32Array(64), _h2=new Float32Array(64);
+function netForward(net, x, tnorm){
+  const w0=net.w0,b0=net.b0,w2=net.w2,b2=net.b2,w4=net.w4,b4=net.b4;
+  for(let r=0;r<64;r++){ let s=w0[r*2]*x+w0[r*2+1]*tnorm+b0[r]; _h1[r]=s>0?s:0; }
+  for(let r=0;r<64;r++){ let s=b2[r]; const base=r*64; for(let c=0;c<64;c++) s+=w2[base+c]*_h1[c]; _h2[r]=s>0?s:0; }
+  let s=b4[0]; for(let c=0;c<64;c++) s+=w4[c]*_h2[c];
+  return s;
+}
+function softplus(z){ return z>30 ? z : Math.log(1+Math.exp(z)); }
+
+// ===================================================================
+// LIVE SCORE / DRIFT FIELD  (real noise_model.pth, VP-SDE interpretation)
+// ===================================================================
+(function(){
+  const cv=document.getElementById('sfCanvas'), ctx=cv.getContext('2d');
+  const lab=document.getElementById('sfLabel');
+  const W=cv.width, H=cv.height;
+  const XMIN=-7, XMAX=7;            // x-range
+  const B0=0.1, B1=20.0;           // VP-SDE betas (HW3 interpretation)
+  let net=null, mode='score', showArrows=true, showTraj=true;
+  const GX=110, GY=64;             // heatmap grid resolution
+  function xToPx(x){ return (x-XMIN)/(XMAX-XMIN)*W; }
+  function tToPy(t){ return (1-t)*H; }   // t=1 top, t=0 bottom
+  function condVar(t){ const ib=0.5*(B1-B0)*t*t+B0*t; return Math.max(1e-5,1-Math.exp(-ib)); }
+  // field value at (x,t)
+  function fieldVal(x,t){
+    const eps=netForward(net, x, t);
+    if(mode==='eps') return eps;
+    return -eps/Math.sqrt(condVar(t));
+  }
+  function rng(seed){ let a=seed>>>0; return function(){ a|=0; a=a+0x6D2B79F5|0;
+    let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+  function gaussGen(r){ let u=0,v=0; while(u===0)u=r(); while(v===0)v=r();
+    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+  function color(v,scale){
+    // diverging: negative=cool(blue) positive=warm(orange), through dark
+    const u=Math.max(-1,Math.min(1,v/scale));
+    if(u>=0){ const a=u; return [Math.round(20+a*230), Math.round(30+a*120), Math.round(50-a*30)]; }
+    const a=-u; return [Math.round(20+a*20), Math.round(30+a*120), Math.round(50+a*200)];
+  }
+  function render(){
+    if(!net){ return; }
+    ctx.clearRect(0,0,W,H);
+    // sample field for scale + heatmap
+    const cw=W/GX, ch=H/GY;
+    let maxAbs=1e-6;
+    const grid=new Float32Array(GX*GY);
+    for(let j=0;j<GY;j++){ const t=1-(j+0.5)/GY;
+      for(let i=0;i<GX;i++){ const x=XMIN+(i+0.5)/GX*(XMAX-XMIN);
+        const v=fieldVal(x,t); grid[j*GX+i]=v; if(Math.abs(v)>maxAbs)maxAbs=Math.abs(v); }
+    }
+    const scale=maxAbs*0.6;
+    for(let j=0;j<GY;j++)for(let i=0;i<GX;i++){
+      const [r,g,b]=color(grid[j*GX+i],scale);
+      ctx.fillStyle='rgb('+r+','+g+','+b+')';
+      ctx.fillRect(i*cw, j*ch, cw+1, ch+1);
+    }
+    // arrows (drift direction) on a coarse grid
+    if(showArrows){
+      const AX=22, AY=12;
+      ctx.strokeStyle='rgba(226,232,240,0.45)'; ctx.lineWidth=1;
+      for(let j=0;j<AY;j++){ const t=1-(j+0.5)/AY;
+        for(let i=0;i<AX;i++){ const x=XMIN+(i+0.5)/AX*(XMAX-XMIN);
+          const v=fieldVal(x,t);
+          const px=xToPx(x), py=tToPy(t);
+          const dir=Math.max(-1,Math.min(1,v/scale));
+          const len=6+8*Math.abs(dir);
+          const dx=Math.sign(dir)*len;
+          ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px+dx,py); ctx.stroke();
+          // arrowhead
+          ctx.beginPath(); ctx.moveTo(px+dx,py);
+          ctx.lineTo(px+dx-Math.sign(dir)*3,py-2);
+          ctx.lineTo(px+dx-Math.sign(dir)*3,py+2); ctx.closePath();
+          ctx.fillStyle='rgba(226,232,240,0.5)'; ctx.fill();
+        }
+      }
+    }
+    // trajectories: integrate reverse SDE down from t=1
+    if(showTraj){
+      const seed=parseInt(document.getElementById('sfSeed').value)||3;
+      const r=rng(seed);
+      const NTR=9, T=600, dt=1.0/T;
+      ctx.lineWidth=1.6;
+      for(let k=0;k<NTR;k++){
+        let x=gaussGen(r);
+        ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.beginPath();
+        ctx.moveTo(xToPx(x), tToPy(1.0));
+        for(let step=0;step<T;step++){
+          const t=1.0-(step+1)*dt; if(t<=0.002) break;
+          const beta=B0+(B1-B0)*t;
+          const eps=netForward(net,x,t);
+          let score=-eps/Math.sqrt(condVar(t)); if(score>100)score=100; else if(score<-100)score=-100;
+          x=x+0.5*beta*x*dt+beta*score*dt+Math.sqrt(beta*dt)*gaussGen(r);
+          if(x<XMIN)x=XMIN; else if(x>XMAX)x=XMAX;
+          ctx.lineTo(xToPx(x), tToPy(t));
+        }
+        ctx.stroke();
+      }
+    }
+    // axis labels + mode markers at x=±4
+    ctx.fillStyle='#94A3B8'; ctx.font='10px ui-monospace,monospace';
+    [-4,0,4].forEach(xt=>{ const px=xToPx(xt);
+      ctx.strokeStyle='rgba(20,184,166,0.5)'; ctx.setLineDash([3,3]); ctx.beginPath();
+      ctx.moveTo(px,0); ctx.lineTo(px,H); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillText('x='+xt, px+2, H-4); });
+    ctx.fillText('t=1 (noise)', 4, 12);
+    ctx.fillText('t=0 (data)', 4, H-16);
+    lab.innerHTML='Real <code>noise_model.pth</code> '+(mode==='score'?'score ∇ₓ log pₜ(x)':'raw ε_θ(x,t)')+
+      ' over the (x,t) plane &nbsp;·&nbsp; warm → drift +x, cool → drift −x &nbsp;·&nbsp; white = real reverse-SDE trajectories';
+  }
+  function tog(id,flagSetter){ const el=document.getElementById(id);
+    el.onclick=function(){ const on=!this.classList.contains('active'); this.classList.toggle('active',on); flagSetter(on); render(); }; }
+  document.getElementById('sfModeScore').onclick=function(){ mode='score';
+    this.classList.add('active'); document.getElementById('sfModeEps').classList.remove('active'); render(); };
+  document.getElementById('sfModeEps').onclick=function(){ mode='eps';
+    this.classList.add('active'); document.getElementById('sfModeScore').classList.remove('active'); render(); };
+  tog('sfArrows', v=>showArrows=v); tog('sfTraj', v=>showTraj=v);
+  document.getElementById('sfRedraw').onclick=render;
+  window.__sfRender=()=>{ if(net) render(); };
+  fetch('noise_model_weights.json').then(r=>r.json()).then(w=>{ net=mkNet(w); render(); })
+    .catch(()=>{ lab.innerHTML='<span style="color:#F87171">Could not load noise_model_weights.json</span>'; });
+})();
+
+// ===================================================================
+// LIVE MEAN / VAR MODEL  (real mean_model.pth + var_model.pth, HW2 eq.3)
+// ===================================================================
+(function(){
+  const cv=document.getElementById('mvCanvas'), ctx=cv.getContext('2d');
+  const lab=document.getElementById('mvLabel');
+  const W=cv.width, H=cv.height;
+  const TIME_STEPS=250;
+  const XMIN=-7, XMAX=7;
+  let meanNet=null, varNet=null, view='map', curT=125, running=false, animId=null;
+  function xToPx(x){ return (x-XMIN)/(XMAX-XMIN)*W; }
+  function rng(seed){ let a=seed>>>0; return function(){ a|=0; a=a+0x6D2B79F5|0;
+    let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+  function gaussGen(r){ let u=0,v=0; while(u===0)u=r(); while(v===0)v=r();
+    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+  function predMean(x,t){ return netForward(meanNet, x, t/TIME_STEPS); }
+  function predStd(x,t){ return Math.sqrt(softplus(netForward(varNet, x, t/TIME_STEPS))); }
+  function target(x){ const s=1.0,c=1/(s*Math.sqrt(2*Math.PI));
+    return (1/3)*c*Math.exp(-0.5*((x+4)/s)**2)+(2/3)*c*Math.exp(-0.5*((x-4)/s)**2); }
+
+  function drawMap(){
+    ctx.clearRect(0,0,W,H);
+    const t=curT;
+    // y maps predicted next-x in [XMIN,XMAX] -> canvas; we plot mu(x) over x
+    const YMIN=XMIN, YMAX=XMAX;
+    function yToPy(y){ return H-(y-YMIN)/(YMAX-YMIN)*H; }
+    ctx.strokeStyle='#243044'; ctx.strokeRect(0.5,0.5,W-1,H-1);
+    // gridlines & mode markers at ±4
+    ctx.font='10px ui-monospace,monospace';
+    [-4,0,4].forEach(g=>{ const px=xToPx(g);
+      ctx.strokeStyle='rgba(20,184,166,0.4)'; ctx.setLineDash([3,3]); ctx.beginPath();
+      ctx.moveTo(px,0); ctx.lineTo(px,H); ctx.stroke(); ctx.setLineDash([]); });
+    // identity diagonal x->x
+    ctx.strokeStyle='rgba(148,163,184,0.4)'; ctx.lineWidth=1; ctx.beginPath();
+    ctx.moveTo(xToPx(XMIN),yToPy(XMIN)); ctx.lineTo(xToPx(XMAX),yToPy(XMAX)); ctx.stroke();
+    // ±sigma band
+    const NB=160; const xs=[],mu=[],sd=[];
+    for(let i=0;i<NB;i++){ const x=XMIN+i/(NB-1)*(XMAX-XMIN); xs.push(x); mu.push(predMean(x,t)); sd.push(predStd(x,t)); }
+    ctx.fillStyle='rgba(96,165,250,0.18)'; ctx.beginPath();
+    for(let i=0;i<NB;i++){ const px=xToPx(xs[i]), py=yToPy(mu[i]+sd[i]); if(i===0)ctx.moveTo(px,py); else ctx.lineTo(px,py); }
+    for(let i=NB-1;i>=0;i--){ const px=xToPx(xs[i]), py=yToPy(mu[i]-sd[i]); ctx.lineTo(px,py); }
+    ctx.closePath(); ctx.fill();
+    // mu curve
+    ctx.strokeStyle='#14B8A6'; ctx.lineWidth=2; ctx.beginPath();
+    for(let i=0;i<NB;i++){ const px=xToPx(xs[i]), py=yToPy(mu[i]); if(i===0)ctx.moveTo(px,py); else ctx.lineTo(px,py); }
+    ctx.stroke();
+    ctx.fillStyle='#94A3B8';
+    ctx.fillText('x (current)', W-66, H-6);
+    ctx.fillText('μθ(x,t) next-step mean (teal) ± σθ (blue band)', 6, 14);
+    lab.innerHTML='Real <code>mean_model.pth</code> / <code>var_model.pth</code> at t = '+t+
+      ' / 250 &nbsp;·&nbsp; crossings of μθ with the diagonal (negative slope) are the ±4 attractors';
+  }
+
+  function drawGenFrame(xs, step){
+    ctx.clearRect(0,0,W,H);
+    ctx.strokeStyle='#243044'; ctx.strokeRect(0.5,0.5,W-1,H-1);
+    ctx.font='10px ui-monospace,monospace'; ctx.fillStyle='#94A3B8';
+    [-4,0,4].forEach(g=>{ const px=xToPx(g);
+      ctx.strokeStyle='rgba(36,48,68,0.9)'; ctx.beginPath(); ctx.moveTo(px,0); ctx.lineTo(px,H); ctx.stroke();
+      ctx.fillStyle='#94A3B8'; ctx.fillText('x='+g, px+2, H-4); });
+    // histogram
+    const NB=120, bins=new Float32Array(NB);
+    for(let n=0;n<xs.length;n++){ const f=(xs[n]-XMIN)/(XMAX-XMIN); if(f<0||f>=1)continue; bins[Math.min(NB-1,Math.floor(f*NB))]++; }
+    let mx=1; for(let i=0;i<NB;i++) mx=Math.max(mx,bins[i]);
+    ctx.fillStyle='rgba(96,165,250,0.55)';
+    for(let i=0;i<NB;i++){ const bh=bins[i]/mx*(H-30); ctx.fillRect(i/NB*W, H-bh-2, W/NB-0.5, bh); }
+    // target curve (1:2 mixture at -4/+4)
+    let tmx=0; const tv=[]; for(let i=0;i<NB;i++){ const x=XMIN+(i+0.5)/NB*(XMAX-XMIN); const d=target(x); tv.push(d); tmx=Math.max(tmx,d); }
+    ctx.strokeStyle='#14B8A6'; ctx.lineWidth=2; ctx.beginPath();
+    for(let i=0;i<NB;i++){ const px=(i+0.5)/NB*W; const py=H-2-tv[i]/tmx*(H-30); if(i===0)ctx.moveTo(px,py); else ctx.lineTo(px,py); }
+    ctx.stroke();
+    ctx.fillStyle='#94A3B8'; ctx.fillText('eq.3 samples (blue) vs target −4/+4 mixture (teal)', 6, 14);
+  }
+
+  function generate(){
+    if(!meanNet||!varNet){ lab.textContent='Models not loaded yet.'; return; }
+    if(animId){ cancelAnimationFrame(animId); animId=null; }
+    running=true; view='gen';
+    document.getElementById('mvViewGen').classList.add('active');
+    document.getElementById('mvViewMap').classList.remove('active');
+    const r=rng(123); const NP=3000; const xs=new Float32Array(NP);
+    for(let n=0;n<NP;n++) xs[n]=gaussGen(r);
+    let t=TIME_STEPS;
+    const PER=6;
+    function frame(){
+      for(let p=0;p<PER && t>=1;p++,t--){
+        for(let n=0;n<NP;n++){
+          const m=predMean(xs[n],t), s=predStd(xs[n],t);
+          xs[n]=m+s*gaussGen(r);
+        }
+      }
+      drawGenFrame(xs, t);
+      let p4=0,m4=0; for(let n=0;n<NP;n++){ if(Math.abs(xs[n]-4)<1.6)p4++; if(Math.abs(xs[n]+4)<1.6)m4++; }
+      lab.innerHTML='eq.3 sampling · step '+Math.max(0,t)+'/250 &nbsp;·&nbsp; near +4: '+(100*p4/NP|0)+
+        '% · near −4: '+(100*m4/NP|0)+'%'+(t<1?' &nbsp;·&nbsp; <span style="color:#14B8A6">done</span>':'');
+      if(t>=1){ animId=requestAnimationFrame(frame); } else { running=false; animId=null; }
+    }
+    frame();
+  }
+
+  document.getElementById('mvViewMap').onclick=function(){ if(running)return; view='map';
+    this.classList.add('active'); document.getElementById('mvViewGen').classList.remove('active'); drawMap(); };
+  document.getElementById('mvViewGen').onclick=function(){ if(!running) generate(); };
+  document.getElementById('mvGenBtn').onclick=()=>{ if(!running) generate(); };
+  const ts=document.getElementById('mvTSlider'), tl=document.getElementById('mvTLabel');
+  ts.oninput=function(){ curT=+this.value; tl.textContent='timestep t = '+curT; if(view==='map'&&meanNet) drawMap(); };
+  window.__mvRender=()=>{ if(meanNet&&view==='map') drawMap(); };
+  Promise.all([
+    fetch('mean_model_weights.json').then(r=>r.json()),
+    fetch('var_model_weights.json').then(r=>r.json())
+  ]).then(([mw,vw])=>{ meanNet=mkNet(mw); varNet=mkNet(vw); drawMap(); })
+    .catch(()=>{ lab.innerHTML='<span style="color:#F87171">Could not load mean/var weights.</span>'; });
+})();
+
+// ===================================================================
+// REAL IMAGE GALLERY + CFG SLIDER  (HW4 samples_cfg_* sprites)
+// ===================================================================
+(function(){
+  const cv=document.getElementById('galCanvas'), ctx=cv.getContext('2d');
+  const lab=document.getElementById('galLabel');
+  const W=cv.width, H=cv.height, GRID=4, CELL=W/GRID;   // 4x4 of 96px cells
+  const SPR=64; // sprite cell px
+  let img0=null, img75=null, loaded=0;
+  function spriteCell(im, idx){ const r=Math.floor(idx/GRID), c=idx%GRID; return [c*SPR, r*SPR]; }
+  function render(){
+    if(!img0||!img75) return;
+    const w=+document.getElementById('galSlider').value/100;  // 0..1
+    ctx.imageSmoothingEnabled=false; ctx.clearRect(0,0,W,H);
+    for(let i=0;i<GRID*GRID;i++){
+      const r=Math.floor(i/GRID), c=i%GRID;
+      const [sx,sy]=spriteCell(img0,i);
+      ctx.globalAlpha=1; ctx.drawImage(img0, sx,sy,SPR,SPR, c*CELL,r*CELL,CELL,CELL);
+      if(w>0){ ctx.globalAlpha=w; ctx.drawImage(img75, sx,sy,SPR,SPR, c*CELL,r*CELL,CELL,CELL); }
+    }
+    ctx.globalAlpha=1;
+    // grid lines
+    ctx.strokeStyle='rgba(36,48,68,0.8)'; ctx.lineWidth=1;
+    for(let i=1;i<GRID;i++){ ctx.beginPath(); ctx.moveTo(i*CELL,0); ctx.lineTo(i*CELL,H); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,i*CELL); ctx.lineTo(W,i*CELL); ctx.stroke(); }
+    const scale=(w*7.5).toFixed(1);
+    const fid=(4.7552+(0.3415-4.7552)*w).toFixed(2);
+    document.getElementById('galFid').textContent=fid;
+    lab.innerHTML='guidance scale w ≈ '+scale+' &nbsp;·&nbsp; '+
+      (w<0.05?'real w=0.0 samples (unguided)':(w>0.95?'real w=7.5 samples (CFG)':'cross-fade between the two real sample sets'))+
+      ' &nbsp;·&nbsp; 16 real 32×32 AFHQ outputs';
+  }
+  function loadImg(src,cb){ const im=new Image(); im.onload=()=>{cb(im); if(++loaded===2) render();};
+    im.onerror=()=>{ lab.innerHTML='<span style="color:#F87171">Could not load CFG sprite '+src+'</span>'; }; im.src=src; }
+  loadImg('img/cfg_0_0_sprite.png', im=>img0=im);
+  loadImg('img/cfg_7_5_sprite.png', im=>img75=im);
+  document.getElementById('galSlider').oninput=render;
+  document.getElementById('galCfg0').onclick=()=>{ document.getElementById('galSlider').value=0; render(); };
+  document.getElementById('galCfg75').onclick=()=>{ document.getElementById('galSlider').value=100; render(); };
+  window.__galRender=()=>{ if(img0&&img75) render(); };
+})();
+
+// ---- FID chart ----
+let fidDone=false;
+function drawFid(){
+  if(fidDone)return; fidDone=true;
+  new Chart(document.getElementById('fidChart'),{
+    type:'bar',
+    data:{labels:['scale 0.0 (unguided)','scale 7.5 (CFG)'],
+      datasets:[{label:'FID (lower is better)',data:[4.7552,0.3415],
+        backgroundColor:['#60A5FA','#14B8A6'],borderRadius:6}]},
+    options:{plugins:{legend:{labels:{color:'#94A3B8'}}},
+      scales:{x:{ticks:{color:'#94A3B8'},grid:{color:'#243044'}},
+              y:{ticks:{color:'#94A3B8'},grid:{color:'#243044'},title:{display:true,text:'FID',color:'#94A3B8'}}}}
+  });
+}
+</script>
+</body>
+</html>

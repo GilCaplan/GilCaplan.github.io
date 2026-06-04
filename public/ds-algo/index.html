@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mibnei — Data Structures &amp; Algorithms</title>
+<style>
+  :root{
+    --bg:#0B1220; --surface:#0F172A; --panel:#1E293B; --border:#243044;
+    --text:#E2E8F0; --muted:#94A3B8; --accent:#14B8A6; --blue:#60A5FA; --red:#F87171; --amber:#FBBF24;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.55;font-size:15px}
+  .wrap{max-width:1080px;margin:0 auto;padding:22px 20px 60px}
+  h1{font-size:24px;margin:0 0 4px}
+  h2{font-size:18px;margin:22px 0 10px}
+  h3{font-size:14px;margin:0 0 6px;color:var(--accent);font-weight:600}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 16px}
+  code,pre,.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+  .pill{font-size:11px;color:var(--accent);border:1px solid #1d4d47;border-radius:6px;padding:1px 7px;margin-left:6px}
+  .tag{display:inline-block;background:var(--panel);border:1px solid var(--border);color:var(--muted);
+    border-radius:999px;padding:2px 10px;font-size:12px;margin:2px 4px 2px 0}
+  .tag.a{color:var(--accent);border-color:#1d4d47}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 14px;border-bottom:1px solid var(--border)}
+  .tab{background:none;border:none;color:var(--muted);padding:9px 14px;cursor:pointer;font-size:14px;
+    font-weight:600;border-bottom:2px solid transparent;border-radius:8px 8px 0 0}
+  .tab:hover{color:var(--text);background:var(--surface)}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .panel{display:none}.panel.active{display:block}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin:12px 0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  pre{background:#0a0f1a;border:1px solid var(--border);border-radius:10px;padding:14px;overflow:auto;
+    font-size:12.5px;line-height:1.5;margin:8px 0}
+  .kw{color:var(--blue)}.fn{color:var(--accent)}.str{color:#fca5a5}.cm{color:#5b6b82}
+  .muted{color:var(--muted)}
+  .note{background:#13202e;border-left:3px solid var(--blue);padding:8px 12px;border-radius:6px;font-size:13px;color:var(--muted);margin:10px 0}
+  a{color:var(--blue)}
+  .foot{color:var(--muted);font-size:12.5px;margin-top:26px;border-top:1px solid var(--border);padding-top:14px}
+  /* tree viz */
+  .ctrls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  input[type=number]{background:#0a0f1a;border:1px solid var(--border);color:var(--text);border-radius:8px;
+    padding:7px 10px;width:90px;font-family:"JetBrains Mono",monospace;font-size:13px}
+  label.fld{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--muted)}
+  button.act{background:var(--accent);color:#04201c;border:none;border-radius:8px;padding:8px 14px;
+    font-weight:700;cursor:pointer;font-size:13px}
+  button.act:hover{filter:brightness(1.1)}
+  button.gh{background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:8px;
+    padding:8px 12px;cursor:pointer;font-size:13px}
+  button.gh:hover{border-color:var(--accent)}
+  button.danger{background:#2a1518;color:#fca5a5;border:1px solid #5b2a2a}
+  button.danger:hover{border-color:var(--red)}
+  #treeSvg{width:100%;height:300px;background:#0a0f1a;border:1px solid var(--border);border-radius:10px;display:block}
+  .raceSvg{width:100%;height:230px;background:#0a0f1a;border:1px solid var(--border);border-radius:10px;display:block}
+  .leafN{fill:#13302c;stroke:var(--accent)}
+  .intN{fill:#15304a;stroke:var(--blue)}
+  .sentN{fill:#1a1f2b;stroke:#3a4658}
+  .hot{fill:#3a2a12;stroke:var(--amber)}
+  .edge{stroke:#34506e;stroke-width:1.5}
+  text{font-family:"JetBrains Mono",monospace;font-size:11px;fill:var(--text)}
+  text.sent{fill:#5b6b82}
+  .msg{font-size:13px;color:var(--muted);min-height:18px;margin-top:6px}
+  .feat{display:flex;gap:10px;align-items:flex-start;margin:8px 0}
+  .feat .ic{flex:0 0 auto;width:24px;height:24px;border-radius:7px;background:#13302c;color:var(--accent);
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;font-family:monospace}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--border)}
+  th{color:var(--accent);font-weight:600}
+  td.m{font-family:"JetBrains Mono",monospace;color:var(--blue)}
+  .raceGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:760px){.raceGrid{grid-template-columns:1fr}}
+  .readouts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .stat{background:#0a0f1a;border:1px solid var(--border);border-radius:9px;padding:9px 11px}
+  .stat .lbl{font-size:11px;color:var(--muted)}
+  .stat .val{font-family:"JetBrains Mono",monospace;font-size:15px;color:var(--accent);font-weight:700}
+  .runnerTbl td.m{color:var(--text)}
+  .runnerTbl tr.sel{background:#13202e}
+  .runnerTbl tr{cursor:pointer}
+  .runnerTbl tr:hover td{background:#101a28}
+  #log{background:#070b13;border:1px solid var(--border);border-radius:9px;padding:8px 10px;height:150px;
+    overflow:auto;font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--muted);white-space:pre-wrap}
+  #log .op{color:var(--blue)}#log .ok{color:var(--accent)}#log .err{color:var(--red)}
+  .svgTitle{font-size:12px;color:var(--muted);margin:2px 0 4px;font-weight:600}
+  .svgTitle b{color:var(--text)}
+  select{background:#0a0f1a;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 10px;
+    font-family:"JetBrains Mono",monospace;font-size:13px}
+  .legend{font-size:11px;color:var(--muted);margin-top:6px}
+  .legend span{display:inline-block;margin-right:12px}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:3px;vertical-align:middle;margin-right:4px;border:1px solid}
+  .cx{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--amber);
+    border:1px solid #4a3a14;background:#241c0c;border-radius:6px;padding:2px 7px;white-space:nowrap}
+  .cx sub{font-size:9px}
+  .perfbar{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:8px;margin:10px 0 2px}
+  @media(max-width:600px){.perfbar{grid-template-columns:1fr}}
+  #cxTable td.cxc{color:var(--amber)}
+  #cxTable tr.lit td{background:#241c0c}
+  #cxTable tr.lit td.cxc{color:var(--amber);font-weight:700}
+  .building #buildBtn,.building #demoBtn{opacity:.5;pointer-events:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Mibnei <span class="pill">Technion · Data Structures &amp; Algorithms</span></h1>
+  <p class="sub">A from-scratch generic <b>2-3 tree</b> in Java, augmented with subtree sizes for <b>order statistics</b>,
+  used to track race-runners by ID, minimum time and average time — plus theory homework.</p>
+  <div>
+    <span class="tag a">2-3 trees</span><span class="tag a">order statistics (Rank)</span>
+    <span class="tag a">Java generics</span><span class="tag a">balanced search trees</span>
+    <span class="tag">BFS/DFS · MST · Dijkstra (theory)</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-t="ov">Overview</button>
+    <button class="tab" data-t="race">Live: Race simulator</button>
+    <button class="tab" data-t="demo">Live 2-3 tree</button>
+    <button class="tab" data-t="how">How it works</button>
+    <button class="tab" data-t="hw">Theory HW</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="panel active" id="ov">
+    <div class="card">
+      <p>The graded programming mini-project (<code>src/</code>) builds, in the README's words, <i>"a dynamic 2-3 tree
+      for runners."</i> A <b>2-3 tree</b> is a perfectly height-balanced search tree where every internal node has
+      <b>2 or 3 children</b> and all leaves sit at the same depth, giving <code>O(log n)</code> search / insert / delete.</p>
+      <p>Gil's implementation goes further: each node also stores the <b>size</b> of its subtree, so the tree supports
+      <b>order statistics</b> — a <code>Rank(x)</code> query in <code>O(log n)</code>. The <code>Race</code> class keeps
+      <b>three</b> such trees in sync so it can answer "who is the fastest runner" and "what is runner X's rank" instantly.</p>
+      <div class="grid">
+        <div class="feat"><div class="ic">ID</div><div><b>IDtree</b><br><span class="muted">runners keyed by ID</span></div></div>
+        <div class="feat"><div class="ic">m</div><div><b>minTree</b><br><span class="muted">keyed by each runner's minimum time</span></div></div>
+        <div class="feat"><div class="ic">x̄</div><div><b>avgTree</b><br><span class="muted">keyed by each runner's average time</span></div></div>
+      </div>
+      <div class="note">The <b>Live: Race simulator</b> tab runs a faithful JavaScript port of the repo's
+      <code>twothreeTree</code> (Insert / Delete / Search / Rank / Minimum, with the same split/merge balancing and the
+      same secondary-key tie-break) and the <code>Race</code> orchestration on top — so the rank / min / avg / fastest
+      readouts match what the Java prints. Reference: <code>twothreeTree.java</code> · <code>Race.java</code> ·
+      <code>RunnerTree.java</code>.</div>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">Source files</h2>
+      <p class="muted mono" style="font-size:12.5px">twothreeTree.java (290 LOC, the core) · node.java · internalNode.java ·
+      leaf.java · Sentinal.java · Race.java · RunnerTree.java · Runner2_3Tree.java · IDtree.java ·
+      minRunner.java · avgRunner.java · myFloat.java · RunnerID.java · Main.java · TestRace.java (454 LOC of tests)</p>
+    </div>
+  </div>
+
+  <!-- RACE SIMULATOR -->
+  <div class="panel" id="race">
+    <div class="card">
+      <h2 style="margin-top:0">Drive the real <code>Race</code> system</h2>
+      <p class="muted" style="font-size:13.5px">Every button below calls the faithful port of a public
+      <code>Race.java</code> method. Three <code>twothreeTree&lt;RunnerID&gt;</code>s stay synchronized: the
+      <b>ID&nbsp;tree</b>, the <b>min&nbsp;tree</b> (keyed by each runner's <code>getMinTime()</code>) and the
+      <b>avg&nbsp;tree</b> (keyed by <code>getAvgRun()</code>). Adding a run re-keys the min/avg trees via
+      <code>fixMinAvgRuns</code> (delete stale key, re-insert fresh), exactly as in the repo.</p>
+
+      <div class="ctrls">
+        <label class="fld">runner id<input id="rId" type="number" value="5" step="1"></label>
+        <button class="act" id="addRunnerBtn">addRunner(id)</button>
+        <span class="cx">O(log n)</span>
+        <button class="gh danger" id="removeRunnerBtn">removeRunner(id)</button>
+        <span class="cx">O(log n)</span>
+      </div>
+      <div class="ctrls">
+        <label class="fld">to runner
+          <select id="runSel"></select></label>
+        <label class="fld">time<input id="rTime" type="number" value="15" step="0.5"></label>
+        <button class="act" id="addRunBtn">addRunToRunner</button>
+        <span class="cx">O(log n + log m<sub>runner</sub>)</span>
+        <button class="gh danger" id="removeRunBtn">removeRunFromRunner</button>
+        <span class="cx">O(log n + log m<sub>runner</sub>)</span>
+      </div>
+      <div class="ctrls">
+        <button class="gh" id="demoBtn">▶ Load demo scenario</button>
+        <button class="gh" id="buildBtn">▶ Build from empty (step-by-step)</button>
+        <button class="gh" id="resetRaceBtn">Reset</button>
+        <span class="msg" id="raceMsg" style="margin:0"></span>
+      </div>
+
+      <div class="perfbar">
+        <div class="stat">
+          <div class="lbl">last op — required bound</div>
+          <div class="val" id="cxOp" style="font-size:13px">—</div>
+        </div>
+        <div class="stat">
+          <div class="lbl">runners <code>n</code> · ⌈log₂(n+1)⌉</div>
+          <div class="val" id="cxN">0 · 0</div>
+        </div>
+        <div class="stat">
+          <div class="lbl">node-touches this op <span class="muted" style="font-weight:400">(empirical, all trees)</span></div>
+          <div class="val" id="cxNodes">0</div>
+        </div>
+      </div>
+
+      <div class="readouts" style="margin:12px 0">
+        <div class="stat"><div class="lbl">fastest by min — <code>getFastestRunnerMin()</code></div><div class="val" id="fMin">—</div></div>
+        <div class="stat"><div class="lbl">fastest by avg — <code>getFastestRunnerAvg()</code></div><div class="val" id="fAvg">—</div></div>
+      </div>
+
+      <div class="raceGrid">
+        <div>
+          <div class="svgTitle"><b>minTree</b> — leaves are <code>(id, minTime)</code>, ordered by min time</div>
+          <svg class="raceSvg" id="minSvg" viewBox="0 0 520 230" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <div>
+          <div class="svgTitle"><b>avgTree</b> — leaves are <code>(id, avgTime)</code>, ordered by avg time</div>
+          <svg class="raceSvg" id="avgSvg" viewBox="0 0 520 230" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+      </div>
+      <div class="raceGrid" style="margin-top:12px">
+        <div>
+          <div class="svgTitle"><b>IDtree</b> — runners keyed by id</div>
+          <svg class="raceSvg" id="idSvg" viewBox="0 0 520 230" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <div>
+          <div class="svgTitle"><b>runner <span id="selIdLbl">—</span></b>'s own run-time tree — <code>RunnerTree.runs</code></div>
+          <svg class="raceSvg" id="runSvg" viewBox="0 0 520 230" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+      </div>
+      <div class="legend">
+        <span><span class="dot" style="background:#13302c;border-color:#14B8A6"></span>leaf (key)</span>
+        <span><span class="dot" style="background:#15304a;border-color:#60A5FA"></span>internal (routing key · size)</span>
+        <span><span class="dot" style="background:#3a2a12;border-color:#FBBF24"></span>node touched by last op</span>
+        <span><span class="dot" style="background:#1a1f2b;border-color:#3a4658"></span>±∞ sentinel</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Required time complexity — <code>Race</code> API</h3>
+      <p class="muted" style="font-size:12px;margin:2px 0 8px">Verbatim from the official assignment
+        (<code>DS_Algs_W23_24_programming_assignment.pdf</code>). <code>n</code> = number of runners;
+        <code>m<sub>runner</sub></code> = number of runs recorded for that runner. The row highlights as you fire an op.</p>
+      <table id="cxTable">
+        <thead><tr><th>method</th><th>what it does</th><th>required</th><th>how it's achieved</th></tr></thead>
+        <tbody>
+          <tr data-m="init"><td class="m">init()</td><td>create three empty 2-3 trees</td><td class="m cxc">O(1)</td><td class="muted">allocate roots + ±∞ sentinels</td></tr>
+          <tr data-m="addRunner"><td class="m">addRunner(id)</td><td>insert runner into all three trees</td><td class="m cxc">O(log n)</td><td class="muted">3 × <code>Insert</code>, each O(log n)</td></tr>
+          <tr data-m="removeRunner"><td class="m">removeRunner(id)</td><td>delete runner from all three trees</td><td class="m cxc">O(log n)</td><td class="muted">3 × <code>Delete</code>, each O(log n)</td></tr>
+          <tr data-m="addRunToRunner"><td class="m">addRunToRunner(id, t)</td><td>record a run, re-key min/avg</td><td class="m cxc">O(log n + log m<sub>runner</sub>)</td><td class="muted"><code>getRunner</code>+run <code>Insert</code> O(log m), then <code>fixMinAvgRuns</code> O(log n)</td></tr>
+          <tr data-m="removeRunFromRunner"><td class="m">removeRunFromRunner(id, t)</td><td>delete a run, re-key min/avg</td><td class="m cxc">O(log n + log m<sub>runner</sub>)</td><td class="muted">run <code>Delete</code> O(log m) + <code>fixMinAvgRuns</code> O(log n)</td></tr>
+          <tr data-m="getMinRun"><td class="m">getMinRun(id)</td><td>runner's cached minimum time</td><td class="m cxc">O(log n)</td><td class="muted"><code>getRunner</code> = <code>IDtree.Search</code>, min is cached</td></tr>
+          <tr data-m="getAvgRun"><td class="m">getAvgRun(id)</td><td>runner's cached average time</td><td class="m cxc">O(log n)</td><td class="muted"><code>getRunner</code> = <code>IDtree.Search</code>, avg is cached</td></tr>
+          <tr data-m="getRankMin"><td class="m">getRankMin(id)</td><td>rank by minimum time</td><td class="m cxc">O(log n)</td><td class="muted"><code>Search</code> + <code>Rank</code> via subtree sizes</td></tr>
+          <tr data-m="getRankAvg"><td class="m">getRankAvg(id)</td><td>rank by average time</td><td class="m cxc">O(log n)</td><td class="muted"><code>Search</code> + <code>Rank</code> via subtree sizes</td></tr>
+          <tr data-m="getFastestRunnerMin"><td class="m">getFastestRunnerMin()</td><td>fastest by minimum time</td><td class="m cxc">O(1)</td><td class="muted">cached <code>fastedRunnerMin</code> field</td></tr>
+          <tr data-m="getFastestRunnerAvg"><td class="m">getFastestRunnerAvg()</td><td>fastest by average time</td><td class="m cxc">O(1)</td><td class="muted">cached <code>fastedRunnerAvg</code> field</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="raceGrid">
+      <div class="card">
+        <h3>Runners — click a row to inspect its run-time tree</h3>
+        <table class="runnerTbl">
+          <thead><tr><th>id</th><th>min</th><th>avg</th><th>rankMin</th><th>rankAvg</th></tr></thead>
+          <tbody id="runnerBody"></tbody>
+        </table>
+        <p class="muted" style="font-size:11.5px;margin-top:8px"><code>min/avg</code> from <code>getMinRun/getAvgRun</code>;
+        ranks from <code>getRankMin/getRankAvg</code> (the runner's <code>Rank</code> in the corresponding tree, ties by id).
+        <code>∞</code> = <code>Float.MAX_VALUE</code>, the value a runner holds before recording any run.</p>
+      </div>
+      <div class="card">
+        <h3>Operation log</h3>
+        <div id="log"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEMO (single tree insert) -->
+  <div class="panel" id="demo">
+    <div class="card">
+      <h2 style="margin-top:0">Insert into a live 2-3 tree</h2>
+      <p class="muted" style="font-size:13.5px">This mirrors the repo's <code>Insert &rarr; Insert_And_Split</code> path:
+      descend to the leaf level, insert, and split overfull (4-child) nodes upward — exactly as in <code>twothreeTree.java</code>.
+      Internal nodes show their routing key and <span style="color:var(--blue)">subtree size</span>.</p>
+      <div class="ctrls">
+        <input id="valIn" type="number" placeholder="value" value="42">
+        <button class="act" id="insBtn">Insert</button>
+        <button class="gh" id="randBtn">Insert random</button>
+        <button class="gh" id="seedBtn">Seed example</button>
+        <button class="gh" id="resetBtn">Reset</button>
+      </div>
+      <div class="msg" id="msg">Tree initialised with &plusmn;&infin; sentinels (as in the repo's <code>Init()</code>). Insert some values.</div>
+      <svg id="treeSvg" viewBox="0 0 900 300" preserveAspectRatio="xMidYMid meet"></svg>
+      <p class="muted" style="font-size:12.5px">Teal = leaf (a key) · blue = internal node, label <code>key·size</code>.
+      The leftmost/rightmost leaves are the <code>-inf / inf</code> sentinels the real code inserts to simplify boundary cases.</p>
+    </div>
+  </div>
+
+  <!-- HOW -->
+  <div class="panel" id="how">
+    <div class="card">
+      <h2 style="margin-top:0">Insert &amp; split — the real code</h2>
+      <p class="muted">Insert walks to the correct leaf's parent, calls <code>Insert_And_Split</code>, and propagates a
+      new node <code>z</code> upward whenever a node overflowed to 4 children. If the root itself splits, a new root is created.</p>
+<pre><span class="kw">public void</span> <span class="fn">Insert</span>(node&lt;T&gt; z) {
+    z.setSize(1);
+    node&lt;T&gt; y = this.root;
+    <span class="kw">while</span>(!(y <span class="kw">instanceof</span> leaf)) {       <span class="cm">// descend to leaf level</span>
+        <span class="kw">if</span> (checkSmaller(z, y.getLeft()))   y = y.getLeft();
+        <span class="kw">else if</span>(checkSmaller(z, y.getMiddle())) y = y.getMiddle();
+        <span class="kw">else</span> y = y.getRight();
+    }
+    internalNode&lt;T&gt; x = (internalNode&lt;T&gt;) y.getp();
+    z = Insert_And_Split(x, z);            <span class="cm">// may return overflow node</span>
+    <span class="kw">while</span>(x != this.root){
+        x = (internalNode&lt;T&gt;) x.getp();
+        <span class="kw">if</span>(z != null) z = Insert_And_Split(x, z);
+        <span class="kw">else</span> Update_Key(x);
+        UpdateSize(x);                     <span class="cm">// maintain subtree sizes</span>
+    }
+    <span class="kw">if</span>(z != null){                         <span class="cm">// root split &rarr; grow height</span>
+        internalNode&lt;T&gt; w = <span class="kw">new</span> internalNode&lt;&gt;(null);
+        Set_Children(w, x, z, null);
+        this.root = w;  UpdateSize(root);
+    }
+}</pre>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">Order statistics — <code>Rank</code></h2>
+      <p class="muted">Because every node caches its subtree size, the rank of a key is computed by summing the sizes of
+      all subtrees that lie to its left on the path to the root — in <code>O(log n)</code>.</p>
+<pre><span class="kw">public int</span> <span class="fn">Rank</span>(node&lt;T&gt; x){
+    int rank = 1;
+    internalNode&lt;T&gt; y = (internalNode&lt;T&gt;) x.getp();
+    <span class="kw">while</span>(y != null){
+        <span class="kw">if</span>(x == y.getMiddle()) rank += y.getLeft().getSize();
+        <span class="kw">else if</span>(x == y.getRight())
+            rank += y.getLeft().getSize() + y.getMiddle().getSize();
+        x = y;  y = (internalNode&lt;T&gt;) y.getp();
+    }
+    <span class="kw">return</span> rank;
+}</pre>
+      <div class="note"><code>Minimum()</code> is just "go left until the leaf level, take the first non-sentinel leaf",
+      giving the fastest runner in <code>O(log n)</code>; the result is cached so <code>getFastestRunnerMin()</code> is <code>O(1)</code>.</div>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">Keeping the trees consistent — <code>fixMinAvgRuns</code></h2>
+      <p class="muted">When a runner records a new time, its min/avg change, so its <b>keys</b> in the min/avg trees must move.
+      The repo deletes the stale entry (using the cached <i>previous</i> value) and re-inserts the fresh one:</p>
+<pre><span class="kw">public void</span> <span class="fn">fixMinAvgRuns</span>(RunnerID id, RunnerTree&lt;RunnerID&gt; runner) {
+    minTree.Delete(<span class="kw">new</span> internalNode&lt;&gt;(id, runner.getPrevMinTime()));
+    runner.setPrevMinTime(runner.getMinTime());
+    avgTree.Delete(<span class="kw">new</span> internalNode&lt;&gt;(id, runner.getPrevAvgTime()));
+    runner.setPrevAvgTime(runner.getAvgRun());
+    minTree.Insert(<span class="kw">new</span> minRunner(runner));
+    avgTree.Insert(<span class="kw">new</span> avgRunner(runner));
+    fastedRunnerAvg = avgTree.Minimum().getKey();
+    fastedRunnerMin = minTree.Minimum().getKey();
+}</pre>
+      <p class="muted" style="font-size:13px">The min/avg trees are keyed by a <b>secondary key</b> (the float time) with the
+      runner id as tie-breaker — see <code>checkSmaller</code> in <code>twothreeTree.java</code>, which compares
+      <code>getSecondaryKey()</code> first and falls back to the id only on a tie.</p>
+    </div>
+  </div>
+
+  <!-- HW -->
+  <div class="panel" id="hw">
+    <div class="card">
+      <h2 style="margin-top:0">Theoretical homework</h2>
+      <p>Alongside the code, <code>HW/</code> holds five problem sets (instructions + Gil's solutions, with the official
+      solutions for comparison). Per the README, the course — following CLRS (4th ed.) — covers:</p>
+      <div class="grid">
+        <div class="feat"><div class="ic">&Sigma;</div><div>Sorting &amp; comparison-based <b>lower bounds</b></div></div>
+        <div class="feat"><div class="ic">T</div><div>Stacks, queues, heaps, <b>balanced trees</b>, hash tables</div></div>
+        <div class="feat"><div class="ic">G</div><div>Graph scans: <b>BFS / DFS</b></div></div>
+        <div class="feat"><div class="ic">d</div><div>Shortest paths: <b>Bellman-Ford, Dijkstra</b></div></div>
+        <div class="feat"><div class="ic">⊺</div><div>Minimum spanning trees (<b>MST</b>)</div></div>
+        <div class="feat"><div class="ic">k</div><div>Order statistics &amp; recurrences</div></div>
+      </div>
+      <div class="note">The HW PDFs are theoretical proofs/derivations and aren't rendered here; the topic list above is
+      taken verbatim from the repo README.</div>
+    </div>
+  </div>
+
+  <div class="foot">Faithful artifact for <span class="mono">Mibnei</span> · the live tabs reimplement the repo's
+  <code>twothreeTree</code> + <code>Race</code> logic in vanilla JS; all code excerpts are copied from the Java source.</div>
+</div>
+
+<script>
+"use strict";
+/* =====================================================================================
+   Faithful JS port of twothreeTree.java + Race.java (Mibnei).
+   - Keys: primary key = id/value (compared via isSmaller), secondary key (skey) = float time.
+   - Sentinels: '-inf' (s-) and 'inf' (s+). Internal routing key = rightmost child key (max).
+   - checkSmaller / keyEqual mirror twothreeTree.checkSmaller / keyEqual exactly, including
+     the secondary-key-first comparison used by the min/avg trees.
+   ===================================================================================== */
+
+const SENT = -1; // skey sentinel value meaning "no secondary key" (myFloat(-1) in Java)
+
+/* ---- empirical work counter ----
+   Counts node visits (descents / split / rank steps) during the LAST Race operation,
+   across all three trees. Lets the UI show that the real cost tracks ~log(n). */
+const PERF = { nodes:0 };
+function bump(k){ PERF.nodes += (k||1); }
+
+// ---- key wrappers (RunnerID analogues) ----
+function intKey(v){ return {kind:'int', v:v}; }      // RunnerIDInt / value
+function floatKey(f){ return {kind:'float', v:f}; }  // myFloat
+function sentKey(plus){ return {kind:'sent', plus:plus}; } // Sentinal "s+"/"s-"
+function keyStr(k){
+  if(k.kind==='sent') return k.plus?'s+':'s-';
+  if(k.kind==='float'){ // mimic Java float toString-ish but stable for equality
+    return String(k.v);
+  }
+  return String(k.v);
+}
+function keyIsSmaller(a,b){ // a.isSmaller(b)
+  if(a.kind==='sent') return a.plus;          // Sentinal.isSmaller returns flag
+  if(a.kind==='float') return a.v < b.v;
+  return a.v < b.v;                            // int
+}
+
+// ---- node ----
+let NID=0;
+function makeNode(isLeaf,key,skey){
+  return {id:++NID, leaf:isLeaf, p:null, left:null, middle:null, right:null,
+          key:key||null, skey:(skey===undefined?floatKey(SENT):skey), size:0, payload:null};
+}
+function leafNode(key,skey){ return makeNode(true,key,skey); }
+function internalNode(key,skey){ return makeNode(false,key,skey); }
+
+function isSent(n){ return n && n.key && n.key.kind==='sent'; }
+
+class TwoThree {
+  constructor(){ this.Init(); this.touched=new Set(); }
+  Init(){
+    const x=internalNode(sentKey(true));        // root internal, key s+
+    const l=leafNode(sentKey(false));           // -inf
+    const m=leafNode(sentKey(true));            // +inf
+    l.p=x; m.p=x; x.left=l; x.middle=m; this.root=x;
+    // Note: Java Init does not call UpdateSize; sizes start 0 and are fixed on first insert.
+  }
+  // checkSmaller(x,y): is x smaller than y ? (mirrors twothreeTree.checkSmaller)
+  checkSmaller(x,y){
+    if(y.key.kind==='sent'){ return y.key.plus; }            // y is s+ -> true ; s- -> false
+    if(x.key.kind==='sent'){ return !x.key.plus; }           // x is s- -> true ; s+ -> false
+    if(x.skey && x.skey.v !== SENT){
+      if(x.skey.v === y.skey.v) return keyIsSmaller(x.key,y.key);
+      return x.skey.v < y.skey.v;
+    }
+    return keyIsSmaller(x.key,y.key);
+  }
+  keyEqual(x,y){
+    if(x.key.kind==='sent' || y.key.kind==='sent') return false;
+    if(x.skey && y.skey && x.skey.v !== SENT){
+      return x.skey.v === y.skey.v && keyStr(x.key)===keyStr(y.key);
+    }
+    return keyStr(x.key)===keyStr(y.key);
+  }
+  Update_Key(x){ // routing key = rightmost child's (key,skey); overwrite L->M->R
+    x.key=x.left.key; x.skey=x.left.skey;
+    if(x.middle){ x.key=x.middle.key; x.skey=x.middle.skey; }
+    if(x.right){ x.key=x.right.key; x.skey=x.right.skey; }
+  }
+  UpdateSize(x){
+    if(!x || x.leaf) return;
+    let r = x.left?x.left.size:0;
+    r += x.middle?x.middle.size:0;
+    r += x.right?x.right.size:0;
+    x.size=r;
+  }
+  Set_Children(x,l,m,r){
+    x.left=l; x.middle=m; x.right=r; l.p=x;
+    if(m) m.p=x; if(r) r.p=x;
+    this.Update_Key(x);
+    if(m) this.UpdateSize(x);
+  }
+  Search(x,k){
+    if(x==null) x=this.root;
+    bump();
+    if(x.leaf){
+      if(keyStr(x.key)===keyStr(k.key)) return x;
+      return null;
+    }
+    if(this.checkSmaller(k,x.left) || this.keyEqual(x.left,k)) return this.Search(x.left,k);
+    if(this.checkSmaller(k,x.middle) || this.keyEqual(x.middle,k)) return this.Search(x.middle,k);
+    return this.Search(x.right,k);
+  }
+  // Search for min/avg entries which carry a secondary key: match on (skey,key) like keyEqual
+  SearchSecondary(k){
+    const walk=(x)=>{
+      bump();
+      if(x.leaf){ return this.keyEqual(x,k)?x:null; }
+      if(this.checkSmaller(k,x.left)||this.keyEqual(x.left,k)) return walk(x.left);
+      if(this.checkSmaller(k,x.middle)||this.keyEqual(x.middle,k)) return walk(x.middle);
+      return walk(x.right);
+    };
+    return walk(this.root);
+  }
+  Insert_And_Split(x,z){
+    const l=x.left,m=x.middle,r=x.right;
+    if(r==null){
+      if(this.checkSmaller(z,l)) this.Set_Children(x,z,l,m);
+      else if(this.checkSmaller(z,m)) this.Set_Children(x,l,z,m);
+      else this.Set_Children(x,l,m,z);
+      return null;
+    }
+    const y=internalNode(null);
+    if(this.checkSmaller(z,l)){ this.Set_Children(x,z,l,null); this.Set_Children(y,m,r,null); }
+    else if(this.checkSmaller(z,m)){ this.Set_Children(x,l,z,null); this.Set_Children(y,m,r,null); }
+    else if(this.checkSmaller(z,r)){ this.Set_Children(x,l,m,null); this.Set_Children(y,z,r,null); }
+    else { this.Set_Children(x,l,m,null); this.Set_Children(y,r,z,null); }
+    return y;
+  }
+  Insert(z){
+    this.touched.clear();
+    z.size=1;
+    let y=this.root;
+    while(!y.leaf){
+      bump();
+      if(this.checkSmaller(z,y.left)) y=y.left;
+      else if(this.checkSmaller(z,y.middle)) y=y.middle;
+      else y=y.right;
+    }
+    let x=y.p;
+    z=this.Insert_And_Split(x,z);
+    bump();
+    this.touched.add(x.id);
+    while(x!==this.root){
+      x=x.p; bump();
+      if(z!=null) z=this.Insert_And_Split(x,z);
+      else this.Update_Key(x);
+      this.UpdateSize(x);
+      this.touched.add(x.id);
+    }
+    if(z!=null){
+      const w=internalNode(null);
+      this.Set_Children(w,x,z,null);
+      this.root=w; this.UpdateSize(this.root);
+      this.touched.add(w.id);
+    }
+  }
+  Borrow_Or_Merge(y){
+    const z=y.p;
+    if(y===z.left){
+      const x=z.middle;
+      if(x.right!=null){
+        this.Set_Children(y,y.left,x.left,null);
+        this.Set_Children(x,x.middle,x.right,null);
+      } else {
+        this.Set_Children(x,y.left,x.left,x.middle);
+        this.Set_Children(z,x,z.right,null);
+      }
+      return z;
+    }
+    if(y===z.middle){
+      const x=z.left;
+      if(x.right!=null){
+        this.Set_Children(y,x.right,y.left,null);
+        this.Set_Children(x,x.left,x.middle,null);
+      } else {
+        this.Set_Children(x,x.left,x.middle,y.left);
+        this.Set_Children(z,x,z.right,null);
+      }
+      return z;
+    }
+    const x=z.middle;
+    if(x.right!=null){
+      this.Set_Children(y,x.right,y.left,null);
+      this.Set_Children(x,x.left,x.middle,null);
+    } else {
+      this.Set_Children(x,x.left,x.middle,y.left);
+      this.Set_Children(z,z.left,x,null);
+    }
+    return z;
+  }
+  Delete(target){ // target is a node carrying (key,skey)
+    this.touched.clear();
+    // Search: for secondary-keyed entries use keyEqual-aware search, else primary search.
+    let z = (target.skey && target.skey.v!==SENT)
+      ? this.SearchSecondary(target) : this.Search(null,target);
+    if(z==null) throw new Error('IllegalArgument: not found');
+    let y=z.p;
+    if(this.keyEqual(target,y.left)) this.Set_Children(y,y.middle,y.right,null);
+    else if(this.keyEqual(target,y.middle)) this.Set_Children(y,y.left,y.right,null);
+    else this.Set_Children(y,y.left,y.middle,null);
+    this.UpdateSize(y);
+    bump();
+    this.touched.add(y.id);
+    while(y!=null){
+      bump();
+      if(y.middle==null){
+        if(y!==this.root){ y=this.Borrow_Or_Merge(y); }
+        else { this.root=y.left; y.left.p=null; return; }
+      } else {
+        this.Update_Key(y);
+        y=y.p;
+      }
+      this.UpdateSize(y);
+      if(y) this.touched.add(y.id);
+    }
+  }
+  Minimum(){
+    let x=this.root;
+    while(!(x.left.leaf)){ x=x.left; bump(); }
+    x=x.middle;
+    if(!isSent(x)) return x;
+    throw new Error('IllegalArgument: empty');
+  }
+  Rank(x){
+    let rank=1;
+    let y=x.p;
+    while(y!=null){
+      bump();
+      if(x===y.middle) rank += y.left.size;
+      else if(x===y.right) rank += y.left.size + y.middle.size;
+      x=y; y=y.p;
+    }
+    return rank;
+  }
+}
+
+/* ---------- RunnerTree: a runner is a leaf in the ID tree + its own run-time 2-3 tree ---------- */
+const FMAX = 3.4028235e38; // Float.MAX_VALUE
+class RunnerTree {
+  constructor(id){
+    // acts as a leaf carrying primary key = id, no secondary key (ID tree)
+    this.node = leafNode(intKey(id), floatKey(SENT));
+    this.node.payload=this;
+    this.id=id;
+    this.runs=new TwoThree();
+    this.minTime=FMAX; this.prevMinTime=FMAX;
+    this.avgTime=FMAX; this.prevAvgTime=FMAX;
+    this.len=0; this.sumTime=0;
+  }
+  Insert(time){
+    if(time<0) throw new Error('IllegalArgument: negative time');
+    if(this.runs.Search(null, leafNode(floatKey(time), floatKey(SENT)))!=null)
+      throw new Error('IllegalArgument: duplicate run');
+    this.runs.Insert(leafNode(floatKey(time), floatKey(SENT)));
+    if(this.len>0) this.minTime=this.runs.Minimum().key.v;
+    else this.minTime=time;
+    this.len++; this.sumTime+=time;
+    this.avgTime=this.sumTime/this.len;
+  }
+  Delete(time){
+    this.runs.Delete(internalNode(floatKey(time), floatKey(SENT)));
+    this.len--; this.sumTime-=time;
+    this.avgTime=this.len>0?this.sumTime/this.len:this.avgTime;
+    if(this.len>0) this.minTime=this.runs.Minimum().key.v;
+    else this.minTime=time;
+  }
+  getMinTime(){ return this.minTime; }
+  getAvgRun(){ return this.len<1?FMAX:this.avgTime; }
+}
+
+/* ---------- Race: three synchronized trees ---------- */
+class Race {
+  constructor(){ this.init(); }
+  init(){
+    this.IDtree=new TwoThree();
+    this.minTree=new TwoThree();
+    this.avgTree=new TwoThree();
+    this.fastedRunnerMin=null; this.fastedRunnerAvg=null;
+    this.runners=new Map(); // id -> RunnerTree
+  }
+  minLeaf(r){ return leafNode(intKey(r.id), floatKey(r.getMinTime())); }
+  avgLeaf(r){ return leafNode(intKey(r.id), floatKey(r.getAvgRun())); }
+  addRunner(id){
+    if(this.runners.has(id)) throw new Error('IllegalArgument: duplicate runner');
+    const runner=new RunnerTree(id);
+    this.IDtree.Insert(runner.node);
+    this.minTree.Insert(this.minLeaf(runner));
+    this.avgTree.Insert(this.avgLeaf(runner));
+    this.runners.set(id,runner);
+    this.fastedRunnerAvg=this.avgTree.Minimum().key.v;
+    this.fastedRunnerMin=this.minTree.Minimum().key.v;
+  }
+  removeRunner(id){
+    const runner=this.getRunner(id);
+    this.IDtree.Delete(internalNode(intKey(id), floatKey(SENT)));
+    this.minTree.Delete(internalNode(intKey(id), floatKey(runner.getMinTime())));
+    this.avgTree.Delete(internalNode(intKey(id), floatKey(runner.getAvgRun())));
+    this.runners.delete(id);
+    try{
+      this.fastedRunnerAvg=this.avgTree.Minimum().key.v;
+      this.fastedRunnerMin=this.minTree.Minimum().key.v;
+    }catch(e){ this.fastedRunnerAvg=null; this.fastedRunnerMin=null; }
+  }
+  addRunToRunner(id,time){
+    const runner=this.getRunner(id);
+    runner.Insert(time);
+    this.fixMinAvgRuns(id,runner);
+  }
+  removeRunFromRunner(id,time){
+    const runner=this.getRunner(id);
+    runner.Delete(time);
+    this.fixMinAvgRuns(id,runner);
+  }
+  fixMinAvgRuns(id,runner){
+    this.minTree.Delete(internalNode(intKey(id), floatKey(runner.prevMinTime)));
+    runner.prevMinTime=runner.getMinTime();
+    this.avgTree.Delete(internalNode(intKey(id), floatKey(runner.prevAvgTime)));
+    runner.prevAvgTime=runner.getAvgRun();
+    this.minTree.Insert(this.minLeaf(runner));
+    this.avgTree.Insert(this.avgLeaf(runner));
+    this.fastedRunnerAvg=this.avgTree.Minimum().key.v;
+    this.fastedRunnerMin=this.minTree.Minimum().key.v;
+  }
+  getMinRun(id){ return this.getRunner(id).getMinTime(); }
+  getAvgRun(id){ return this.getRunner(id).getAvgRun(); }
+  getRankMin(id){
+    const r=this.getRunner(id);
+    const node=this.minTree.SearchSecondary(this.minLeaf(r));
+    return this.minTree.Rank(node);
+  }
+  getRankAvg(id){
+    const r=this.getRunner(id);
+    const node=this.avgTree.SearchSecondary(this.avgLeaf(r));
+    return this.avgTree.Rank(node);
+  }
+  getFastestRunnerMin(){ return this.fastedRunnerMin; }
+  getFastestRunnerAvg(){ return this.fastedRunnerAvg; }
+  getRunner(id){
+    const r=this.runners.get(id);
+    if(!r) throw new Error('IllegalArgument: no such runner');
+    return r;
+  }
+}
+
+/* =====================================================================================
+   RENDERING
+   ===================================================================================== */
+function fmtFloat(f){
+  if(f===FMAX || f===null || f===undefined) return '∞';
+  if(Number.isInteger(f)) return String(f);
+  return (Math.round(f*100)/100).toString();
+}
+function labelLeaf(n){
+  if(isSent(n)) return n.key.plus?'+∞':'-∞';
+  if(n.skey && n.skey.v!==SENT) return n.key.v+','+fmtFloat(n.skey.v);
+  return String(n.key.v);
+}
+function labelInternal(n){
+  let k = isSent(n)?(n.key.plus?'∞':'-∞')
+        : (n.skey && n.skey.v!==SENT ? fmtFloat(n.skey.v) : String(n.key.v));
+  return k+'·'+n.size;
+}
+
+function renderTree(svg, root, touched, opts){
+  opts=opts||{};
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+  const vb = svg.viewBox.baseVal;
+  const W=vb.width, H=vb.height;
+  if(!root){ return; }
+  // gather leaves L->R
+  const leaves=[];
+  (function gl(n){ if(n.leaf){leaves.push(n);return;} [n.left,n.middle,n.right].forEach(c=>{if(c)gl(c);}); })(root);
+  let depth=0;
+  (function d(n,l){ depth=Math.max(depth,l); if(!n.leaf)[n.left,n.middle,n.right].forEach(c=>{if(c)d(c,l+1);}); })(root,0);
+  const xmap=new Map();
+  const gap=W/(leaves.length+1);
+  leaves.forEach((lf,i)=>xmap.set(lf,gap*(i+1)));
+  function xpos(n){ if(xmap.has(n)) return xmap.get(n); const cs=[n.left,n.middle,n.right].filter(Boolean);
+    const x=cs.map(xpos).reduce((a,b)=>a+b,0)/cs.length; xmap.set(n,x); return x; }
+  const topPad=22, botPad=18;
+  const rowH = depth>0 ? Math.min(70,(H-topPad-botPad)/depth) : 0;
+  function ypos(n){ let dd=0,c=n; while(c.p){dd++;c=c.p;} return topPad+dd*rowH; }
+  const SVGNS='http://www.w3.org/2000/svg';
+  function line(x1,y1,x2,y2){ const e=document.createElementNS(SVGNS,'line');
+    e.setAttribute('x1',x1);e.setAttribute('y1',y1);e.setAttribute('x2',x2);e.setAttribute('y2',y2);
+    e.setAttribute('class','edge'); svg.appendChild(e); }
+  function box(x,y,label,cls,sentClass){
+    const w=Math.max(26,label.length*6.4+10);
+    const r=document.createElementNS(SVGNS,'rect');
+    r.setAttribute('x',x-w/2);r.setAttribute('y',y-10);r.setAttribute('width',w);r.setAttribute('height',20);
+    r.setAttribute('rx',6);r.setAttribute('class',cls);r.setAttribute('stroke-width','1.5');svg.appendChild(r);
+    const t=document.createElementNS(SVGNS,'text');
+    t.setAttribute('x',x);t.setAttribute('y',y+4);t.setAttribute('text-anchor','middle');
+    if(sentClass) t.setAttribute('class','sent');
+    t.textContent=label; svg.appendChild(t);
+  }
+  (function edges(n){ if(n.leaf)return; [n.left,n.middle,n.right].forEach(c=>{ if(c){ line(xpos(n),ypos(n),xpos(c),ypos(c)); edges(c);} }); })(root);
+  (function nodes(n){
+    const x=xpos(n),y=ypos(n);
+    const hot = touched && touched.has(n.id);
+    if(n.leaf){
+      const sent=isSent(n);
+      box(x,y,labelLeaf(n), hot?'hot':(sent?'sentN':'leafN'), sent);
+    } else {
+      box(x,y,labelInternal(n), hot?'hot':'intN', isSent(n));
+      [n.left,n.middle,n.right].forEach(c=>{ if(c) nodes(c); });
+    }
+  })(root);
+}
+
+/* =====================================================================================
+   UI WIRING — Race tab
+   ===================================================================================== */
+let race=new Race();
+let selectedId=null;
+const $=id=>document.getElementById(id);
+
+/* Required bounds (verbatim from the assignment PDF), keyed by Race method. */
+const CX = {
+  init:'O(1)', addRunner:'O(log n)', removeRunner:'O(log n)',
+  addRunToRunner:'O(log n + log m_runner)', removeRunFromRunner:'O(log n + log m_runner)',
+  getMinRun:'O(log n)', getAvgRun:'O(log n)', getRankMin:'O(log n)', getRankAvg:'O(log n)',
+  getFastestRunnerMin:'O(1)', getFastestRunnerAvg:'O(1)'
+};
+/* Update the perf bar + highlight the matching API-table row for an op. */
+function showCx(method, nodes){
+  const bound = CX[method] || '';
+  $('cxOp').innerHTML = method ? ('<code>'+method+'</code> · '+bound.replace('m_runner','m<sub>runner</sub>')) : '—';
+  const n = race.runners.size;
+  $('cxN').textContent = n + ' · ' + Math.ceil(Math.log2(n+1));
+  if(nodes!=null) $('cxNodes').textContent = String(nodes);
+  document.querySelectorAll('#cxTable tr.lit').forEach(tr=>tr.classList.remove('lit'));
+  if(method){ const row=document.querySelector('#cxTable tr[data-m="'+method+'"]'); if(row) row.classList.add('lit'); }
+}
+
+function logLine(html, cls){
+  const log=$('log');
+  const div=document.createElement('div');
+  if(cls) div.className=cls;
+  div.innerHTML=html;
+  log.appendChild(div);
+  log.scrollTop=log.scrollHeight;
+}
+function setRaceMsg(m){ $('raceMsg').textContent=m; }
+
+function refreshRunnerSelect(){
+  const sel=$('runSel');
+  const cur=sel.value;
+  sel.innerHTML='';
+  const ids=[...race.runners.keys()].sort((a,b)=>a-b);
+  ids.forEach(id=>{ const o=document.createElement('option'); o.value=id; o.textContent='runner '+id; sel.appendChild(o); });
+  if(ids.length){
+    if(ids.map(String).includes(cur)) sel.value=cur;
+    else sel.value=String(ids[0]);
+  }
+}
+
+function renderRace(){
+  renderTree($('minSvg'), race.minTree.root, race.minTree.touched);
+  renderTree($('avgSvg'), race.avgTree.root, race.avgTree.touched);
+  renderTree($('idSvg'), race.IDtree.root, race.IDtree.touched);
+  // fastest readouts
+  $('fMin').textContent = race.getFastestRunnerMin()==null?'—':('runner '+race.getFastestRunnerMin());
+  $('fAvg').textContent = race.getFastestRunnerAvg()==null?'—':('runner '+race.getFastestRunnerAvg());
+  // runner table
+  const body=$('runnerBody'); body.innerHTML='';
+  const ids=[...race.runners.keys()].sort((a,b)=>a-b);
+  if(selectedId!=null && !race.runners.has(selectedId)) selectedId=null;
+  if(selectedId==null && ids.length) selectedId=ids[0];
+  ids.forEach(id=>{
+    const tr=document.createElement('tr');
+    if(id===selectedId) tr.className='sel';
+    const min=race.getMinRun(id), avg=race.getAvgRun(id);
+    let rm='—', ra='—';
+    try{ rm=race.getRankMin(id); }catch(e){}
+    try{ ra=race.getRankAvg(id); }catch(e){}
+    tr.innerHTML=`<td class="m">${id}</td><td class="m">${fmtFloat(min)}</td><td class="m">${fmtFloat(avg)}</td>`+
+                 `<td class="m">${rm}</td><td class="m">${ra}</td>`;
+    tr.onclick=()=>{ selectedId=id; renderRace(); };
+    body.appendChild(tr);
+  });
+  // selected runner's run tree
+  $('selIdLbl').textContent = selectedId==null?'—':selectedId;
+  const rt = selectedId!=null ? race.runners.get(selectedId) : null;
+  renderTree($('runSvg'), rt?rt.runs.root:null, rt?rt.runs.touched:null);
+  refreshRunnerSelect();
+}
+
+function safeOp(label, method, fn){
+  PERF.nodes=0;
+  let n=0;
+  try{ fn(); n=PERF.nodes; logLine('<span class="op">›</span> '+label+' <span class="ok">ok</span> '+
+      '<span class="muted">· '+(CX[method]||'').replace('m_runner','mᵣ')+' · '+n+' node-touches</span>','op');
+    setRaceMsg(label+' — ok'); showCx(method, n); }
+  catch(e){ logLine('<span class="op">›</span> '+label+' <span class="err">→ '+e.message+'</span>'); setRaceMsg(label+' — '+e.message); showCx(method, PERF.nodes); }
+  renderRace();
+}
+
+$('addRunnerBtn').onclick=()=>{ const id=parseInt($('rId').value); if(isNaN(id)){setRaceMsg('enter an id');return;}
+  safeOp('addRunner('+id+')','addRunner',()=>{ race.addRunner(id); selectedId=id; }); };
+$('removeRunnerBtn').onclick=()=>{ const id=parseInt($('rId').value); if(isNaN(id)){setRaceMsg('enter an id');return;}
+  safeOp('removeRunner('+id+')','removeRunner',()=>race.removeRunner(id)); };
+$('addRunBtn').onclick=()=>{ const id=parseInt($('runSel').value); const t=parseFloat($('rTime').value);
+  if(isNaN(id)){setRaceMsg('add a runner first');return;} if(isNaN(t)){setRaceMsg('enter a time');return;}
+  safeOp('addRunToRunner('+id+', '+t+')','addRunToRunner',()=>{ race.addRunToRunner(id,t); selectedId=id; }); };
+$('removeRunBtn').onclick=()=>{ const id=parseInt($('runSel').value); const t=parseFloat($('rTime').value);
+  if(isNaN(id)){setRaceMsg('add a runner first');return;} if(isNaN(t)){setRaceMsg('enter a time');return;}
+  safeOp('removeRunFromRunner('+id+', '+t+')','removeRunFromRunner',()=>{ race.removeRunFromRunner(id,t); selectedId=id; }); };
+$('resetRaceBtn').onclick=()=>{ stopBuild(); race=new Race(); selectedId=null; $('log').innerHTML='';
+  logLine('Race reset — three empty 2-3 trees with ±∞ sentinels.'); showCx(null,0); renderRace(); };
+
+/* Demo scenario — based on TestRace.testGetRankMin / testGetFastestRunnerMin in the repo.
+   Each step is a real Race op; ranks/fastest update live. */
+let buildTimer=null;
+function stopBuild(){ if(buildTimer){ clearTimeout(buildTimer); buildTimer=null; } document.body.classList.remove('building'); }
+function runSteps(steps, intro, onDone){
+  stopBuild();
+  race=new Race(); selectedId=null; $('log').innerHTML='';
+  document.body.classList.add('building');
+  if(intro) logLine(intro,'op');
+  let i=0;
+  function step(){
+    if(i>=steps.length){ stopBuild(); if(onDone) onDone(); return; }
+    const s=steps[i++];
+    PERF.nodes=0;
+    let method=null, note='';
+    try{
+      if(s[0]==='addRunner'){ method='addRunner'; race.addRunner(s[1]); selectedId=s[1]; }
+      else if(s[0]==='run'){ method='addRunToRunner'; race.addRunToRunner(s[1],s[2]); selectedId=s[1];
+        note=' → min '+fmtFloat(race.getMinRun(s[1]))+', avg '+fmtFloat(race.getAvgRun(s[1])); }
+      const n=PERF.nodes;
+      const lbl = method==='addRunner' ? 'addRunner('+s[1]+')' : 'addRunToRunner('+s[1]+', '+s[2]+')';
+      let extra='';
+      if(s[3]) extra=' <span class="ok">'+s[3]+'</span>';
+      logLine('<span class="op">›</span> '+lbl+note+' <span class="muted">· '+(CX[method]||'')+' · '+n+' touches</span>'+extra,'op');
+      showCx(method, n);
+    }catch(e){ logLine('error: '+e.message,'err'); }
+    renderRace();
+    buildTimer=setTimeout(step, 460);
+  }
+  step();
+}
+function loadDemo(){
+  runSteps([
+    ['addRunner',1],['addRunner',2],['addRunner',3],['addRunner',4],
+    ['run',2,15],['run',1,16],['run',1,1],['run',3,20],['run',4,7],
+    ['run',2,9],['run',3,4],['run',4,12],['run',1,5]
+  ], 'Loading demo (from TestRace.java) …', ()=>{
+    logLine('demo complete — fastest by min: runner '+race.getFastestRunnerMin()+
+            ', by avg: runner '+race.getFastestRunnerAvg(),'ok');
+    setRaceMsg('demo loaded');
+  });
+}
+$('demoBtn').onclick=loadDemo;
+
+/* Build-from-empty demo: start with three EMPTY trees and grow them step by step,
+   narrating root creation, the first split (height 1→2) and the live node-touch counter. */
+function buildFromEmpty(){
+  // A sorted-ish insertion order chosen to force a visible root split early:
+  // inserting 7 runners makes the IDtree grow from a single node to height 2 (first split at the 3rd→4th leaf),
+  // then height 3, so the user watches the height climb.
+  const steps=[
+    ['addRunner',10,'first runner → root holds one leaf (+ ±∞ sentinels)'],
+    ['addRunner',20,'second leaf, still one internal node'],
+    ['addRunner',30,'third leaf → node would overflow to 4 children → SPLIT → new root (height 1→2)'],
+    ['addRunner',40,''],
+    ['addRunner',50,'another split propagates upward'],
+    ['addRunner',60,''],
+    ['addRunner',70,'tree now height 3 — note touches ≈ ⌈log₂(n+1)⌉'],
+    ['run',30,8,'record runs → re-keys minTree & avgTree via fixMinAvgRuns'],
+    ['run',10,12,''],
+    ['run',70,5,'runner 70 now fastest by min'],
+    ['run',30,4,'']
+  ];
+  runSteps(steps, 'Building from EMPTY — watch the 2-3 trees grow from nothing …', ()=>{
+    logLine('build complete — '+race.runners.size+' runners. IDtree internal-height is now '+treeHeight(race.IDtree.root)+
+            ' (grew from 1 as it filled). fastest by min: runner '+race.getFastestRunnerMin(),'ok');
+    setRaceMsg('built from empty');
+  });
+}
+$('buildBtn').onclick=buildFromEmpty;
+
+/* =====================================================================================
+   UI WIRING — single-tree insert demo (uses the same TwoThree port, value-keyed)
+   ===================================================================================== */
+let demoTree=new TwoThree();
+function demoRender(){ renderTree($('treeSvg'), demoTree.root, demoTree.touched); }
+function demoInsert(v){
+  if(v===null||isNaN(v)) return 'Enter a number.';
+  if(demoTree.Search(null, leafNode(intKey(v), floatKey(SENT)))!=null)
+    return v+' is already in the tree (Insert throws on duplicates).';
+  const before = treeHeight(demoTree.root);
+  demoTree.Insert(leafNode(intKey(v), floatKey(SENT)));
+  const grew = treeHeight(demoTree.root)>before;
+  return 'Inserted '+v+(grew?'  (root split → tree grew taller)':'  ✓');
+}
+function treeHeight(n){ let h=0,c=n; while(c && !c.leaf){h++;c=c.left;} return h; }
+function setMsg(m){ $('msg').innerHTML=m; }
+$('insBtn').onclick=()=>{ const v=parseInt($('valIn').value); setMsg(demoInsert(v)); demoRender(); };
+$('randBtn').onclick=()=>{ const v=Math.floor(Math.random()*99)+1; $('valIn').value=v; setMsg(demoInsert(v)); demoRender(); };
+$('resetBtn').onclick=()=>{ demoTree=new TwoThree(); setMsg('Reset — only the ±∞ sentinels remain.'); demoRender(); };
+$('seedBtn').onclick=()=>{ demoTree=new TwoThree(); [50,30,70,20,40,60,80,10,25,35].forEach(demoInsert);
+  setMsg('Seeded with 50,30,70,20,40,60,80,10,25,35 — note the balanced height and subtree sizes.'); demoRender(); };
+
+/* tabs */
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active'); $(t.dataset.t).classList.add('active');
+  if(t.dataset.t==='demo') demoRender();
+  if(t.dataset.t==='race') renderRace();
+}));
+
+/* init: seed Race with a few runners so the trees aren't empty on first view */
+logLine('Race initialised — three empty 2-3 trees. Add runners, load the demo, or build from empty.');
+[1,2,3,4].forEach(id=>{ try{ race.addRunner(id); }catch(e){} });
+selectedId=1;
+showCx(null,0);
+renderRace();
+demoRender();
+</script>
+</body>
+</html>

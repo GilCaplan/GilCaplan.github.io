@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NLP Coursework — Technion</title>
+<style>
+:root{
+  --bg:#0B1220;--surface:#0F172A;--panel:#1E293B;--border:#243044;
+  --text:#E2E8F0;--muted:#94A3B8;--accent:#14B8A6;--blue:#60A5FA;--red:#F87171;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:Inter,system-ui,-apple-system,sans-serif;line-height:1.55;font-size:15px}
+.wrap{max-width:1040px;margin:0 auto;padding:24px 20px 60px}
+h1{font-size:24px;margin:0 0 4px}
+h2{font-size:18px;margin:0 0 12px;color:var(--text)}
+h3{font-size:15px;margin:18px 0 8px;color:var(--accent)}
+.sub{color:var(--muted);font-size:13px;margin-bottom:20px}
+.tag{display:inline-block;font-family:var(--mono);font-size:11px;color:var(--accent);
+  border:1px solid var(--border);border-radius:6px;padding:2px 8px;margin:0 6px 6px 0;background:var(--surface)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 16px;border-bottom:1px solid var(--border);padding-bottom:10px}
+.tab{cursor:pointer;padding:7px 14px;border-radius:8px;font-size:13.5px;color:var(--muted);
+  background:transparent;border:1px solid transparent;user-select:none}
+.tab:hover{color:var(--text);background:var(--surface)}
+.tab.active{color:var(--accent);background:var(--surface);border-color:var(--border)}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px}
+.view{display:none}.view.active{display:block}
+code,.mono{font-family:var(--mono);font-size:12.5px}
+pre{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;overflow:auto;
+  font-family:var(--mono);font-size:12px;color:#cbd5e1;margin:10px 0}
+.muted{color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:720px){.grid2{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px}
+.card h4{margin:0 0 6px;font-size:14px;color:var(--blue)}
+.pipe{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+.stage{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12.5px;cursor:default}
+.arrow{color:var(--muted)}
+.kv{font-family:var(--mono);font-size:12px}
+.kv b{color:var(--accent);font-weight:600}
+figure{margin:12px 0}figcaption{font-size:12px;color:var(--muted);margin-top:6px}
+img{max-width:100%;border-radius:8px;border:1px solid var(--border);background:#fff}
+table{border-collapse:collapse;width:100%;font-size:12.5px;margin:8px 0}
+th,td{border:1px solid var(--border);padding:6px 9px;text-align:left}
+th{color:var(--muted);font-weight:600;background:var(--panel)}
+.demo input,.demo select{background:var(--bg);border:1px solid var(--border);color:var(--text);
+  border-radius:7px;padding:7px 9px;font-family:var(--mono);font-size:12.5px;width:100%}
+.demo label{display:block;font-size:11.5px;color:var(--muted);margin:8px 0 3px}
+.btn{background:var(--accent);color:#04201d;border:none;border-radius:8px;padding:9px 16px;
+  font-weight:600;font-size:13px;cursor:pointer;margin-top:12px}
+.btn:hover{filter:brightness(1.08)}
+.result{margin-top:14px;padding:12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);font-family:var(--mono);font-size:12.5px}
+.ok{color:var(--accent)}.bad{color:var(--red)}
+.pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:20px;background:var(--panel);border:1px solid var(--border);color:var(--muted);margin-left:6px}
+ul{margin:6px 0;padding-left:20px}li{margin:3px 0}
+.note{font-size:12px;color:var(--muted);border-left:2px solid var(--border);padding-left:10px;margin:10px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Natural Language Processing — Coursework</h1>
+  <div class="sub">Technion · repo <span class="mono">NLP_970215</span> · three components: an HMM POS tagger, a BPE tokenizer + NER study, and an LLM reasoning-evaluation final project.</div>
+  <div>
+    <span class="tag">Viterbi / HMM</span>
+    <span class="tag">Byte-Pair Encoding</span>
+    <span class="tag">NER</span>
+    <span class="tag">LLM evaluation</span>
+    <span class="tag">Gemini · 270-example benchmark</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-v="overview">Overview</div>
+    <div class="tab" data-v="hw1">HW1 · POS tagging</div>
+    <div class="tab" data-v="hw2">HW2 · Tokenizers</div>
+    <div class="tab" data-v="proj">Final project</div>
+    <div class="tab" data-v="demo">Try the evaluator</div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="view active" id="overview">
+    <div class="panel">
+      <h2>What's in this repository</h2>
+      <p class="muted">Three self-contained assignments from the NLP course, each grounded in real code and data in the repo.</p>
+      <div class="grid2">
+        <div class="card">
+          <h4>HW1 — POS tagging (MEMM + Viterbi)</h4>
+          <p class="muted" style="font-size:13px">A part-of-speech tagger trained on <code>train1.wtag</code> / <code>train2.wtag</code>, decoded with the Viterbi algorithm over hand-built feature templates. Predictions are written for <code>comp1.words</code> / <code>comp2.words</code>.</p>
+        </div>
+        <div class="card">
+          <h4>HW2 — BPE tokenizer + NER</h4>
+          <p class="muted" style="font-size:13px">A from-scratch Byte-Pair-Encoding tokenizer extending a <code>BaseTokenizer</code>, trained on domain text, then evaluated on a binary NER task using "first-subtoken" labeling. Three trained tokenizers are shipped as <code>.pkl</code>.</p>
+        </div>
+        <div class="card">
+          <h4>Final project — LLM reasoning eval</h4>
+          <p class="muted" style="font-size:13px">A 270-example benchmark of timezone / flight-duration reasoning questions. Four Gemini models are scored with a <em>mathematical</em> validator (no string matching), revealing a striking weakness on multi-step arithmetic reasoning.</p>
+        </div>
+        <div class="card">
+          <h4>Grounding</h4>
+          <p class="muted" style="font-size:13px">All numbers, examples and figures below are copied directly from the repo: <code>project/data/examples.jsonl</code>, the saved plots under <code>project/output/plots/</code>, and the consistency report.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HW1 -->
+  <div class="view" id="hw1">
+    <div class="panel">
+      <h2>HW1 · Part-of-Speech tagging</h2>
+      <p class="muted">Files: <code>preprocessing.py</code>, <code>optimization.py</code>, <code>inference.py</code>, <code>main.py</code>, data under <code>HW1_POS/data/</code>.</p>
+      <div class="pipe">
+        <span class="stage"><b>train*.wtag</b><br><span class="muted">tagged corpus</span></span><span class="arrow">→</span>
+        <span class="stage">Feature extraction<br><span class="muted">word/tag templates</span></span><span class="arrow">→</span>
+        <span class="stage">Weight optimization<br><span class="muted">log-linear model</span></span><span class="arrow">→</span>
+        <span class="stage">Viterbi decode<br><span class="muted">best tag sequence</span></span><span class="arrow">→</span>
+        <span class="stage"><b>comp*.words</b><br><span class="muted">predicted tags</span></span>
+      </div>
+      <h3>The data format (real lines)</h3>
+      <p class="muted" style="font-size:13px">Training data is whitespace-separated <code>word_TAG</code> tokens, one sentence per line. Inputs to tag (<code>comp1.words</code>) are raw words. The model estimates <span class="kv">P(tag | word, context)</span> via a log-linear feature model and decodes the most-likely sequence with Viterbi, with explicit handling of unknown words.</p>
+      <div class="note">The README frames HW1 as "Hidden Markov Models for POS tagging using the Viterbi algorithm" with transition/emission estimation and unknown-word handling. The shipped code (<code>optimization.py</code>) trains feature weights that Viterbi then decodes.</div>
+    </div>
+  </div>
+
+  <!-- HW2 -->
+  <div class="view" id="hw2">
+    <div class="panel">
+      <h2>HW2 · BPE Tokenizers &amp; downstream NER</h2>
+      <p class="muted">Files: <code>base_tokenizer.py</code>, <code>my_tokenizer.py</code>, <code>train_tokenizer.py</code>, <code>train_ner_model.py</code>, <code>test_tokenizer.py</code>; three trained tokenizers in <code>trained_tokenizers/</code>.</p>
+
+      <h3>Byte-Pair Encoding, interactively</h3>
+      <p class="muted" style="font-size:13px">BPE starts from single characters and repeatedly merges the most frequent adjacent pair into a new token. Step through the merges on a sample word:</p>
+      <div class="demo">
+        <div id="bpeView" class="result"></div>
+        <button class="btn" id="bpeStep">Merge most frequent pair →</button>
+        <button class="btn" id="bpeReset" style="background:var(--panel);color:var(--text)">Reset</button>
+        <div class="muted" style="font-size:11.5px;margin-top:8px">Illustrative demo of the BPE merge rule the assignment implements (corpus: <span class="mono">low low low low low lower lower newest newest widest</span>).</div>
+      </div>
+
+      <h3>What is measured</h3>
+      <p class="muted" style="font-size:13px">Per the assignment README, tokenizers are compared on:</p>
+      <ul class="muted" style="font-size:13px">
+        <li><b>Correctness</b> — does it implement BPE faithfully (encode/decode round-trip)?</li>
+        <li><b>Speed</b> — tokens encoded per second.</li>
+        <li><b>Efficiency</b> — tokens needed to cover unseen text.</li>
+        <li><b>NER performance</b> — binary entity / non-entity F1 on the downstream task.</li>
+      </ul>
+      <div class="note">NER uses <b>first-subtoken labeling</b>: when a word splits into subwords, only the first subtoken carries the entity label; remaining subtokens are set to <code>-100</code> (ignored in the loss). Example from the README: <span class="mono">"Steve Jobs" → ["Steve J", "ob", "s ate"]</span>, only "Steve J" gets label 1.</div>
+    </div>
+  </div>
+
+  <!-- PROJECT -->
+  <div class="view" id="proj">
+    <div class="panel">
+      <h2>Final project · Evaluating LLM timezone reasoning</h2>
+      <p class="muted">Can LLMs do multi-step time arithmetic without tools? A 270-question benchmark says: mostly not.</p>
+
+      <h3>Dataset (270 examples — real structure)</h3>
+      <table>
+        <tr><th>Axis</th><th>Values</th><th>Count</th></tr>
+        <tr><td>Mode</td><td>Airport (global), Country (international), State (US)</td><td>3 · 90 each</td></tr>
+        <tr><td>Variation</td><td>basic · with_origin · with_timezone_hint</td><td>3</td></tr>
+        <tr><td>Difficulty</td><td>short / medium / long timezone gap (≈3h / 8h / 14h)</td><td>3</td></tr>
+        <tr><td>Per cell</td><td>questions per mode×variation×difficulty</td><td>10</td></tr>
+      </table>
+      <p class="kv muted">3 × 3 × 3 × 10 = <b>270</b> examples in <code>data/examples.jsonl</code></p>
+
+      <h3>A real example from the dataset</h3>
+      <pre>{"id": "country_easy_69",
+ "question": "A flight from CUU departed at 08:45 and arrived at 13:48.
+   The flight duration was 183 minutes. There exists a valid destination
+   airport where there is a timezone difference of +2.0 hours from the
+   origin. Which airport was the destination?",
+ "context": {"origin":"CUU","timezone_difference":2,
+   "departure_time":"08:45","arrival_time":"13:48","flight_duration":183},
+ "expected_answer": "AZO",
+ "variation": "with_timezone_hint", "question_mode": "country"}</pre>
+
+      <h3>How a response is scored (the real criterion)</h3>
+      <p class="muted" style="font-size:13px">Scoring is <b>mathematical</b>, not string-matching. A model's airport pair is valid iff the implied flight duration matches the stated duration within tolerance, after converting both endpoints to UTC:</p>
+      <pre>Valid  ⟺  | duration_calc − duration_expected | ≤ tolerance
+duration_calc = (t_arr − tz_dest) − (t_dep − tz_orig)   # in UTC minutes</pre>
+      <p class="kv muted">Final score = <b>macro-averaged accuracy</b>: each question contributes equally, Acc = (1/n)·Σ xᵢ/r.</p>
+
+      <h3>Results — real saved figures</h3>
+      <figure>
+        <img src="figures/model_comparison.png" alt="Model accuracy and consistency comparison">
+        <figcaption>From <code>project/output/plots/model_comparison_20250825_130330.png</code>. Accuracy stays in single digits (1.5% / 5.6% / 9.8%) even though within-run answer <em>consistency</em> is high (78–91%) — the models answer confidently but get the arithmetic wrong.</figcaption>
+      </figure>
+      <figure>
+        <img src="figures/flight_airport_mode.png" alt="Per-variation accuracy, airport mode, 4 Gemini models">
+        <figcaption>From <code>project/putils/output/plots/.../model_comparison_multi_mode_20250825_111923.png</code>. Airport mode, 120 questions across 3 variations. Gemini 2.5 Flash (green) leads, and the "With TZ Hint" variation — where the timezone gap is given — produces the highest accuracies.</figcaption>
+      </figure>
+
+      <h3>Key findings (as the repo states them)</h3>
+      <ul class="muted" style="font-size:13px">
+        <li>Four models tested: Gemini 1.5 Flash, 1.5 Flash-8B, 2.0 Flash, 2.5 Flash.</li>
+        <li>Overall accuracy is low (&lt;10% macro-averaged) — the task isolates genuine multi-step arithmetic reasoning rather than recall.</li>
+        <li>Within-run consistency report: 960 questions, 85.05% consistency rate — answers are stable but frequently incorrect.</li>
+        <li>Reproducible with <code>RANDOM_SEED=43</code> deterministic generation.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- DEMO -->
+  <div class="view" id="demo">
+    <div class="panel">
+      <h2>Try the project's evaluation rule</h2>
+      <p class="muted">This runs the project's actual validation math in your browser: convert departure/arrival to UTC using each timezone, and check whether the implied duration matches the stated one within tolerance.</p>
+      <div class="demo grid2">
+        <div>
+          <label>Departure local time (HH:MM)</label>
+          <input id="dep" value="08:45">
+          <label>Arrival local time (HH:MM)</label>
+          <input id="arr" value="13:48">
+          <label>Stated flight duration (minutes)</label>
+          <input id="dur" value="183">
+        </div>
+        <div>
+          <label>Origin timezone (UTC offset, hours)</label>
+          <input id="tzo" value="-6">
+          <label>Destination timezone (UTC offset, hours)</label>
+          <input id="tzd" value="-4">
+          <label>Tolerance (minutes)</label>
+          <input id="tol" value="2">
+        </div>
+      </div>
+      <button class="btn" id="run">Validate</button>
+      <div class="result" id="out"></div>
+      <div class="note">Mirrors <code>duration_calc = (t_arr − tz_dest) − (t_dep − tz_orig)</code> from <code>project/README.md</code> and <code>evaluation.py</code>. Defaults reproduce the <code>country_easy_69</code> example (CUU origin, +2h hint).</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// tabs
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById(t.dataset.v).classList.add('active');
+  };
+});
+
+// ---- BPE demo ----
+const bpeCorpus = {"low":5,"lower":2,"newest":1,"widest":1};
+let bpeWords, bpeMerges;
+function bpeInit(){
+  bpeWords={}; bpeMerges=[];
+  for(const w in bpeCorpus){ bpeWords[w]=w.split('').concat(['</w>']); }
+  bpeRender(null);
+}
+function bpePairCounts(){
+  const c={};
+  for(const w in bpeWords){
+    const s=bpeWords[w], f=bpeCorpus[w];
+    for(let i=0;i<s.length-1;i++){const p=s[i]+' '+s[i+1]; c[p]=(c[p]||0)+f;}
+  }
+  return c;
+}
+function bpeRender(last){
+  let html='<div class="muted" style="font-size:11.5px;margin-bottom:8px">Current segmentation (frequency):</div>';
+  for(const w in bpeWords){
+    html+='<div><span class="muted">'+bpeCorpus[w]+'×</span> &nbsp;'+
+      bpeWords[w].map(t=>'<span style="border:1px solid var(--border);border-radius:5px;padding:1px 5px;margin:0 2px;background:var(--panel)">'+t.replace('</w>','∎')+'</span>').join('')+'</div>';
+  }
+  if(last) html+='<div style="margin-top:10px" class="ok">merged "'+last.replace(' ','" + "')+'" → "'+last.replace(' ','')+'"</div>';
+  else if(bpeMerges.length===0) html+='<div style="margin-top:10px" class="muted">No merges yet — every symbol is a character. Click below.</div>';
+  if(bpeMerges.length) html+='<div style="margin-top:8px" class="muted">merges so far: '+bpeMerges.join(', ')+'</div>';
+  document.getElementById('bpeView').innerHTML=html;
+}
+function bpeStep(){
+  const c=bpePairCounts();
+  let best=null,bv=-1;
+  for(const p in c){ if(c[p]>bv){bv=c[p];best=p;} }
+  if(!best) return;
+  const [a,b]=best.split(' '), merged=a+b;
+  for(const w in bpeWords){
+    const s=bpeWords[w], ns=[];
+    for(let i=0;i<s.length;i++){
+      if(i<s.length-1 && s[i]===a && s[i+1]===b){ns.push(merged);i++;}
+      else ns.push(s[i]);
+    }
+    bpeWords[w]=ns;
+  }
+  bpeMerges.push(merged.replace('</w>','∎'));
+  bpeRender(best);
+}
+document.getElementById('bpeStep').onclick=bpeStep;
+document.getElementById('bpeReset').onclick=bpeInit;
+bpeInit();
+
+// ---- evaluator demo ----
+function toMin(s){const m=s.trim().match(/^(\d{1,2}):(\d{2})$/); if(!m)return null; return (+m[1])*60+(+m[2]);}
+document.getElementById('run').onclick=()=>{
+  const dep=toMin(dep_.value),arr=toMin(arr_.value);
+  const dur=+document.getElementById('dur').value;
+  const tzo=parseFloat(document.getElementById('tzo').value);
+  const tzd=parseFloat(document.getElementById('tzd').value);
+  const tol=parseFloat(document.getElementById('tol').value);
+  const out=document.getElementById('out');
+  if(dep===null||arr===null){out.innerHTML='<span class="bad">Times must be HH:MM.</span>';return;}
+  let depUTC=dep-tzo*60, arrUTC=arr-tzd*60;
+  let calc=arrUTC-depUTC;
+  while(calc<0)calc+=1440; // wrap past midnight
+  const diff=Math.abs(calc-dur);
+  const ok=diff<=tol;
+  out.innerHTML=
+    '<div>t_dep − tz_orig (UTC) = '+dep+' − ('+(tzo*60)+') = <b>'+depUTC+'</b> min</div>'+
+    '<div>t_arr − tz_dest (UTC) = '+arr+' − ('+(tzd*60)+') = <b>'+arrUTC+'</b> min</div>'+
+    '<div>duration_calc = '+calc+' min  &nbsp;vs&nbsp; stated = '+dur+' min</div>'+
+    '<div>|Δ| = '+diff+' min  (tolerance '+tol+')</div>'+
+    '<div style="margin-top:8px" class="'+(ok?'ok':'bad')+'">'+(ok?'✓ VALID — duration matches':'✗ INVALID — duration does not match')+'</div>';
+};
+const dep_=document.getElementById('dep'),arr_=document.getElementById('arr');
+document.getElementById('run').click();
+</script>
+</body>
+</html>

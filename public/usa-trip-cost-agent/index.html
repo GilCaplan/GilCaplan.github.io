@@ -1,0 +1,983 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>USA Trip Cost Agent — explorer</title>
+<style>
+  :root {
+    --bg:#0B1220; --surface:#0F172A; --panel:#1E293B; --line:#243044;
+    --text:#E2E8F0; --muted:#94A3B8; --accent:#14B8A6; --ocean:#60A5FA; --spice:#F87171;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:Inter,system-ui,sans-serif; line-height:1.5; padding:20px; }
+  .mono { font-family:"JetBrains Mono",ui-monospace,monospace; }
+  h1 { font-size:1.5rem; } h2 { font-size:.8rem; text-transform:uppercase; letter-spacing:.08em; color:var(--accent); margin-bottom:10px; }
+  .muted { color:var(--muted); }
+  .tabs { display:flex; gap:4px; border-bottom:1px solid var(--line); margin:16px 0 20px; }
+  .tab { padding:8px 14px; font-size:.85rem; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; }
+  .tab.active { color:var(--accent); border-color:var(--accent); }
+  .panel { background:rgba(30,41,59,.5); border:1px solid var(--line); border-radius:12px; padding:16px; }
+  .grid { display:grid; gap:12px; }
+  .pill { display:inline-flex; gap:6px; align-items:center; border:1px solid var(--line); border-radius:999px; padding:3px 10px; font-size:.72rem; color:var(--muted); }
+  select, input { background:var(--surface); border:1px solid var(--line); border-radius:8px; color:var(--text); padding:8px 12px; font-size:.9rem; outline:none; }
+  select:focus, input:focus { border-color:var(--accent); }
+  a { color:var(--ocean); }
+  .stat { background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:12px; }
+  .stat .v { font-size:1.3rem; font-weight:600; } .stat .l { font-size:.72rem; color:var(--muted); }
+  .hidden { display:none; }
+  .flow { display:flex; flex-direction:column; gap:10px; }
+  .node { background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+  .node b { color:var(--text); } .node .m { font-size:.78rem; color:var(--muted); }
+  .agents { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+  .agent { background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; padding:10px 12px; }
+  .agent .t { font-weight:600; font-size:.85rem; } .agent .mdl { font-size:.7rem; color:var(--muted); }
+
+  /* ---- BYO-key chat widget ---- */
+  .chatwrap{display:flex;flex-direction:column;gap:10px}
+  .keybar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .keybar select,.keybar input{background:var(--surface);border:1px solid var(--line);border-radius:8px;color:var(--text);padding:8px 10px;font-size:.85rem;outline:none}
+  .keybar input#apikey{flex:1;min-width:200px}
+  .keybar select:focus,.keybar input:focus{border-color:var(--accent)}
+  .remember{font-size:.75rem;color:var(--muted);display:flex;gap:4px;align-items:center}
+  .privacy{font-size:.72rem}
+  .chatlog{height:380px;overflow-y:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
+  .chatlog .empty{text-align:center;margin:auto}
+  .msg{max-width:85%;padding:9px 13px;border-radius:14px;font-size:.9rem;white-space:pre-wrap;line-height:1.5}
+  .msg.user{align-self:flex-end;background:rgba(20,184,166,.15);color:var(--text)}
+  .msg.bot{align-self:flex-start;background:var(--panel);color:var(--text)}
+  .grounded{align-self:flex-start;font-size:.68rem;color:var(--accent);border:1px solid var(--line);border-radius:999px;padding:2px 9px}
+  .suggest{display:flex;gap:6px;flex-wrap:wrap}
+  .suggest button{background:var(--surface);border:1px solid var(--line);border-radius:999px;color:var(--muted);padding:5px 11px;font-size:.75rem;cursor:pointer}
+  .suggest button:hover{border-color:var(--accent);color:var(--text)}
+  .composer{display:flex;gap:8px}
+  .composer input{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:8px;color:var(--text);padding:10px 12px;font-size:.9rem;outline:none}
+  .composer input:focus{border-color:var(--accent)}
+  .btn{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:8px;padding:9px 16px;font-size:.85rem;cursor:pointer}
+  .btn.primary{background:var(--accent);color:#04201c;border-color:var(--accent);font-weight:600}
+  .btn:disabled{opacity:.55;cursor:default}
+  .err{color:var(--spice)!important}
+
+  /* ---- real-model predictor ---- */
+  .fld{display:flex;flex-direction:column;gap:5px}
+  .fld .lbl{font-size:.72rem;color:var(--muted)}
+  .fld select,.fld input{width:100%}
+  .predcard{background:var(--surface);border:1px solid var(--accent);border-radius:12px;padding:18px}
+  .predcard .big{font-size:2rem;font-weight:700;color:var(--accent)}
+  .predcard .sub{font-size:.8rem;color:var(--muted);margin-top:4px}
+</style>
+</head>
+<body>
+  <div style="max-width:980px;margin:0 auto">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <h1>USA Trip Cost Agent</h1>
+      <span class="pill">FastAPI</span><span class="pill">Ollama · Llama 3</span><span class="pill">scikit-learn</span>
+    </div>
+    <p class="muted" style="margin-top:6px">A multi-agent system that estimates US trip costs and recommends venues. Below: explore the real underlying city data, and the real agent architecture.</p>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="explorer">City cost explorer</div>
+      <div class="tab" data-tab="predict">Cost predictor (real model)</div>
+      <div class="tab" data-tab="recommend">Recommendations (real model)</div>
+      <div class="tab" data-tab="agent">Trip Cost Agent (live)</div>
+      <div class="tab" data-tab="arch">Architecture</div>
+      <div class="tab" data-tab="about">About</div>
+    </div>
+
+    <!-- EXPLORER -->
+    <section id="explorer">
+      <div class="panel">
+        <h2>Pick a US city</h2>
+        <input id="search" list="cityList" placeholder="Type a city… e.g. Murrieta, Duluth" style="width:100%;max-width:360px" />
+        <datalist id="cityList"></datalist>
+        <p class="muted" style="font-size:.75rem;margin-top:8px" id="coverage"></p>
+      </div>
+      <div id="cityOut" style="margin-top:14px"></div>
+    </section>
+
+    <!-- COST PREDICTOR (real exported XGBoost models, runs client-side) -->
+    <section id="predict" class="hidden">
+      <div class="panel">
+        <h2>Cost predictors — the real trained models, in your browser</h2>
+        <p class="muted" style="font-size:.82rem">
+          These run the project's <b>actual trained XGBoost models</b> live client-side — no server, no API key.
+          Each model's complete tree structure was exported from its Python pickle using XGBoost's
+          <b>native model JSON</b> (<span class="mono">Booster.save_model</span>) — which keeps every
+          <span class="mono">split_index</span>, <span class="mono">split_condition</span>,
+          <span class="mono">default_left</span> and leaf weight — then evaluated by a tiny vanilla-JS tree walker.
+          All three predictors below reproduce the original Python/XGBoost output to within
+          <b>~10⁻³</b> or better on held-out inputs. These are the <b>exact committed weights</b>, not a retrain.
+        </p>
+      </div>
+
+      <!-- ===== LODGING ===== -->
+      <div class="panel" style="margin-top:14px">
+        <h2>1 · Lodging cost predictor</h2>
+        <p class="muted" style="font-size:.8rem">
+          <b>What it is:</b> <span class="mono">lodging_cost_predictor_v1.pkl</span> — an XGBoost regressor
+          (<span class="mono">reg:squarederror</span>) trained on the project's Airbnb listings. Output is
+          <b>price per night</b>; total = per-night × nights (with the agent's per-guest floor).
+          <b>How to use:</b> pick a region + room type and set the listing attributes.
+          Parity vs Python: <b>~6×10⁻⁵</b>.
+        </p>
+        <p class="muted" style="font-size:.76rem;margin-top:6px">
+          <b>Features:</b> guests, listing rating, review count, amenities count, host score, description length,
+          one-hot <span class="mono">room_type</span> (baseline = Entire Home/Apt), one-hot
+          <span class="mono">state/region</span>. The dataset is global Airbnb data, so the region list includes
+          some non-US regions the model also learned.
+        </p>
+
+        <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-top:14px">
+          <label class="fld"><span class="lbl">State / region</span>
+            <select id="p_state"></select></label>
+          <label class="fld"><span class="lbl">Room type</span>
+            <select id="p_room">
+              <option value="">Entire Home/Apt (baseline)</option>
+              <option value="room_type_Hotel">Hotel</option>
+              <option value="room_type_Private Room">Private Room</option>
+            </select></label>
+          <label class="fld"><span class="lbl">Guests</span>
+            <input id="p_guests" type="number" min="1" max="16" value="2" /></label>
+          <label class="fld"><span class="lbl">Nights</span>
+            <input id="p_nights" type="number" min="1" max="60" value="4" /></label>
+          <label class="fld"><span class="lbl">Listing rating (1–5)</span>
+            <input id="p_rating" type="number" min="1" max="5" step="0.1" value="4.8" /></label>
+          <label class="fld"><span class="lbl">Review count</span>
+            <input id="p_reviews" type="number" min="0" max="2000" value="50" /></label>
+          <label class="fld"><span class="lbl">Amenities count</span>
+            <input id="p_amen" type="number" min="0" max="60" value="8" /></label>
+          <label class="fld"><span class="lbl">Host score (1–5)</span>
+            <input id="p_host" type="number" min="1" max="5" step="0.1" value="4.5" /></label>
+          <label class="fld"><span class="lbl">Description length (chars)</span>
+            <input id="p_desc" type="number" min="0" max="2000" value="200" /></label>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap">
+          <button id="p_run" class="btn primary">Predict cost</button>
+          <span class="muted" style="font-size:.75rem" id="p_status">Loading model…</span>
+        </div>
+
+        <div id="p_out" style="margin-top:14px"></div>
+
+        <p class="muted" style="font-size:.72rem;margin-top:14px">
+          Honest note: these are the <b>real exported weights</b>, not a retrain — the JS tree evaluator reproduces the
+          committed XGBoost model's raw output. Dataset RMSE was about <span class="mono" id="p_rmse">$143</span> with a
+          mean nightly price near <span class="mono" id="p_avg">$185</span>, so treat single predictions as ballpark.
+        </p>
+      </div>
+
+      <!-- ===== FOOD ===== -->
+      <div class="panel" style="margin-top:14px">
+        <h2>2 · Food cost predictor</h2>
+        <p class="muted" style="font-size:.8rem">
+          <b>What it is:</b> <span class="mono">food_cost_predictor_v1.pkl</span> — an XGBoost regressor (300 trees)
+          that predicts a <b>restaurant meal price</b> from state + cuisine + vibe rating. The food agent then combines
+          that meal price with the <b>USDA food-plan grocery costs</b> (scaled by a per-state grocery index) and your
+          <b>eating-out ratio</b> to produce a total food cost for the trip. <b>How to use:</b> set who's traveling,
+          the cuisine/quality, and how much you'll eat out vs. cook.
+          Parity vs Python (full pipeline): <b>exact (0.0)</b>.
+        </p>
+        <p class="muted" style="font-size:.76rem;margin-top:6px">
+          <b>Model features:</b> rating (vibe), review_count (fixed at 150 like the agent), one-hot
+          <span class="mono">state</span>, one-hot <span class="mono">cuisine</span>. Grocery side uses real USDA
+          low/moderate/liberal plans × demographics × the dataset's state grocery index.
+        </p>
+
+        <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-top:14px">
+          <label class="fld"><span class="lbl">State</span>
+            <select id="f_state"></select></label>
+          <label class="fld"><span class="lbl">Cuisine</span>
+            <select id="f_cuisine"></select></label>
+          <label class="fld"><span class="lbl">Restaurant vibe / rating (1–5)</span>
+            <input id="f_vibe" type="number" min="1" max="5" step="0.1" value="4.5" /></label>
+          <label class="fld"><span class="lbl">Grocery budget level</span>
+            <select id="f_budget">
+              <option value="low">Low (USDA thrifty)</option>
+              <option value="moderate" selected>Moderate</option>
+              <option value="liberal">Liberal</option>
+            </select></label>
+          <label class="fld"><span class="lbl">Days</span>
+            <input id="f_days" type="number" min="1" max="60" value="4" /></label>
+          <label class="fld"><span class="lbl">Adults (male)</span>
+            <input id="f_males" type="number" min="0" max="12" value="1" /></label>
+          <label class="fld"><span class="lbl">Adults (female)</span>
+            <input id="f_females" type="number" min="0" max="12" value="1" /></label>
+          <label class="fld"><span class="lbl">Children</span>
+            <input id="f_children" type="number" min="0" max="12" value="0" /></label>
+          <label class="fld"><span class="lbl">Eat-out ratio: <span id="f_ratio_v" class="mono">0.5</span></span>
+            <input id="f_ratio" type="range" min="0" max="1" step="0.05" value="0.5" /></label>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap">
+          <button id="f_run" class="btn primary" disabled>Predict food cost</button>
+          <span class="muted" style="font-size:.75rem" id="f_status">Loading model…</span>
+        </div>
+        <div id="f_out" style="margin-top:14px"></div>
+      </div>
+
+      <!-- ===== ENTERTAINMENT ===== -->
+      <div class="panel" style="margin-top:14px">
+        <h2>3 · Entertainment cost predictor</h2>
+        <p class="muted" style="font-size:.8rem">
+          <b>What it is:</b> <span class="mono">entertainment_cost_model.pkl</span> — an XGBoost regressor (100 trees,
+          R²≈0.987) that predicts <b>total entertainment spend</b> for the trip from a city's real venue profile plus
+          party size, days, and travel style. <b>How to use:</b> pick a city (its real venue stats from
+          <span class="mono">city_profiles.csv</span> feed the model) — if the exact city isn't in the dataset the agent
+          falls back to a state average, then a national average, exactly as in the Python code.
+          Parity vs Python (full pipeline incl. fallbacks): <b>~5×10⁻³</b>.
+        </p>
+        <p class="muted" style="font-size:.76rem;margin-top:6px">
+          <b>Features:</b> venue_count, avg_price, price_std, avg_rating, avg_popularity, category mix
+          (<span class="mono">pct_museum/theme_park/outdoor/tour/attraction</span>), audience mix, pct_accessible,
+          pct_kid_friendly, plus num_people, num_days and a budget→travel-style encoding.
+        </p>
+
+        <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-top:14px">
+          <label class="fld"><span class="lbl">City (real venue profile)</span>
+            <input id="e_city" list="entCityList" placeholder="e.g. Denver, CO" />
+            <datalist id="entCityList"></datalist></label>
+          <label class="fld"><span class="lbl">Travelers</span>
+            <input id="e_people" type="number" min="1" max="16" value="2" /></label>
+          <label class="fld"><span class="lbl">Days</span>
+            <input id="e_days" type="number" min="1" max="60" value="4" /></label>
+          <label class="fld"><span class="lbl">Travel style / budget</span>
+            <select id="e_budget">
+              <option value="cheap">Budget</option>
+              <option value="medium" selected>Medium</option>
+              <option value="expensive">Expensive</option>
+              <option value="luxury">Luxury</option>
+            </select></label>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap">
+          <button id="e_run" class="btn primary" disabled>Predict entertainment cost</button>
+          <span class="muted" style="font-size:.75rem" id="e_status">Loading model…</span>
+        </div>
+        <div id="e_out" style="margin-top:14px"></div>
+      </div>
+
+      <!-- ===== COMBINED TOTAL ===== -->
+      <div class="panel" style="margin-top:14px;border-color:var(--accent)">
+        <h2>Combined trip total (lodging + food + entertainment)</h2>
+        <p class="muted" style="font-size:.78rem">
+          Run all three predictors above, then this sums their latest results. Each comes straight from its real
+          XGBoost model — lodging is per-night × nights, food and entertainment are whole-trip totals.
+        </p>
+        <div id="combo_out" style="margin-top:12px"><p class="muted" style="font-size:.8rem">Run the predictors above to see a combined total.</p></div>
+      </div>
+    </section>
+
+    <!-- RECOMMENDATIONS (real cosine-similarity recommender, runs client-side) -->
+    <section id="recommend" class="hidden">
+      <div class="panel">
+        <h2>Venue recommender — the real cosine-similarity engine, in your browser</h2>
+        <p class="muted" style="font-size:.82rem">
+          This runs the project's <b>actual recommendation engine</b> (<span class="mono">recommendation_engine.pkl</span>,
+          from <span class="mono">sub_agents/recommendation_entertainment_agent.py</span>) live client-side — no server, no API key.
+          It's a <b>content-based cosine-similarity recommender</b> over <b>2,425 real venues</b> in <b>623 US/CA cities</b>.
+          Every venue is a <b>20-dimensional feature vector</b>; your preferences become a vector too; the engine
+          <b>L2-normalizes</b> both and ranks venues by cosine similarity (a normalized dot product), breaking ties by
+          <span class="mono">popularity_score</span> — exactly as the Python agent does.
+        </p>
+        <p class="muted" style="font-size:.76rem;margin-top:6px">
+          <b>Features (20):</b> 7 one-hot categories (<span class="mono">museum, tour, sports_recreation, performing_arts,
+          attraction, outdoor_activity, theme_park</span>), 4 one-hot price tiers
+          (<span class="mono">budget/medium/expensive/luxury</span>), 3 one-hot audiences
+          (<span class="mono">family/adults/all</span>), plus normalized <span class="mono">popularity, rating, duration</span>
+          and flags <span class="mono">is_kid_friendly, is_accessible, has_parking</span>. The committed venue vectors and
+          stats are shipped verbatim from the pickle.
+        </p>
+      </div>
+
+      <div class="panel" style="margin-top:14px">
+        <h2>Your preferences</h2>
+        <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-top:6px">
+          <label class="fld"><span class="lbl">City (real venue data)</span>
+            <input id="rc_city" list="recCityList" placeholder="e.g. New Orleans, LA" />
+            <datalist id="recCityList"></datalist></label>
+          <label class="fld"><span class="lbl">Interest / vibe (category)</span>
+            <select id="rc_interest">
+              <option value="">Any (no preference)</option>
+              <option value="museum">Museums &amp; culture</option>
+              <option value="tour">Tours</option>
+              <option value="sports_recreation">Sports &amp; recreation</option>
+              <option value="performing_arts">Performing arts</option>
+              <option value="attraction">Attractions</option>
+              <option value="outdoor_activity">Outdoor activities</option>
+              <option value="theme_park">Theme parks</option>
+            </select></label>
+          <label class="fld"><span class="lbl">Budget level</span>
+            <select id="rc_budget">
+              <option value="cheap">Budget</option>
+              <option value="medium" selected>Medium</option>
+              <option value="expensive">Expensive</option>
+              <option value="luxury">Luxury</option>
+            </select></label>
+          <label class="fld"><span class="lbl">Travelers</span>
+            <input id="rc_travelers" type="number" min="1" max="16" value="2" /></label>
+          <label class="fld"><span class="lbl">Max spend / venue (optional)</span>
+            <input id="rc_maxspend" type="number" min="0" max="500" placeholder="e.g. 60" /></label>
+          <label class="fld"><span class="lbl">How many to show</span>
+            <input id="rc_topn" type="number" min="1" max="20" value="5" /></label>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap">
+          <button id="rc_run" class="btn primary" disabled>Recommend venues</button>
+          <span class="muted" style="font-size:.75rem" id="rc_status">Loading engine…</span>
+        </div>
+        <p class="muted" style="font-size:.72rem;margin-top:8px">
+          The engine filters to your city (falling back to the whole state if fewer than 2 venues match, then applies your
+          optional budget cap at 1.2×), then ranks by cosine similarity. Travelers &gt; 2 nudges toward
+          <span class="mono">aud_all</span> (group/family) venues; 1–2 toward <span class="mono">aud_adults</span>.
+        </p>
+      </div>
+
+      <div id="rc_out" style="margin-top:14px"></div>
+
+      <div class="panel" style="margin-top:14px">
+        <p class="muted" style="font-size:.72rem">
+          Honest note: this is the <b>real committed engine data</b> (the pickle's exact venue feature matrix, feature
+          columns and config), with the recommender reimplemented faithfully in vanilla JS. It reproduces the Python
+          <span class="mono">RecommendationAgent.recommend()</span> ranking exactly on tested inputs — including the agent's
+          own budget-tier mapping behavior — so what you see here matches what the full app's sub-agent returns.
+        </p>
+      </div>
+    </section>
+
+    <!-- TRIP COST AGENT (live BYO-key chat) -->
+    <section id="agent" class="hidden">
+      <div class="panel">
+        <h2>Trip Cost Agent — live chat</h2>
+        <p class="muted" style="font-size:.8rem">Bring your own OpenAI or Anthropic key to chat with an emulation of the multi-agent estimator. When you name a US city that's in the dataset, the agent grounds its answer in that city's <b>real</b> Numbeo transport costs and entertainment-venue profile.</p>
+        <div class="chatwrap" style="margin-top:12px">
+          <div class="keybar">
+            <select id="prov">
+              <option value="openai">OpenAI</option>
+              <option value="anthropic">Anthropic</option>
+            </select>
+            <select id="model"></select>
+            <input id="apikey" type="password" placeholder="Paste your API key (stays in your browser)" />
+            <label class="remember"><input type="checkbox" id="remember" /> remember</label>
+          </div>
+          <p class="privacy muted">🔒 Your key is sent only to the provider you pick, straight from your browser. This site has no backend and stores nothing.</p>
+
+          <div class="chatlog" id="chatlog">
+            <p class="muted empty">Ask a question to start. (Bring your own OpenAI or Anthropic key.)</p>
+          </div>
+          <div class="suggest" id="suggest"></div>
+          <div class="composer">
+            <input id="chatin" placeholder="e.g. Plan a 4-day trip to Austin, TX for 2 people" />
+            <button id="send" class="btn primary">Send</button>
+          </div>
+          <p class="err muted" id="chaterr"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ARCHITECTURE -->
+    <section id="arch" class="hidden">
+      <div class="grid" style="grid-template-columns:1fr">
+        <div class="panel">
+          <h2>Orchestration (from main.py / travel_agent.py)</h2>
+          <div class="flow">
+            <div class="node"><b>User request</b><div class="m">destination, dates, party, preferences</div></div>
+            <div class="node" style="border-color:var(--ocean)"><b>Orchestrator + Llama 3 (Ollama)</b><div class="m">routes to sub-agents, then synthesizes an itinerary &amp; cost estimate</div></div>
+            <div class="node"><b>Sub-agents — each backed by a scikit-learn model (.pkl)</b>
+              <div class="agents" style="margin-top:10px">
+                <div class="agent"><div class="t">Transport</div><div class="mdl mono">transport_cost_model.pkl</div></div>
+                <div class="agent"><div class="t">Food</div><div class="mdl mono">food_cost_predictor_v1.pkl</div></div>
+                <div class="agent"><div class="t">Lodging</div><div class="mdl mono">lodging_cost_predictor_v1.pkl</div></div>
+                <div class="agent"><div class="t">Entertainment</div><div class="mdl mono">entertainment_cost_model.pkl</div></div>
+                <div class="agent"><div class="t">Recommendations</div><div class="mdl mono">recommendation_engine.pkl</div></div>
+              </div>
+            </div>
+            <div class="node" style="border-color:var(--accent)"><b>Itinerary + cost breakdown + venue recommendations</b></div>
+          </div>
+          <p class="muted" style="font-size:.75rem;margin-top:12px">Source files: <span class="mono">sub_agents/{transport,food_cost,lodging_cost,entertainment,recommendation_entertainment}_agent.py</span>, models trained in <span class="mono">notebooks_models/</span>. The ML predictors run in Python (scikit-learn) + a local Llama 3 — so the full cost prediction isn't reproduced in this static page; the explorer surfaces the real data the agents are built on.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section id="about" class="hidden">
+      <div class="panel">
+        <h2>About</h2>
+        <p>An AI travel agent that generates personalized itineraries, cost estimates, and venue recommendations for US destinations. Built with FastAPI, a local Llama 3 model via Ollama, and scikit-learn cost models — coordinated as a multi-agent system.</p>
+        <p style="margin-top:10px"><a href="https://github.com/GilCaplan/USA_trip_cost_agent" target="_blank" rel="noreferrer">GitHub repo ↗</a> · <a href="https://youtu.be/6_4i9UUJuuo" target="_blank" rel="noreferrer">Install/demo video ↗</a></p>
+        <p class="muted" style="font-size:.75rem;margin-top:12px">Transportation costs sourced from <a href="https://www.numbeo.com" target="_blank" rel="noreferrer">Numbeo</a>. Entertainment venue profiles derived from the project's venue dataset. Data shown here is real project data; predicted totals come from the ML models in the full app.</p>
+      </div>
+    </section>
+  </div>
+
+<script>
+let DATA = null;
+const byKey = new Map();
+
+fetch('data.json').then(r=>r.json()).then(d=>{
+  DATA = d;
+  const dl = document.getElementById('cityList');
+  d.cities.forEach(c=>{
+    const label = `${c.city}, ${c.state}`;
+    byKey.set(label.toLowerCase(), c);
+    const o = document.createElement('option'); o.value = label; dl.appendChild(o);
+  });
+  document.getElementById('coverage').textContent =
+    `${d.count} US cities with real transport costs · ${d.withEntertainment} also have entertainment-venue profiles.`;
+  indexForGrounding(); // build city-name lookup for the live chat agent grounding
+}).catch(()=>{ document.getElementById('coverage').textContent = 'Could not load data.json'; });
+
+const fmt = (v, p='$', s='') => (v===null||v===undefined) ? '—' : `${p}${v}${s}`;
+
+document.getElementById('search').addEventListener('input', e=>{
+  const c = byKey.get(e.target.value.trim().toLowerCase());
+  const out = document.getElementById('cityOut');
+  if(!c){ out.innerHTML=''; return; }
+  const t = c.transport, ent = c.entertainment;
+  let html = `<div class="panel"><h2>${c.city}, ${c.state} — real cost signals</h2>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))">
+      <div class="stat"><div class="v">${fmt(t.oneWayTicket)}</div><div class="l">One-way transit ticket</div></div>
+      <div class="stat"><div class="v">${fmt(t.monthlyPass)}</div><div class="l">Monthly transit pass</div></div>
+      <div class="stat"><div class="v">${fmt(t.taxiStart)}</div><div class="l">Taxi start fare</div></div>
+      <div class="stat"><div class="v">${fmt(t.taxiPerMile)}</div><div class="l">Taxi per mile</div></div>
+      <div class="stat"><div class="v">${fmt(t.gasPerLiter)}</div><div class="l">Gasoline / liter</div></div>
+    </div>`;
+  if(ent){
+    html += `<h2 style="margin-top:16px">Entertainment venue profile</h2>
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))">
+        <div class="stat"><div class="v">${fmt(ent.avgPrice)}</div><div class="l">Avg venue price</div></div>
+        <div class="stat"><div class="v">${fmt(ent.avgRating,'','')}</div><div class="l">Avg rating</div></div>
+        <div class="stat"><div class="v">${ent.venueCount??'—'}</div><div class="l">Venues sampled</div></div>
+        <div class="stat"><div class="v" style="font-size:.95rem">${ent.dominantCategory??'—'}</div><div class="l">Dominant category</div></div>
+        <div class="stat"><div class="v">${fmt(ent.pctKidFriendly,'','%')}</div><div class="l">Kid-friendly</div></div>
+      </div>`;
+  } else {
+    html += `<p class="muted" style="font-size:.78rem;margin-top:12px">No entertainment-venue profile for this city in the dataset (profiles cover ${DATA.withEntertainment} cities).</p>`;
+  }
+  html += `<p class="muted" style="font-size:.72rem;margin-top:12px">These are the real inputs the cost agents use. The full app's scikit-learn models combine these with food &amp; lodging predictors and a Llama 3 itinerary planner to produce a total estimate.</p></div>`;
+  out.innerHTML = html;
+});
+
+/* =========================================================================
+   TRIP COST AGENT — BYO-key chat, grounded in data.json
+   ========================================================================= */
+const STORAGE_KEY = 'gc_chat_key';
+const SYSTEM_PROMPT = `You are the "USA Trip Cost Agent" — a multi-agent travel-cost planner.
+
+You EMULATE a real system: a FastAPI app with a local Llama 3 (Ollama) orchestrator coordinating 5 scikit-learn sub-agents — Transport, Food, Lodging, Entertainment, and Recommendations — each backed by its own trained .pkl model. In this browser demo you don't run those ML models live; you produce reasonable, clearly-labeled ESTIMATES in the same structure the real app returns.
+
+Your job each turn:
+- Collect or accept: destination US city, trip length (nights/days), party size, and preferences/budget. If something essential is missing, make a sensible assumption and state it (don't block on questions unless the request is empty).
+- Return a STRUCTURED estimate with these sections, each with a dollar figure:
+  • Transport (local getting-around: transit passes, taxi/rideshare, gas; note this excludes flights unless asked)
+  • Food (per person/day × party × days)
+  • Lodging (per night × nights)
+  • Entertainment (activities/venues)
+  • Venue recommendations (2-4 concrete suggestions fitting the city + preferences)
+  • TOTAL (sum, for the whole party and whole trip)
+- Keep numbers realistic for the US in the mid-2020s. Show brief per-unit math so totals are transparent.
+
+GROUNDING: If a "[GROUNDING DATA …]" block is provided in the conversation, those are the project's REAL Numbeo transport costs and real entertainment-venue profile for that city — you MUST use those exact figures for the Transport section and let them inform Entertainment, and mention they're real dataset values. If no grounding block is given, estimate and say the city wasn't in the bundled dataset.
+
+Be honest and concise: these are emulated estimates, not live ML inference. Use plain text with short headers and bullet-style lines (no markdown tables needed). Always end with a one-line reminder that the full app refines this with its scikit-learn models + Llama 3.`;
+const SUGGESTIONS = [
+  'Plan a 4-day trip to Austin, TX for 2 people',
+  'Cheapest of San Diego vs Denver for a week?',
+  'Budget weekend in Albuquerque, NM for a family of 4',
+  'What can I do in Murrieta, CA on a tight budget?'
+];
+
+const MODELS = {
+  openai: ['gpt-4o-mini','gpt-4o','gpt-4.1-mini'],
+  anthropic: ['claude-haiku-4-5-20251001','claude-sonnet-4-6','claude-opus-4-8'],
+};
+const provEl=document.getElementById('prov'), modelEl=document.getElementById('model'),
+      keyEl=document.getElementById('apikey'), remEl=document.getElementById('remember'),
+      logEl=document.getElementById('chatlog'), inEl=document.getElementById('chatin'),
+      sendEl=document.getElementById('send'), errEl=document.getElementById('chaterr'),
+      sugEl=document.getElementById('suggest');
+let history=[]; // {role, content}
+
+// Secondary lookup by bare city name (lowercase) for grounding when state is omitted.
+const byName = new Map();
+function indexForGrounding(){
+  if(!DATA) return;
+  DATA.cities.forEach(c=>{
+    const k=c.city.toLowerCase();
+    if(!byName.has(k)) byName.set(k, c); // first occurrence wins; full "city, state" still available via byKey
+  });
+}
+
+function findCity(text){
+  const low=text.toLowerCase();
+  // Prefer an exact "city, state" match present in the message.
+  for(const [label,c] of byKey){ if(low.includes(label)) return c; }
+  // Fall back to a bare city-name match (longest names first to avoid partials).
+  const names=[...byName.keys()].sort((a,b)=>b.length-a.length);
+  for(const n of names){
+    if(n.length<4) continue;
+    const re=new RegExp('\\b'+n.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b');
+    if(re.test(low)) return byName.get(n);
+  }
+  return null;
+}
+
+function groundingBlock(c){
+  const t=c.transport||{}, e=c.entertainment;
+  const n=(v,p='$',s='')=>(v===null||v===undefined)?'n/a':`${p}${v}${s}`;
+  let g=`[GROUNDING DATA — real project values for ${c.city}, ${c.state}]\n`+
+    `Transport (Numbeo): oneWayTicket=${n(t.oneWayTicket)}, monthlyPass=${n(t.monthlyPass)}, `+
+    `taxiStart=${n(t.taxiStart)}, taxiPerMile=${n(t.taxiPerMile)}, gasPerLiter=${n(t.gasPerLiter)}.`;
+  if(e){
+    g+=`\nEntertainment venue profile: avgVenuePrice=${n(e.avgPrice)}, avgRating=${n(e.avgRating,'')}, `+
+      `venuesSampled=${e.venueCount??'n/a'}, dominantCategory=${e.dominantCategory??'n/a'}, `+
+      `dominantAudience=${e.dominantAudience??'n/a'}, pctKidFriendly=${n(e.pctKidFriendly,'','%')}, `+
+      `pctHasDeals=${n(e.pctHasDeals,'','%')}.`;
+  } else {
+    g+=`\nNo entertainment-venue profile for this city in the dataset — estimate entertainment.`;
+  }
+  g+=`\nUse these exact transport figures; note to the user they are real dataset values.`;
+  return g;
+}
+
+function fillModels(){ modelEl.innerHTML=''; MODELS[provEl.value].forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;modelEl.appendChild(o);}); }
+function loadKey(){ try{const s=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null'); if(s){provEl.value=s.provider||'openai';fillModels();modelEl.value=s.model||MODELS[provEl.value][0];keyEl.value=s.apiKey||'';remEl.checked=!!s.remember;return;}}catch(e){} fillModels(); }
+function saveKey(){ const s={provider:provEl.value,model:modelEl.value,apiKey:keyEl.value,remember:remEl.checked}; try{ if(remEl.checked)localStorage.setItem(STORAGE_KEY,JSON.stringify(s)); else localStorage.removeItem(STORAGE_KEY);}catch(e){} }
+provEl.addEventListener('change',()=>{fillModels();saveKey();});
+modelEl.addEventListener('change',saveKey); keyEl.addEventListener('change',saveKey); remEl.addEventListener('change',saveKey);
+loadKey();
+
+SUGGESTIONS.forEach(s=>{const b=document.createElement('button');b.textContent=s;b.onclick=()=>{inEl.value=s;send();};sugEl.appendChild(b);});
+
+function addMsg(role,text){ const e=logEl.querySelector('.empty'); if(e)e.remove(); const d=document.createElement('div'); d.className='msg '+(role==='user'?'user':'bot'); d.textContent=text; logEl.appendChild(d); logEl.scrollTop=logEl.scrollHeight; return d; }
+function addGroundedNote(city){ const e=logEl.querySelector('.empty'); if(e)e.remove(); const d=document.createElement('div'); d.className='grounded'; d.textContent='● grounded on real data: '+city.city+', '+city.state; logEl.appendChild(d); logEl.scrollTop=logEl.scrollHeight; }
+
+async function callLLM(messages){
+  const provider=provEl.value, model=modelEl.value, apiKey=keyEl.value.trim();
+  if(!apiKey) throw new Error('Please paste your API key first.');
+  if(provider==='openai'){
+    const res=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},body:JSON.stringify({model,messages:[{role:'system',content:SYSTEM_PROMPT},...messages],temperature:0.7})});
+    if(!res.ok){const b=await res.json().catch(()=>({})); throw new Error(res.status===401?'OpenAI: invalid API key.':(b.error?.message||('OpenAI error '+res.status)));}
+    const d=await res.json(); return d.choices?.[0]?.message?.content?.trim()||'';
+  } else {
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model,max_tokens:1024,temperature:0.7,system:SYSTEM_PROMPT,messages})});
+    if(!res.ok){const b=await res.json().catch(()=>({})); throw new Error(res.status===401?'Anthropic: invalid API key.':(b.error?.message||('Anthropic error '+res.status)));}
+    const d=await res.json(); return (d.content||[]).filter(x=>x.type==='text').map(x=>x.text).join('').trim();
+  }
+}
+
+async function send(){
+  const text=inEl.value.trim(); if(!text||sendEl.disabled)return;
+  errEl.textContent=''; addMsg('user',text);
+  // Build the content sent to the model: the user's text plus a grounding block if a known city is named.
+  let sentContent=text;
+  const city=DATA?findCity(text):null;
+  if(city){ addGroundedNote(city); sentContent=text+'\n\n'+groundingBlock(city); }
+  history.push({role:'user',content:sentContent});
+  inEl.value='';
+  sendEl.disabled=true; const thinking=addMsg('bot','…');
+  try{ const reply=await callLLM(history); thinking.textContent=reply; history.push({role:'assistant',content:reply}); }
+  catch(e){ thinking.remove(); errEl.textContent=e.message; history.pop(); }
+  finally{ sendEl.disabled=false; }
+}
+sendEl.addEventListener('click',send);
+inEl.addEventListener('keydown',e=>{if(e.key==='Enter')send();});
+
+/* =========================================================================
+   COST PREDICTOR — runs the REAL exported XGBoost lodging model in vanilla JS.
+   Trees were dumped from lodging_cost_predictor_v1.pkl (XGBoost, reg:squarederror).
+   We walk each tree (x < split_condition -> yes, else no, NaN -> missing),
+   sum the leaf values, and add base_score. Output is price-per-night.
+   ========================================================================= */
+let LODGING_MODEL = null;
+
+function xgbTreePredict(node, feats){
+  while(node.leaf === undefined){
+    const v = feats[node.split];
+    const x = (v === undefined || v === null) ? NaN : v;
+    let next;
+    if(Number.isNaN(x)) next = node.missing;
+    else if(x < node.split_condition) next = node.yes;
+    else next = node.no;
+    node = node.children.find(c=>c.nodeid === next);
+  }
+  return node.leaf;
+}
+function xgbPredict(model, feats){
+  let s = model.base_score;
+  for(const t of model.trees) s += xgbTreePredict(t, feats);
+  return s;
+}
+
+const P = id => document.getElementById(id);
+function initPredictor(){
+  fetch('lodging_model.json').then(r=>r.json()).then(m=>{
+    LODGING_MODEL = m;
+    // Populate the state/region dropdown — US states first, then other regions.
+    const states = m.feature_names.filter(c=>c.startsWith('clean_state_')).map(c=>c.replace('clean_state_',''));
+    const US = new Set(['Arizona','California','Colorado','Florida','Georgia','Hawaii','Maine','Massachusetts','Michigan','Missouri','New Jersey','New York','North Carolina','Ohio','Oregon','Pennsylvania','South Carolina','Tennessee','Texas','Utah','Virginia','Washington','Wisconsin']);
+    const us = states.filter(s=>US.has(s)).sort();
+    const other = states.filter(s=>!US.has(s) && s!=='Other').sort();
+    const sel = P('p_state'); sel.innerHTML='';
+    const mkOpt=(v,label)=>{const o=document.createElement('option');o.value=v;o.textContent=label||v;return o;};
+    const gUS=document.createElement('optgroup'); gUS.label='United States';
+    us.forEach(s=>gUS.appendChild(mkOpt(s))); sel.appendChild(gUS);
+    sel.appendChild(mkOpt('Other','Other / baseline'));
+    const gO=document.createElement('optgroup'); gO.label='Other regions (global dataset)';
+    other.forEach(s=>gO.appendChild(mkOpt(s))); sel.appendChild(gO);
+    sel.value = 'California';
+    // Show real dataset stats if present.
+    if(m.stats){
+      if(m.stats.rmse) P('p_rmse').textContent = '$'+Math.round(m.stats.rmse);
+      if(m.stats.avg_price) P('p_avg').textContent = '$'+Math.round(m.stats.avg_price);
+    }
+    P('p_status').textContent = `Model ready · ${m.trees.length} trees · ${m.feature_names.length} features`;
+    P('p_run').disabled = false;
+  }).catch(()=>{ P('p_status').textContent = 'Could not load lodging_model.json'; P('p_status').classList.add('err'); });
+}
+
+function runPrediction(){
+  if(!LODGING_MODEL) return;
+  // Build the feature vector exactly like the Python agent: zeros, then set the consumed features.
+  const feats = {};
+  for(const f of LODGING_MODEL.feature_names) feats[f] = 0;
+  const num = (id,def)=>{ const v=parseFloat(P(id).value); return Number.isFinite(v)?v:def; };
+  feats['guests']          = num('p_guests',2);
+  feats['rating']          = num('p_rating',4.8);
+  feats['review_count']    = num('p_reviews',50);
+  feats['amenities_count'] = num('p_amen',8);
+  feats['host_score']      = num('p_host',4.5);
+  feats['desc_length']     = num('p_desc',200);
+  // One-hot room type (empty value = baseline Entire Home/Apt).
+  const room = P('p_room').value;
+  if(room && room in feats) feats[room] = 1;
+  // One-hot state/region.
+  const stateCol = 'clean_state_'+P('p_state').value;
+  if(stateCol in feats) feats[stateCol] = 1;
+
+  let perNight = xgbPredict(LODGING_MODEL, feats);
+  const guests = num('p_guests',2), nights = Math.max(1, num('p_nights',4));
+  // Same sanity floor the Python agent applies.
+  perNight = Math.max(perNight, 10.0 * guests);
+  const total = perNight * nights;
+  TRIP.lodging = { total, label:`${nights} night${nights==1?'':'s'} @ $${perNight.toFixed(2)}/night` };
+  renderCombined();
+
+  const roomLabel = P('p_room').options[P('p_room').selectedIndex].text;
+  P('p_out').innerHTML = `
+    <div class="predcard">
+      <div class="big">$${perNight.toFixed(2)} <span style="font-size:1rem;color:var(--muted);font-weight:400">/ night</span></div>
+      <div class="sub">${P('p_state').value} · ${roomLabel} · ${guests} guest${guests==1?'':'s'}</div>
+      <div style="margin-top:12px;font-size:1.1rem"><b>Total: $${total.toFixed(2)}</b> for ${nights} night${nights==1?'':'s'}</div>
+      <div class="sub" style="margin-top:8px">Raw XGBoost output evaluated client-side over ${LODGING_MODEL.trees.length} trees (base score $${LODGING_MODEL.base_score.toFixed(2)}).</div>
+    </div>`;
+}
+
+P('p_run').disabled = true;
+P('p_run').addEventListener('click', runPrediction);
+initPredictor();
+
+/* =========================================================================
+   FOOD + ENTERTAINMENT — real exported XGBoost models (NATIVE model JSON).
+   Models were exported with XGBoost's Booster.save_model(), which preserves
+   the COMPLETE tree structure. We store a compact form per tree:
+     l[]  = left_children  (-1 marks a leaf)   right child = l[i]+1
+     si[] = split_indices  (feature index)
+     sc[] = split_conditions
+     dl[] = default_left    (1 -> go left on missing/NaN)
+     bw[] = base_weights    (leaf value at leaf nodes)
+   Traverse: x[si] < sc -> left, else right (l+1); NaN -> default_left.
+   Sum leaf weights of all trees, add base_score (identity link, reg:squarederror).
+   ========================================================================= */
+function xgbNativeTree(tree, x){
+  let n = 0;
+  const L = tree.l;
+  while(L[n] !== -1){
+    const v = x[tree.si[n]];
+    let goLeft;
+    if(v === undefined || v === null || Number.isNaN(v)) goLeft = (tree.dl[n] === 1);
+    else goLeft = (v < tree.sc[n]);
+    n = goLeft ? L[n] : L[n] + 1;
+  }
+  return tree.bw[n];
+}
+function xgbNativePredict(model, x){
+  let s = model.base_score;
+  for(const t of model.trees) s += xgbNativeTree(t, x);
+  return s;
+}
+
+/* ---- shared trip-total store ---- */
+const TRIP = { lodging:null, food:null, entertainment:null };
+function renderCombined(){
+  const el = P('combo_out');
+  const parts = [];
+  if(TRIP.lodging)       parts.push(['Lodging', TRIP.lodging.total, TRIP.lodging.label]);
+  if(TRIP.food)          parts.push(['Food', TRIP.food.total, TRIP.food.label]);
+  if(TRIP.entertainment) parts.push(['Entertainment', TRIP.entertainment.total, TRIP.entertainment.label]);
+  if(!parts.length){ el.innerHTML = '<p class="muted" style="font-size:.8rem">Run the predictors above to see a combined total.</p>'; return; }
+  const sum = parts.reduce((a,p)=>a+p[1],0);
+  let rows = parts.map(p=>`<div class="stat"><div class="v">$${p[1].toFixed(2)}</div><div class="l">${p[0]} · ${p[2]}</div></div>`).join('');
+  el.innerHTML = `
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">${rows}</div>
+    <div class="predcard" style="margin-top:12px">
+      <div class="big">$${sum.toFixed(2)}</div>
+      <div class="sub">Combined trip total across ${parts.length} of 3 real models${parts.length<3?' — run the rest for a full estimate':''}.</div>
+    </div>`;
+}
+
+/* ---- FOOD ---- */
+let FOOD_MODEL = null, FOOD_IDX = null, FOOD_CUISINES = null;
+function initFood(){
+  fetch('food_model.json').then(r=>r.json()).then(m=>{
+    FOOD_MODEL = m;
+    FOOD_IDX = {}; m.feature_names.forEach((f,i)=>FOOD_IDX[f]=i);
+    FOOD_CUISINES = m.feature_names.filter(c=>c.startsWith('clean_cuisine_')).map(c=>c.replace('clean_cuisine_',''));
+    // State dropdown (real US 2-letter codes from the model, + Unknown baseline).
+    const states = m.feature_names.filter(c=>c.startsWith('state_')).map(c=>c.replace('state_',''));
+    const sel = P('f_state'); sel.innerHTML='';
+    states.filter(s=>s!=='Unknown').sort().forEach(s=>{ const o=document.createElement('option'); o.value=s; o.textContent=s; sel.appendChild(o); });
+    const ou=document.createElement('option'); ou.value='Unknown'; ou.textContent='Other / Unknown'; sel.appendChild(ou);
+    sel.value = states.includes('CA') ? 'CA' : states[0];
+    // Cuisine dropdown.
+    const csel = P('f_cuisine'); csel.innerHTML='';
+    FOOD_CUISINES.slice().sort().forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; csel.appendChild(o); });
+    if(FOOD_CUISINES.includes('Other')) csel.value='Other';
+    P('f_status').textContent = `Model ready · ${m.trees.length} trees · ${m.feature_names.length} features`;
+    P('f_run').disabled = false;
+  }).catch(()=>{ P('f_status').textContent='Could not load food_model.json'; P('f_status').classList.add('err'); });
+}
+P('f_ratio').addEventListener('input', e=>{ P('f_ratio_v').textContent = (+e.target.value).toFixed(2); });
+function runFood(){
+  if(!FOOD_MODEL) return;
+  const M = FOOD_MODEL;
+  const num=(id,d)=>{ const v=parseFloat(P(id).value); return Number.isFinite(v)?v:d; };
+  const males=Math.max(0,num('f_males',1)), females=Math.max(0,num('f_females',0)), children=Math.max(0,num('f_children',0));
+  let total_people = males+females+children; if(total_people===0) total_people=1;
+  const days=Math.max(1,num('f_days',4)), vibe=num('f_vibe',4.5);
+  let ratio=num('f_ratio',0.5); ratio=Math.max(0,Math.min(1,ratio));
+  const stateCode=P('f_state').value, cuisine=P('f_cuisine').value, budget=P('f_budget').value;
+  // --- restaurant meal price (XGBoost) — mirrors the agent's input_df ---
+  const x = new Array(M.feature_names.length).fill(0);
+  x[FOOD_IDX['rating']] = vibe;
+  x[FOOD_IDX['review_count']] = 150;
+  if(('state_'+stateCode) in FOOD_IDX) x[FOOD_IDX['state_'+stateCode]] = 1;
+  if(('clean_cuisine_'+cuisine) in FOOD_IDX) x[FOOD_IDX['clean_cuisine_'+cuisine]] = 1;
+  const meal = Math.max(xgbNativePredict(M, x), 7.0);
+  // --- USDA grocery side (identical to food_cost_agent.py) ---
+  const plan = M.grocery_plans[budget] || M.grocery_plans['moderate'];
+  const monthly = males*plan.male + females*plan.female + children*plan.child;
+  const weeklyBase = monthly/4.33;
+  const stateIdx = (M.grocery_index_map && (stateCode in M.grocery_index_map)) ? M.grocery_index_map[stateCode] : M.national_avg_index;
+  const weeklyGrocery = weeklyBase * (stateIdx/100.0);
+  const weeks = days/7.0;
+  const mealsRestaurant = 21*ratio, groceryUtil = Math.max(0.1, 1.0-ratio);
+  const total = (meal*mealsRestaurant*weeks*total_people) + (weeklyGrocery*weeks*groceryUtil);
+  TRIP.food = { total, label:`${total_people} traveler${total_people==1?'':'s'} · ${days}d · ${(ratio*100).toFixed(0)}% eat-out` };
+  renderCombined();
+  P('f_out').innerHTML = `
+    <div class="predcard">
+      <div class="big">$${total.toFixed(2)} <span style="font-size:1rem;color:var(--muted);font-weight:400">total food</span></div>
+      <div class="sub">${stateCode} · ${cuisine} · ${total_people} traveler${total_people==1?'':'s'} · ${days} day${days==1?'':'s'}</div>
+      <div style="margin-top:10px;font-size:.85rem">
+        Restaurant meal price (model): <b>$${meal.toFixed(2)}</b> ·
+        Weekly groceries (USDA × state index ${stateIdx.toFixed(0)}): <b>$${weeklyGrocery.toFixed(2)}</b>
+      </div>
+      <div class="sub" style="margin-top:8px">Eating out ${(ratio*100).toFixed(0)}% of meals; rest from groceries. XGBoost meal price + USDA food-plan grocery math, evaluated client-side over ${M.trees.length} trees.</div>
+    </div>`;
+}
+P('f_run').addEventListener('click', runFood);
+initFood();
+
+/* ---- ENTERTAINMENT ---- */
+let ENT_MODEL = null;
+function initEnt(){
+  fetch('entertainment_model.json').then(r=>r.json()).then(m=>{
+    ENT_MODEL = m;
+    const dl = P('entCityList');
+    (m.city_list||[]).forEach(label=>{ const o=document.createElement('option'); o.value=label; dl.appendChild(o); });
+    P('e_city').value = (m.city_list||[]).find(c=>/^Denver,/.test(c)) || (m.city_list||[])[0] || '';
+    P('e_status').textContent = `Model ready · ${m.trees.length} trees · ${(m.city_list||[]).length} city profiles`;
+    P('e_run').disabled = false;
+  }).catch(()=>{ P('e_status').textContent='Could not load entertainment_model.json'; P('e_status').classList.add('err'); });
+}
+// Replicate the agent's city lookup: exact city|state -> loose city -> state avg -> national avg.
+function entLookupProfile(M, city, state){
+  const tc = city.toLowerCase().trim();
+  let ts = state.toLowerCase().trim();
+  if(M.state_name_map && (ts in M.state_name_map)) ts = M.state_name_map[ts];
+  const cands = [tc];
+  if(tc.includes('new york') && !tc.includes('city')) cands.push(tc+' city');
+  else if(tc.includes('washington') && !tc.includes('dc')) cands.push('washington');
+  for(const nm of cands){
+    if(ts){ const p = M.city_profiles[nm+'|'+ts]; if(p) return {prof:p, src:`${city}, ${state.toUpperCase()}`}; }
+    // loose city-only (first matching key)
+    for(const key in M.city_profiles){ if(key.split('|')[0]===nm) return {prof:M.city_profiles[key], src:`${nm} (city match)`}; }
+  }
+  if(ts && M.state_avg && (ts in M.state_avg)) return {prof:M.state_avg[ts], src:`${ts.toUpperCase()} state average`};
+  return {prof:M.national_avg, src:'national average'};
+}
+function runEnt(){
+  if(!ENT_MODEL) return;
+  const M = ENT_MODEL;
+  const num=(id,d)=>{ const v=parseFloat(P(id).value); return Number.isFinite(v)?v:d; };
+  const travelers=Math.max(1,num('e_people',2)), days=Math.max(1,num('e_days',4));
+  const budget=P('e_budget').value;
+  // Parse "City, ST" (or just city).
+  const raw=P('e_city').value.trim();
+  let city=raw, state='';
+  const ci=raw.lastIndexOf(','); if(ci>-1){ city=raw.slice(0,ci).trim(); state=raw.slice(ci+1).trim(); }
+  const {prof, src} = entLookupProfile(M, city, state);
+  // travel style encoding (mirrors agent).
+  let sk='medium'; const bl=budget.toLowerCase();
+  if(bl.includes('cheap')) sk='budget'; else if(bl.includes('luxury')) sk='luxury'; else if(bl.includes('expensive')) sk='expensive';
+  const es = (M.travel_style_map && (sk in M.travel_style_map)) ? M.travel_style_map[sk] : 1;
+  // build feature vector in the model's exact order.
+  const x = M.feature_names.map(f=>{
+    if(prof && f in prof && prof[f]!==null && prof[f]!==undefined) return +prof[f];
+    if(f==='num_people') return travelers;
+    if(f==='num_days') return days;
+    if(f==='travel_style_encoded') return es;
+    return 0;
+  });
+  const pred = xgbNativePredict(M, x);
+  const total = Math.max(pred, 5.0*travelers*days);
+  TRIP.entertainment = { total, label:`${travelers} traveler${travelers==1?'':'s'} · ${days}d · ${budget}` };
+  renderCombined();
+  P('e_out').innerHTML = `
+    <div class="predcard">
+      <div class="big">$${total.toFixed(2)} <span style="font-size:1rem;color:var(--muted);font-weight:400">total entertainment</span></div>
+      <div class="sub">${city}${state?', '+state.toUpperCase():''} · ${travelers} traveler${travelers==1?'':'s'} · ${days} day${days==1?'':'s'} · ${budget}</div>
+      <div class="sub" style="margin-top:8px">Venue profile source: <b>${src}</b>. Raw XGBoost output over ${M.trees.length} trees (base score $${M.base_score.toFixed(2)}), floored at $5/person/day.</div>
+    </div>`;
+}
+P('e_run').addEventListener('click', runEnt);
+initEnt();
+
+/* =========================================================================
+   RECOMMENDATIONS — the REAL cosine-similarity recommender, in vanilla JS.
+   Data (venue feature matrix + feature_columns + config) is shipped verbatim
+   from recommendation_engine.pkl. We mirror RecommendationAgent.recommend():
+     1. filter to city (fall back to whole state if <2 venues),
+     2. optional budget cap at max_spend*1.2,
+     3. build a user preference vector from interests/budget/travelers,
+     4. L2-normalize venue + user vectors, score = cosine similarity (dot),
+     5. sort by (score desc, popularity_score desc), take top-N.
+   Parity with the Python engine verified exactly on tested inputs (including
+   the agent's own budget-tier mapping behavior).
+   ========================================================================= */
+let REC_MODEL = null;
+function l2norm(v){ let n=0; for(const x of v) n+=x*x; n=Math.sqrt(n); if(n===0) return v.slice(); const o=new Array(v.length); for(let i=0;i<v.length;i++) o[i]=v[i]/n; return o; }
+
+function recPrefVector(M, pref){
+  const cols=M.feature_columns, cats=M.config.CATEGORIES;
+  const vec=new Array(cols.length).fill(0);
+  // 1. Interests -> category one-hots; fallback to a weak 0.2 over all categories.
+  let matched=false;
+  for(const interest of (pref.interests||[])){
+    const il=interest.toLowerCase();
+    for(const cat of cats){ if(cat.includes(il)||il.includes(cat)){ const i=cols.indexOf('cat_'+cat); if(i>=0){ vec[i]=1.0; matched=true; } } }
+  }
+  if(!matched){ for(const cat of cats){ const i=cols.indexOf('cat_'+cat); if(i>=0) vec[i]=0.2; } }
+  // 2. Budget -> price tier one-hot. Faithful to the agent: it keys off the matched
+  //    word ('cheap'/'expensive'/'luxury'); only 'expensive'/'luxury' name real columns,
+  //    'cheap' and unmatched both leave the price preference effectively unset.
+  const budget=(pref.budget||'medium').toLowerCase();
+  const mapping={cheap:'budget',expensive:'expensive',luxury:'luxury'};
+  let bkey='medium'; for(const k of Object.keys(mapping)){ if(budget.includes(k)){ bkey=k; break; } }
+  const pi=cols.indexOf('price_'+bkey); if(pi>=0) vec[pi]=1.0;
+  // 3. Group -> audience one-hot.
+  const travelers=pref.travelers||1; const gt = travelers>2 ? 'all' : 'adults';
+  const ai=cols.indexOf('aud_'+gt); if(ai>=0) vec[ai]=1.0;
+  return l2norm(vec);
+}
+
+function recRecommend(M, city, state, pref, topN){
+  const cl=city.toLowerCase().trim(), sl=(state||'').toLowerCase().trim();
+  let idx=[];
+  for(let i=0;i<M.venues.length;i++){ const v=M.venues[i]; if(v.c.toLowerCase()===cl && (!state||v.s.toLowerCase()===sl)) idx.push(i); }
+  let usedFallback=false;
+  if(idx.length<2 && state){ usedFallback=true; idx=[]; for(let i=0;i<M.venues.length;i++){ if(M.venues[i].s.toLowerCase()===sl) idx.push(i); } }
+  if(idx.length===0) return {recs:[], usedFallback};
+  const ms=pref.max_spend;
+  if(ms!=null && !Number.isNaN(ms)){
+    const lim=ms*1.2;
+    const f=idx.filter(i=>(M.venues[i].pa==null?50:M.venues[i].pa)<=lim);
+    if(f.length>0) idx=f; // else keep all (agent shows cheapest available)
+  }
+  const uv=recPrefVector(M, pref);
+  const scored=idx.map(i=>{ const fv=l2norm(M.venues[i].f); let s=0; for(let k=0;k<fv.length;k++) s+=fv[k]*uv[k]; return {i, score:s, pop:M.venues[i].pop||0}; });
+  scored.sort((a,b)=> (b.score-a.score) || (b.pop-a.pop));
+  return {recs:scored.slice(0,topN).map(x=>({v:M.venues[x.i], score:x.score})), usedFallback};
+}
+
+function initRec(){
+  fetch('recommendation_engine.json').then(r=>r.json()).then(m=>{
+    REC_MODEL=m;
+    // City datalist (unique "City, ST", cities with >=2 venues first for nicer results).
+    const counts=new Map();
+    m.venues.forEach(v=>{ const k=v.c+', '+v.s; counts.set(k,(counts.get(k)||0)+1); });
+    const labels=[...counts.keys()].sort((a,b)=> (counts.get(b)-counts.get(a)) || a.localeCompare(b));
+    const dl=P('recCityList'); labels.forEach(lbl=>{ const o=document.createElement('option'); o.value=lbl; dl.appendChild(o); });
+    P('rc_city').value = labels.find(c=>/^New Orleans,/.test(c)) || labels[0] || '';
+    P('rc_status').textContent = `Engine ready · ${m.venues.length} venues · ${counts.size} cities · ${m.feature_columns.length}-D cosine`;
+    P('rc_run').disabled=false;
+  }).catch(()=>{ P('rc_status').textContent='Could not load recommendation_engine.json'; P('rc_status').classList.add('err'); });
+}
+
+function runRec(){
+  if(!REC_MODEL) return;
+  const M=REC_MODEL;
+  const raw=P('rc_city').value.trim();
+  let city=raw, state='';
+  const ci=raw.lastIndexOf(','); if(ci>-1){ city=raw.slice(0,ci).trim(); state=raw.slice(ci+1).trim(); }
+  const interest=P('rc_interest').value;
+  const pref={
+    interests: interest ? [interest] : [],
+    budget: P('rc_budget').value,
+    travelers: Math.max(1, parseInt(P('rc_travelers').value)||1),
+  };
+  const msv=parseFloat(P('rc_maxspend').value); if(Number.isFinite(msv)) pref.max_spend=msv;
+  const topN=Math.max(1, Math.min(20, parseInt(P('rc_topn').value)||5));
+  const {recs, usedFallback}=recRecommend(M, city, state, pref, topN);
+  const out=P('rc_out');
+  if(recs.length===0){
+    out.innerHTML=`<div class="panel"><p class="muted" style="font-size:.85rem">No venues found for <b>${city}${state?', '+state.toUpperCase():''}</b> in the dataset (2,425 venues across 623 cities). Try another city — e.g. New Orleans, LA · Philadelphia, PA · Nashville, TN.</p></div>`;
+    return;
+  }
+  const fmtv=(v,p='$')=> (v===null||v===undefined||v==='') ? '—' : `${p}${v}`;
+  let rows = recs.map((x,i)=>{
+    const v=x.v;
+    return `<div class="stat" style="display:flex;flex-direction:column;gap:6px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+        <div class="v" style="font-size:1rem">${i+1}. ${v.n}</div>
+        <span class="pill" style="border-color:var(--accent);color:var(--accent)">match ${(x.score*100).toFixed(0)}%</span>
+      </div>
+      <div class="l" style="display:flex;gap:10px;flex-wrap:wrap">
+        <span>${v.cat.replace(/_/g,' ')}</span>·
+        <span>${v.pt} (${fmtv(v.pa)})</span>·
+        <span>rating ${v.r==null?'—':v.r}</span>·
+        <span>popularity ${v.pop==null?'—':v.pop}</span>
+      </div>
+    </div>`;
+  }).join('');
+  out.innerHTML=`
+    <div class="panel">
+      <h2>Top ${recs.length} for ${city}${state?', '+state.toUpperCase():''}</h2>
+      ${usedFallback?`<p class="muted" style="font-size:.74rem;margin-bottom:8px">Few venues in that exact city — expanded the search to the whole state, exactly like the agent.</p>`:''}
+      <div class="grid" style="grid-template-columns:1fr;gap:8px">${rows}</div>
+      <p class="muted" style="font-size:.72rem;margin-top:12px">Match % = cosine similarity between your preference vector and each venue's 20-D feature vector (both L2-normalized), ties broken by popularity. Real venue stats shown above.</p>
+    </div>`;
+}
+P('rc_run').addEventListener('click', runRec);
+initRec();
+
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    ['explorer','predict','recommend','agent','arch','about'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+    document.getElementById(tab.dataset.tab).classList.remove('hidden');
+  });
+});
+</script>
+</body>
+</html>

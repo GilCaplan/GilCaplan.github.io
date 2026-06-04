@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ChatbotForge — generate a runnable chatbot from a config</title>
+<style>
+  :root{
+    --bg:#0B1220; --surface:#0F172A; --panel:#1E293B; --border:#243044;
+    --text:#E2E8F0; --muted:#94A3B8; --accent:#14B8A6; --blue:#60A5FA; --red:#F87171;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    --ui:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--ui);line-height:1.55;padding:20px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1100px;margin:0 auto}
+  header.hd{display:flex;flex-wrap:wrap;align-items:baseline;gap:14px;margin-bottom:4px}
+  .logo{font-size:26px;font-weight:700}
+  .logo b{color:var(--accent)}
+  .pill{display:inline-block;font-family:var(--mono);font-size:11px;color:var(--accent);border:1px solid var(--accent);border-radius:20px;padding:2px 10px}
+  .sub{color:var(--muted);font-size:13px;margin:4px 0 18px;max-width:820px}
+  .sub code{font-family:var(--mono);color:var(--blue);background:#0d1830;padding:1px 6px;border-radius:5px}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:10px}
+  .tab{font-size:13.5px;color:var(--muted);background:transparent;border:1px solid transparent;padding:7px 14px;border-radius:9px;cursor:pointer;transition:.15s}
+  .tab:hover{color:var(--text);background:#16223a}
+  .tab.active{color:var(--bg);background:var(--accent);font-weight:600}
+  .view{display:none;animation:fade .25s ease}.view.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px}
+  h2{font-size:17px;margin:0 0 6px}h3{font-size:13px;margin:0 0 8px;color:var(--accent);font-family:var(--mono);letter-spacing:.4px;text-transform:uppercase}
+  p{font-size:14px;color:#cbd6e6}.muted{color:var(--muted)}
+  pre{margin:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.5}
+  code{font-family:var(--mono)}
+  .cmt{color:#5e718e}.key{color:var(--blue)}.str{color:#9ad17a}.num{color:#f2b56b}.boo{color:#c792ea}.fld{color:var(--accent)}
+  /* pipeline */
+  .flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px;margin-top:6px}
+  .stage{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 13px;cursor:pointer;transition:.15s;position:relative}
+  .stage:hover{border-color:var(--accent);transform:translateY(-2px)}
+  .stage.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+  .stage .n{font-family:var(--mono);font-size:10px;color:var(--muted)}
+  .stage .t{font-size:13.5px;font-weight:600;margin:3px 0}
+  .stage .f{font-family:var(--mono);font-size:10.5px;color:var(--blue);word-break:break-all}
+  .arrow{align-self:center;color:var(--muted);font-size:18px}
+  @media(max-width:820px){.arrow{display:none}.stage{min-width:0;flex-basis:46%}}
+  .detail{margin-top:14px;font-size:13.5px;color:#cbd6e6;border-left:2px solid var(--accent);padding-left:12px;min-height:40px}
+  /* config controls */
+  .ctl{display:flex;flex-wrap:wrap;gap:18px;margin-bottom:12px}
+  .ctl label{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;gap:5px}
+  select,.toggle{font-family:var(--mono);font-size:12.5px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 9px}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{font-family:var(--mono);font-size:11.5px;color:var(--blue);background:var(--surface);border:1px solid var(--border);padding:5px 10px;border-radius:7px;cursor:pointer;user-select:none;transition:.12s}
+  .chip:hover{border-color:var(--accent)}
+  .chip.on{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:600}
+  .grid2{display:grid;grid-template-columns:0.95fr 1.05fr;gap:16px}
+  @media(max-width:880px){.grid2{grid-template-columns:1fr}}
+  .tree{font-family:var(--mono);font-size:12px;line-height:1.7;white-space:pre}
+  .tree .dir{color:var(--blue)}.tree .new{color:var(--accent)}.tree .cmtt{color:#5e718e}.tree .off{color:#3c4b63;text-decoration:line-through}
+  table{border-collapse:collapse;width:100%;font-size:12.5px;margin-top:6px}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-family:var(--mono);font-size:11px;letter-spacing:.5px;text-transform:uppercase}
+  td code{color:var(--blue)}
+  .src{font-family:var(--mono);font-size:11.5px;color:var(--muted)}.src b{color:var(--blue);font-weight:500}
+  .note{font-size:12.5px;color:var(--muted);background:#10192c;border:1px dashed var(--border);border-radius:9px;padding:10px 13px;margin-top:12px}
+  a{color:var(--blue)}
+  .cnt{font-family:var(--mono);font-size:12px;color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hd">
+    <div class="logo">🤖 Chatbot<b>Forge</b></div>
+    <span class="pill">interactive explainer · showcase</span>
+  </header>
+  <div class="sub">
+    Answer a few wizard questions and ChatbotForge writes a complete, runnable chatbot codebase —
+    a <code>FastAPI</code> backend with SSE streaming, a web chat UI, a terminal client, and an optional
+    <code>ChromaDB</code> RAG pipeline. Generation is template-driven: a <code>ChatbotConfig</code> feeds
+    a Jinja2 renderer, and a <b>file manifest</b> decides exactly which template files to emit.
+    Everything below is taken from the real repo (schema, manifest, templates, README).
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-v="pipe">Generation pipeline</button>
+    <button class="tab" data-v="config">Config → files</button>
+    <button class="tab" data-v="example">Example config</button>
+    <button class="tab" data-v="api">Generated API</button>
+  </div>
+
+  <!-- ───────── PIPELINE ───────── -->
+  <section class="view active" id="pipe">
+    <div class="panel">
+      <h2>From wizard answers to a working project</h2>
+      <p class="muted">Click a stage. Grounded in <code>__main__.py</code>, <code>generator/engine.py</code>,
+        <code>generator/renderer.py</code>, <code>generator/file_manifest.py</code>, and <code>setup_runner/</code>.</p>
+      <div class="flow" id="flow"></div>
+      <div class="detail" id="flowDetail">Select a stage above to see what it does.</div>
+    </div>
+    <div class="panel">
+      <h2>What you can configure</h2>
+      <table>
+        <thead><tr><th>Choice</th><th>Options (from schema.py)</th></tr></thead>
+        <tbody>
+          <tr><td>LLM provider</td><td><code>openai · anthropic · gemini · ollama</code></td></tr>
+          <tr><td>Generated UI</td><td><code>web · terminal · both</code></td></tr>
+          <tr><td>Chat mode</td><td><code>conversation · single_shot</code></td></tr>
+          <tr><td>Auth mode</td><td><code>none · name_only · name_password</code></td></tr>
+          <tr><td>Data sources (RAG)</td><td><code>pdf · csv · text · json · markdown · url · api</code></td></tr>
+          <tr><td>Web theme</td><td><code>dark · light</code> + accent-color presets</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ───────── CONFIG → FILES ───────── -->
+  <section class="view" id="config">
+    <div class="panel">
+      <h2>Toggle a config — watch the generated file set change</h2>
+      <p class="muted">This mirrors <code>get_manifest(config)</code> exactly: the same conditionals
+        (<code>enable_rag</code>, <code>has_web_ui</code>, <code>has_terminal_ui</code>, per-loader
+        <code>has_pdf/has_csv/...</code>, <code>auth_mode == "name_password"</code>) that the real generator uses.</p>
+      <div class="ctl">
+        <label>Generated UI
+          <select id="cUi">
+            <option value="both">both</option>
+            <option value="web">web</option>
+            <option value="terminal">terminal</option>
+          </select>
+        </label>
+        <label>Auth mode
+          <select id="cAuth">
+            <option value="none">none</option>
+            <option value="name_only">name_only</option>
+            <option value="name_password">name_password</option>
+          </select>
+        </label>
+        <label>Data sources (enabling any = RAG on)
+          <div class="chips" id="cSources" style="margin-top:2px">
+            <span class="chip" data-s="pdf">pdf</span>
+            <span class="chip" data-s="csv">csv</span>
+            <span class="chip" data-s="text">text</span>
+            <span class="chip" data-s="markdown">markdown</span>
+            <span class="chip" data-s="json">json</span>
+            <span class="chip" data-s="url">url</span>
+            <span class="chip" data-s="api">api</span>
+          </div>
+        </label>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>output/&lt;project_name&gt;/  ·  <span class="cnt" id="fileCount"></span></h3>
+      <div class="tree" id="tree"></div>
+      <p class="note muted">Greyed-out / struck items are <b>not</b> generated for the current config.
+        Loader files appear only when their source type is selected; <code>app/services/rag_service.py</code>,
+        <code>ingest/</code>, and the runtime <code>data/</code> + <code>chroma_db/</code> dirs appear only when RAG is on.</p>
+    </div>
+  </section>
+
+  <!-- ───────── EXAMPLE CONFIG ───────── -->
+  <section class="view" id="example">
+    <div class="grid2">
+      <div class="panel">
+        <h2>Terminal wizard transcript</h2>
+        <p class="muted">The step-by-step example from the README (movie_recommender / Ollama):</p>
+        <pre><code>$ python -m chatbot_forge --ui terminal
+
+╔══════════════════════════════╗
+║  🤖  ChatbotForge            ║
+╚══════════════════════════════╝
+
+<span class="cmt">── Step 1 · Identity ──</span>
+Project name [my_chatbot]: <span class="str">movie_recommender</span>
+Display name: <span class="str">MovieBot</span>
+System prompt:
+  <span class="str">You are MovieBot, a friendly movie
+  recommendation assistant...</span>
+Output directory [./output]: <span class="str">./output</span>
+
+<span class="cmt">── Step 2 · LLM Provider ──</span>
+LLM provider: <span class="str">ollama</span>
+Model (ollama): <span class="str">llama3.2</span>
+Temperature [0.7]: <span class="num">0.8</span>
+Max tokens [1024]: <span class="num">512</span>
+Enable streaming? [Y/n]: <span class="str">Y</span>
+
+<span class="cmt">── Step 3 · Interface ──</span>
+Generated chatbot UI: <span class="str">both</span>
+Port [8000]: <span class="num">8000</span>
+
+<span class="cmt">── Step 4 · Data Sources (RAG) ──</span>
+Add data sources for RAG? [y/N]: <span class="str">N</span>
+
+  <span class="fld">✓ Project generated: ./output/movie_recommender</span>
+  <span class="fld">✓ Dependencies installed</span></code></pre>
+      </div>
+      <div class="panel">
+        <h2><code>chatbot_config.json</code></h2>
+        <p class="muted">The engine saves the resolved config to the project root (engine.py). Shape &amp; defaults
+          are from <code>ChatbotConfig</code>; values from the transcript on the left:</p>
+        <pre><code>{
+  <span class="key">"project_name"</span>: <span class="str">"movie_recommender"</span>,
+  <span class="key">"chatbot_display_name"</span>: <span class="str">"MovieBot"</span>,
+  <span class="key">"system_prompt"</span>: <span class="str">"You are MovieBot, a friendly..."</span>,
+  <span class="key">"output_dir"</span>: <span class="str">"./output"</span>,
+  <span class="key">"llm_provider"</span>: <span class="str">"ollama"</span>,
+  <span class="key">"model_name"</span>: <span class="str">"llama3.2"</span>,
+  <span class="key">"ollama_base_url"</span>: <span class="str">"http://localhost:11434"</span>,
+  <span class="key">"temperature"</span>: <span class="num">0.8</span>,
+  <span class="key">"max_tokens"</span>: <span class="num">512</span>,
+  <span class="key">"streaming"</span>: <span class="boo">true</span>,
+  <span class="key">"history_window"</span>: <span class="num">10</span>,
+  <span class="key">"response_style"</span>: <span class="str">"friendly"</span>,
+  <span class="key">"chat_mode"</span>: <span class="str">"conversation"</span>,
+  <span class="key">"web_theme"</span>: <span class="str">"dark"</span>,
+  <span class="key">"accent_color"</span>: <span class="str">"#3b82f6"</span>,
+  <span class="key">"auth_mode"</span>: <span class="str">"none"</span>,
+  <span class="key">"enable_rag"</span>: <span class="boo">false</span>,
+  <span class="key">"data_sources"</span>: [],
+  <span class="key">"output_ui"</span>: <span class="str">"both"</span>,
+  <span class="key">"port"</span>: <span class="num">8000</span>,
+  <span class="key">"host"</span>: <span class="str">"0.0.0.0"</span>,
+  <span class="key">"auto_install"</span>: <span class="boo">true</span>,
+  <span class="key">"auto_index"</span>: <span class="boo">false</span>,
+  <span class="key">"auto_launch"</span>: <span class="boo">false</span>
+}</code></pre>
+        <p class="note muted">Any saved config can be replayed (<code>--config bot.json</code>) or re-opened
+          for editing (<code>--edit ./output/movie_recommender</code>). The model name is filled from
+          <code>DEFAULT_MODELS</code> when left blank.</p>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Run the generated chatbot (from README)</h2>
+      <pre><code>cd output/movie_recommender
+cp .env.example .env        <span class="cmt"># skip for Ollama; set OPENAI_API_KEY etc. otherwise</span>
+python run.py               <span class="cmt"># web UI at http://localhost:8000</span>
+python client.py            <span class="cmt"># terminal client (second terminal)</span>
+python ingest/ingest.py     <span class="cmt"># build the ChromaDB index first (RAG projects only)</span></code></pre>
+    </div>
+  </section>
+
+  <!-- ───────── API ───────── -->
+  <section class="view" id="api">
+    <div class="panel">
+      <h2>API of the generated chatbot</h2>
+      <p class="muted">Endpoints emitted by the backend routers (<code>routers/chat.py</code>, <code>health.py</code>,
+        <code>manage.py</code>). Verbatim from README.</p>
+      <table>
+        <thead><tr><th>Endpoint</th><th>Method</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>/api/chat</code></td><td>POST</td><td>Send message, returns an SSE token stream</td></tr>
+          <tr><td><code>/api/chats</code></td><td>GET</td><td>List all chat sessions</td></tr>
+          <tr><td><code>/api/chats/{id}/history</code></td><td>GET</td><td>Full message history</td></tr>
+          <tr><td><code>/api/chats/{id}</code></td><td>DELETE</td><td>Delete a chat session</td></tr>
+          <tr><td><code>/api/manage/sources</code></td><td>GET</td><td>List RAG data sources <span class="muted">(RAG only)</span></td></tr>
+          <tr><td><code>/api/manage/add-source</code></td><td>POST</td><td>Add a data source <span class="muted">(RAG only)</span></td></tr>
+          <tr><td><code>/api/manage/reindex</code></td><td>POST</td><td>Re-run ingestion &amp; reload vector store <span class="muted">(RAG only)</span></td></tr>
+          <tr><td><code>/health</code></td><td>GET</td><td>Health check</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="panel">
+      <h2>SSE events from <code>/api/chat</code></h2>
+      <pre><code>{<span class="key">"text"</span>: <span class="str">"chunk of text"</span>, <span class="key">"chat_id"</span>: <span class="str">"uuid"</span>}   <span class="cmt">// token chunk</span>
+{<span class="key">"done"</span>: <span class="boo">true</span>, <span class="key">"chat_id"</span>: <span class="str">"uuid"</span>}               <span class="cmt">// stream complete</span>
+{<span class="key">"error"</span>: <span class="str">"message"</span>}                            <span class="cmt">// on failure</span></code></pre>
+      <p class="muted" style="margin-top:12px">RAG responses cite verified sources as <code>[Source N]</code>; citations
+        are streamed as an extra event before <code>done</code> (chat.py template).</p>
+    </div>
+  </section>
+
+  <div class="panel" style="margin-top:4px">
+    <div class="src"><b>Grounded in:</b> README.md · chatbot_forge/config/schema.py · generator/{engine,renderer,file_manifest}.py ·
+      setup_runner/{installer,indexer,launcher}.py · templates/ (32 .j2 files) · pyproject.toml</div>
+  </div>
+</div>
+
+<script>
+// ---- pipeline ----
+const stages=[
+  ['1','Wizard / config','--ui terminal|web|desktop','Collect answers via the terminal (rich/questionary), Streamlit web wizard, or Tkinter desktop GUI — or load a saved JSON with --config / --edit.'],
+  ['2','ChatbotConfig','config/schema.py','A pydantic model validates everything and applies defaults: fills model_name from DEFAULT_MODELS, derives the Chroma collection name, and auto-enables RAG if any data source is present.'],
+  ['3','build_context','generator/renderer.py','Flattens the config into a Jinja2 render context (provider flags, has_web_ui, RAG flags, etc.) shared by every template.'],
+  ['4','get_manifest','generator/file_manifest.py','Returns the exact list of (template → output) files for THIS config. Base + backend always; RAG, loaders, web UI, terminal client, and auth router are conditional.'],
+  ['5','Render templates','templates/*.j2','Renders each manifest entry to disk under output/<project>/. Copies local data files into ./data/ first, creates app package __init__ stubs, then writes chatbot_config.json for later editing.'],
+  ['6','setup_runner','setup_runner/','Optional automation: installer (pip install -e .), indexer (run ingest.py to build the ChromaDB store), launcher (start the server) — each gated by auto_install / auto_index / auto_launch.'],
+];
+const flow=document.getElementById('flow');
+stages.forEach((s,i)=>{
+  if(i>0){const a=document.createElement('div');a.className='arrow';a.textContent='→';flow.appendChild(a);}
+  const d=document.createElement('div');d.className='stage';d.dataset.i=i;
+  d.innerHTML='<div class="n">STAGE '+s[0]+'</div><div class="t">'+s[1]+'</div><div class="f">'+s[2]+'</div>';
+  d.onclick=()=>{document.querySelectorAll('.stage').forEach(x=>x.classList.remove('active'));d.classList.add('active');
+    document.getElementById('flowDetail').textContent=s[3];};
+  flow.appendChild(d);
+});
+document.querySelector('.stage').click();
+
+// ---- tabs ----
+document.getElementById('tabs').addEventListener('click',e=>{
+  const b=e.target.closest('.tab'); if(!b)return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===b));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===b.dataset.v));
+});
+
+// ---- config → files (mirror of file_manifest.get_manifest) ----
+const srcSel=new Set();
+document.querySelectorAll('#cSources .chip').forEach(c=>{
+  c.onclick=()=>{c.classList.toggle('on');if(c.classList.contains('on'))srcSel.add(c.dataset.s);else srcSel.delete(c.dataset.s);render();};
+});
+document.getElementById('cUi').onchange=render;
+document.getElementById('cAuth').onchange=render;
+
+function buildManifest(){
+  const ui=document.getElementById('cUi').value;
+  const auth=document.getElementById('cAuth').value;
+  const rag=srcSel.size>0;
+  const hasWeb=ui==='web'||ui==='both';
+  const hasTerm=ui==='terminal'||ui==='both';
+  const F=[]; // [depth, label, generated, isDir, comment]
+  const add=(d,l,g,dir,c)=>F.push([d,l,g!==false,!!dir,c||'']);
+  add(0,'output/<project_name>/',true,true);
+  add(1,'run.py',true,false,'start here: python run.py');
+  add(1,'app/',true,true);
+  add(2,'main.py',true,false,'FastAPI app');
+  add(2,'__init__.py',true,false);
+  add(2,'routers/',true,true);
+  add(3,'chat.py',true,false,'/api/chat (SSE), history');
+  add(3,'health.py',true,false);
+  add(3,'settings.py',true,false,'in-UI settings panel');
+  add(3,'auth.py',auth==='name_password',false,'only when auth = name_password');
+  add(3,'manage.py',rag,false,'RAG source management');
+  add(2,'services/',true,true);
+  add(3,'llm_service.py',true,false,'your chosen provider only');
+  add(3,'settings_service.py',true,false);
+  add(3,'chat_history.py',true,false);
+  add(3,'rag_service.py',rag,false,'only when RAG on');
+  add(2,'models/schemas.py',true,false);
+  add(2,'core/config.py',true,false);
+  add(2,'core/database.py',rag,false,'RAG only');
+  add(1,'ingest/',rag,true,'data ingestion (RAG only)');
+  add(2,'ingest.py',rag,false,'build the index');
+  add(2,'chunker.py',rag,false);
+  add(2,'loaders/',rag,true);
+  add(3,'pdf_loader.py',rag&&srcSel.has('pdf'),false);
+  add(3,'csv_loader.py',rag&&srcSel.has('csv'),false);
+  add(3,'text_loader.py',rag&&(srcSel.has('text')||srcSel.has('markdown')),false,'text OR markdown');
+  add(3,'json_loader.py',rag&&srcSel.has('json'),false);
+  add(3,'url_loader.py',rag&&srcSel.has('url'),false);
+  add(3,'api_loader.py',rag&&srcSel.has('api'),false);
+  add(1,'static/index.html',hasWeb,false,'web UI (web/both)');
+  add(1,'client.py',hasTerm,false,'terminal client (terminal/both)');
+  add(1,'data/',rag,true,'your data files copied here');
+  add(1,'chroma_db/',rag,true,'vector store built by ingest.py');
+  add(1,'requirements.txt',true,false,'only deps you need');
+  add(1,'pyproject.toml',true,false);
+  add(1,'.env.example',true,false);
+  add(1,'chatbot_config.json',true,false,'saved for --edit');
+  add(1,'README.md',true,false);
+  return F;
+}
+function render(){
+  const F=buildManifest();
+  let genCount=0;
+  const html=F.map(([d,l,g,dir,c])=>{
+    if(g&&!dir)genCount++;
+    const indent='  '.repeat(d);
+    const cls=!g?'off':(dir?'dir':(/\.(py|json|toml|html|md|example)/.test(l)?'':'new'));
+    const lbl='<span class="'+cls+'">'+(d>0?(g?'├─ ':'· '):'')+l+'</span>';
+    const cm=c?'  <span class="cmtt">← '+c+'</span>':'';
+    return indent+lbl+cm;
+  }).join('\n');
+  document.getElementById('tree').innerHTML=html;
+  document.getElementById('fileCount').textContent=genCount+' files generated';
+}
+render();
+</script>
+</body>
+</html>

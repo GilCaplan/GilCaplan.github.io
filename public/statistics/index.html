@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Statistics 2 — Inference on the Hotel Booking Dataset</title>
+<style>
+  :root{
+    --bg:#0B1220; --surface:#0F172A; --panel:#1E293B; --border:#243044;
+    --text:#E2E8F0; --muted:#94A3B8; --teal:#14B8A6; --blue:#60A5FA; --red:#F87171;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.55;font-size:15px;}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 20px 60px;}
+  code,.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;}
+  h1{font-size:24px;margin:0 0 4px;} h2{font-size:18px;margin:26px 0 10px;}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 4px;}
+  .badge{display:inline-block;font-size:11px;padding:2px 9px;border-radius:999px;border:1px solid var(--border);
+    color:var(--muted);background:var(--surface);margin-right:6px;font-family:"JetBrains Mono",monospace;}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 14px;border-bottom:1px solid var(--border);padding-bottom:10px;}
+  .tab{padding:7px 13px;border-radius:9px;border:1px solid var(--border);background:var(--surface);
+    color:var(--muted);cursor:pointer;font-size:13px;transition:.15s;}
+  .tab:hover{color:var(--text);border-color:var(--teal);}
+  .tab.active{background:var(--panel);color:var(--teal);border-color:var(--teal);}
+  .view{display:none;animation:fade .25s ease;} .view.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:14px 0;}
+  .panel.surface{background:var(--surface);}
+  .muted{color:var(--muted);} .teal{color:var(--teal);} .blue{color:var(--blue);} .red{color:var(--red);}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0;}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em;}
+  td.mono{font-family:"JetBrains Mono",monospace;}
+  tr.hi td{background:rgba(20,184,166,.08);}
+  .cols{display:flex;gap:14px;flex-wrap:wrap;} .cols>div{flex:1 1 300px;}
+  img.fig{width:100%;border-radius:10px;border:1px solid var(--border);background:#fff;}
+  figure{margin:0;} figcaption{font-size:12px;color:var(--muted);margin-top:6px;}
+  .kvs{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0;}
+  .kv{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 11px;font-size:12px;}
+  .kv b{color:var(--teal);font-family:"JetBrains Mono",monospace;}
+  .note{font-size:12.5px;color:var(--muted);border-left:2px solid var(--teal);padding-left:10px;margin:10px 0;}
+  .pill{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-family:"JetBrains Mono",monospace;
+    border:1px solid var(--border);background:var(--surface);}
+  .pill.sig{border-color:var(--teal);color:var(--teal);} .pill.no{border-color:var(--red);color:var(--red);}
+  .proj-nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .pn{padding:6px 11px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);
+    cursor:pointer;font-size:12.5px;}
+  .pn.active{border-color:var(--blue);color:var(--blue);background:var(--panel);}
+  .pview{display:none;} .pview.active{display:block;}
+  pre{background:#0A0F1A;border:1px solid var(--border);border-radius:10px;padding:13px 15px;overflow:auto;font-size:12px;}
+  pre .c{color:var(--muted);} pre .k{color:var(--blue);} pre .s{color:var(--teal);}
+  a{color:var(--blue);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="badge">Technion · statistics_970414</span>
+  <span class="badge">Statistics 2</span>
+  <h1>Statistical Inference on the Hotel Booking Dataset</h1>
+  <p class="sub">A five-project arc through the Statistics&nbsp;2 syllabus — estimators &amp; MLE, confidence
+  intervals, hypothesis testing, linear regression, the bootstrap and Bayesian inference — all applied to one
+  consistent real dataset of <b>5,000</b> hotel bookings (sampled with seed 42).</p>
+
+  <div class="tabs">
+    <div class="tab active" data-v="overview">Overview</div>
+    <div class="tab" data-v="data">The dataset</div>
+    <div class="tab" data-v="projects">Projects 1–5</div>
+    <div class="tab" data-v="figs">Figures</div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="view active" id="overview">
+    <div class="panel">
+      <p>The course (based on Wasserman's <i>All of Statistics</i>) covers statistical models, estimators, MLE,
+      confidence intervals, hypothesis testing, linear regression, variance decomposition, relative risk /
+      odds ratios, logistic &amp; Poisson regression, the bootstrap, permutation tests, the Bayesian approach,
+      Monte-Carlo simulation, and missing-data methods.</p>
+      <p>The repo contains 6 graded homeworks and <b>5 project notebooks</b> that build on each other. Rather
+      than touching every topic on a toy example, the projects carry a single dataset all the way from
+      exploratory description (Project&nbsp;3) through estimation/testing (Projects&nbsp;2–4) to Bayesian and
+      missing-data analysis (Project&nbsp;5).</p>
+    </div>
+    <h2>Method progression</h2>
+    <div class="cols">
+      <div class="panel surface"><h4 class="teal" style="margin:0 0 6px">Estimation &amp; testing</h4>
+        <p class="muted" style="font-size:13px;margin:0">MLE for the chosen variables, asymptotic normality of
+        the estimator, Wald &amp; t-tests, λ likelihood-ratio test, and a simulation study of Wald-test p-value
+        behavior across sample sizes.</p></div>
+      <div class="panel surface"><h4 class="teal" style="margin:0 0 6px">Regression</h4>
+        <p class="muted" style="font-size:13px;margin:0">Multiple linear regression of <span class="mono">adr</span>
+        on lead time, hotel type and arrival year; F-test, t-tests on coefficients, residual/linearity
+        diagnostics, and an interaction model compared by LRT &amp; AIC.</p></div>
+      <div class="panel surface"><h4 class="teal" style="margin:0 0 6px">Resampling &amp; Bayes</h4>
+        <p class="muted" style="font-size:13px;margin:0">Bootstrap CIs (pivot &amp; percentile) for regression
+        coefficients vs the normal approximation, then a Bayesian Beta–Binomial analysis and missing-data
+        protocols.</p></div>
+    </div>
+  </div>
+
+  <!-- DATA -->
+  <div class="view" id="data">
+    <div class="panel">
+      <p>From the project notebooks: the <b>Hotel Booking Dataset</b> covers two hotel types (City &amp;
+      Resort). The projects randomly sample <b>5,000 rows (seed 42)</b> and focus on a fixed set of variables.</p>
+    </div>
+    <div class="cols">
+      <div class="panel surface">
+        <h4 class="blue" style="margin:0 0 6px">Numerical variables</h4>
+        <table>
+          <tr><td class="mono">adr</td><td class="muted">average daily rate (the response variable)</td></tr>
+          <tr><td class="mono">lead_time</td><td class="muted">days between booking and arrival</td></tr>
+          <tr><td class="mono">arrival_date_year</td><td class="muted">2015 / 2016 / 2017</td></tr>
+        </table>
+      </div>
+      <div class="panel surface">
+        <h4 class="blue" style="margin:0 0 6px">Binary / categorical</h4>
+        <table>
+          <tr><td class="mono">hotel</td><td class="muted">Resort Hotel vs City Hotel</td></tr>
+          <tr><td class="mono">is_repeated_guest</td><td class="muted">guest rebooked the hotel</td></tr>
+        </table>
+      </div>
+    </div>
+    <h2>Two research questions driving the analysis</h2>
+    <div class="panel surface">
+      <p class="muted" style="margin:0 0 6px">Stated verbatim in Project&nbsp;1:</p>
+      <p style="margin:0 0 4px">1 · If <span class="mono">lead_time</span> increases, does
+      <span class="mono">adr</span> decrease?</p>
+      <p style="margin:0">2 · The influence of <span class="mono">lead_time</span>,
+      <span class="mono">hotel</span> and arrival year on <span class="mono">adr</span>.</p>
+    </div>
+    <p class="note">Both <span class="mono">adr</span> and <span class="mono">lead_time</span> are
+    strongly right-skewed (long upper tails, outliers) — a recurring point in the notebooks that motivates
+    log-normal fits, Q-Q checks and caution about t-test normality assumptions.</p>
+  </div>
+
+  <!-- PROJECTS -->
+  <div class="view" id="projects">
+    <div class="proj-nav">
+      <div class="pn active" data-p="p2">P2 · Estimators &amp; tests</div>
+      <div class="pn" data-p="p3">P3 · Regression</div>
+      <div class="pn" data-p="p4">P4 · Bootstrap CIs</div>
+      <div class="pn" data-p="p5">P5 · Bayes &amp; missing data</div>
+    </div>
+
+    <div class="pview active" id="p2">
+      <div class="panel">
+        <h4 class="teal" style="margin:0 0 6px">Project 2 — Estimators, CIs &amp; hypothesis tests</h4>
+        <p class="muted" style="margin:0 0 6px">MLE per category (the mean), shown asymptotically normal.
+        Q1 finds the <span class="mono">adr</span> and <span class="mono">lead_time</span> confidence intervals
+        do <b>not overlap</b>. Q2 tests H₀: <span class="mono">lead_avg = adr_avg</span> against a two-sided
+        alternative using both a Wald test and a t-test.</p>
+        <div class="kvs">
+          <span class="kv">Wald &amp; t-test <b>p = 0.003</b></span>
+          <span class="pill sig">reject H₀</span>
+          <span class="kv muted">"both tests give the same result"</span>
+        </div>
+        <p class="muted" style="font-size:12.5px;margin:8px 0 0">Q2(B) explicitly notes the t-test assumptions
+        aren't all met (lead_time is non-normal from the Project&nbsp;1 histogram). Q3 runs a simulation: Wald
+        p-values cluster around 0.5 under H₀ (mean ≈ 0.508 for lead_time, 0.427 for adr at n = 30).</p>
+      </div>
+
+      <div class="panel surface">
+        <h4 class="teal" style="margin:0 0 6px">Try it live — two-sample Wald test</h4>
+        <p class="muted" style="font-size:12.5px;margin:0 0 10px">Test H₀: μ₁ = μ₂ from two sample means and
+        standard errors, exactly as in Q2. Defaults give a borderline-significant case; drag the sliders to see
+        when the verdict flips.</p>
+        <div id="wt_ctrls"></div>
+        <div class="kvs" id="wt_out" style="margin-top:10px"></div>
+        <p class="muted" style="font-size:11.5px;margin:8px 0 0">Wald statistic
+        <span class="mono">W = (x̄₁ − x̄₂) / √(se₁² + se₂²)</span>, two-sided p = 2(1 − Φ(|W|)).</p>
+      </div>
+    </div>
+
+    <div class="pview" id="p3">
+      <div class="panel">
+        <h4 class="teal" style="margin:0 0 6px">Project 3 — Multiple linear regression</h4>
+        <p class="muted" style="margin:0 0 8px">Regresses <span class="mono">adr</span> on
+        <span class="mono">lead_time</span>, <span class="mono">hotel_encoded</span> and arrival year, with full
+        EDA (symmetry, outliers, distribution fits), F-test, coefficient t-tests and a linearity check.</p>
+        <table>
+          <tr><th>Coefficient</th><th class="mono">Estimate</th><th>Interpretation (from notebook)</th></tr>
+          <tr class="hi"><td class="mono">lead_time</td><td class="mono">-0.0487</td><td class="muted">each extra day's lead time → adr down ~$0.05 (early-booking discounts)</td></tr>
+          <tr><td class="mono">hotel_encoded</td><td class="mono">-13.9205</td><td class="muted">Resort (1) vs City (0): ~$13.9 lower adr on average</td></tr>
+        </table>
+        <p class="muted" style="font-size:12.5px;margin:8px 0 0"><b>Part B</b> — an interaction model is
+        compared to the base model. The Likelihood-Ratio Test statistic <b>9.91</b> exceeds the critical
+        <b>7.81</b> (reject H₀: interactions add nothing), and AIC is lower (<b>−114.38</b> vs <b>−113.31</b>),
+        so the interaction model is preferred.</p>
+      </div>
+    </div>
+
+    <div class="pview" id="p4">
+      <div class="panel">
+        <h4 class="teal" style="margin:0 0 6px">Project 4 — Bootstrap confidence intervals</h4>
+        <p class="muted" style="margin:0 0 6px">Builds CIs for each regression coefficient β four ways and
+        compares them:</p>
+        <table>
+          <tr><th>Section</th><th>Method</th></tr>
+          <tr><td class="mono">1.a</td><td>Normal approximation — s.e. from the estimated β covariance matrix</td></tr>
+          <tr><td class="mono">1.b</td><td>Normal approximation — s.e. estimated by <b>bootstrap</b></td></tr>
+          <tr><td class="mono">1.c</td><td>Bootstrap <b>pivot</b> interval</td></tr>
+          <tr><td class="mono">1.d</td><td>Bootstrap <b>percentile</b> interval</td></tr>
+        </table>
+        <p class="note" style="margin-top:10px">Notebook conclusion: the pivot and percentile methods yield
+        the <b>same interval length</b> for every coefficient — expected, since both derive their width from
+        the same bootstrap quantiles. The CIs are then checked against the CI computed on all 5,000 rows.</p>
+      </div>
+    </div>
+
+    <div class="pview" id="p5">
+      <div class="panel">
+        <h4 class="teal" style="margin:0 0 6px">Project 5 — Bayesian inference &amp; missing data</h4>
+        <p class="muted" style="margin:0 0 8px"><b>Part 1 (Bayesian):</b> tests H₀:
+        <span class="mono">adr₀ = adr₁</span> across the two hotel types using a Beta–Binomial model. Because of
+        the Beta–Binomial <b>conjugacy</b> property, the posterior is Beta in every section; three estimators
+        are compared and the first two agree (similar priors barely move the result).</p>
+        <p class="muted" style="margin:0"><b>Part 2 (missing data):</b> works through missing-data mechanisms
+        and completion protocols on the same dataset (Sections 1–5 with sub-parts).</p>
+        <pre><span class="c"># conjugacy: Beta prior + Binomial likelihood → Beta posterior</span>
+posterior = Beta(<span class="s">α</span> + clicks, <span class="s">β</span> + (n - clicks))</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIGURES -->
+  <div class="view" id="figs">
+    <p class="muted">Real figures rendered by the project notebooks (extracted from the committed
+    <span class="mono">.ipynb</span> outputs).</p>
+    <div class="cols">
+      <div><figure><img class="fig" src="figs/p1_adr_hist.png" alt="Histogram of adr">
+        <figcaption>P1 · <span class="mono">adr</span> distribution — right-skewed, peaked near $75–100.</figcaption></figure></div>
+      <div><figure><img class="fig" src="figs/p1_leadtime_hist.png" alt="Histogram of lead_time">
+        <figcaption>P1 · <span class="mono">lead_time</span> — heavy right tail (most bookings &lt; 100 days out).</figcaption></figure></div>
+    </div>
+    <div class="cols">
+      <div><figure><img class="fig" src="figs/p3_leadtime_hist_box.png" alt="lead_time histogram and boxplot">
+        <figcaption>P3 · <span class="mono">lead_time</span> histogram + boxplot showing high-end outliers.</figcaption></figure></div>
+      <div><figure><img class="fig" src="figs/p3_categorical_dist.png" alt="Hotel and arrival year distributions">
+        <figcaption>P3 · Categorical balance — City&gt;Resort hotels; 2016 the dominant arrival year.</figcaption></figure></div>
+    </div>
+    <div class="cols">
+      <div><figure><img class="fig" src="figs/p3_lognormal_fit.png" alt="Log-normal fit">
+        <figcaption>P3 · Log-normal fit (shape 0.46, scale 90.20) — modeling the skewed response.</figcaption></figure></div>
+      <div><figure><img class="fig" src="figs/p4_adr_resort_vs_city.png" alt="ADR distribution resort vs city">
+        <figcaption>P4 · <span class="mono">adr</span> density: Resort vs City hotels overlaid.</figcaption></figure></div>
+    </div>
+    <div class="cols">
+      <div><figure><img class="fig" src="figs/p4_qq_adr_resort.png" alt="Q-Q plot ADR resort">
+        <figcaption>P4 · Normal Q-Q plot for Resort <span class="mono">adr</span> — departs from the line in both tails (non-normal).</figcaption></figure></div>
+      <div><figure><img class="fig" src="figs/p5_exponential_qq.png" alt="Exponential Q-Q plot">
+        <figcaption>P5 · Exponential Q-Q plot for <span class="mono">lead_time</span> — close to the 45° line, supporting an exponential-type tail.</figcaption></figure></div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.tab[data-v]').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab[data-v]').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById(t.dataset.v).classList.add('active');
+});
+document.querySelectorAll('.pn').forEach(p=>p.onclick=()=>{
+  document.querySelectorAll('.pn').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.pview').forEach(x=>x.classList.remove('active'));
+  p.classList.add('active');
+  document.getElementById(p.dataset.p).classList.add('active');
+});
+
+// Live two-sample Wald test
+function normCdf(x){
+  var t=1/(1+0.2316419*Math.abs(x));
+  var d=0.3989422804014327*Math.exp(-x*x/2);
+  var pr=d*t*(0.319381530+t*(-0.356563782+t*(1.781477937+t*(-1.821255978+t*1.330274429))));
+  return x>0 ? 1-pr : pr;
+}
+var wtFields=[
+  {id:'m1',label:'mean x̄₁',min:0,max:200,step:1,val:106},
+  {id:'s1',label:'se₁',min:1,max:40,step:1,val:8},
+  {id:'m2',label:'mean x̄₂',min:0,max:200,step:1,val:120},
+  {id:'s2',label:'se₂',min:1,max:40,step:1,val:9}
+];
+(function(){
+  var c=document.getElementById('wt_ctrls'); if(!c) return;
+  wtFields.forEach(function(f){
+    var row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:10px;margin:4px 0;font-size:12.5px';
+    row.innerHTML='<span class="muted mono" style="width:70px">'+f.label+'</span>'+
+      '<input id="wt_'+f.id+'" type="range" min="'+f.min+'" max="'+f.max+'" step="'+f.step+'" value="'+f.val+'" style="flex:1">'+
+      '<span class="mono teal" id="wt_'+f.id+'_v" style="width:42px;text-align:right">'+f.val+'</span>';
+    c.appendChild(row);
+    row.querySelector('input').addEventListener('input', waldTest);
+  });
+})();
+function waldTest(){
+  var v={}; wtFields.forEach(function(f){
+    var el=document.getElementById('wt_'+f.id); v[f.id]=+el.value;
+    document.getElementById('wt_'+f.id+'_v').textContent=el.value;
+  });
+  var se=Math.sqrt(v.s1*v.s1+v.s2*v.s2);
+  var W=se>0?(v.m1-v.m2)/se:0;
+  var p=2*(1-normCdf(Math.abs(W)));
+  var sig=p<0.05;
+  document.getElementById('wt_out').innerHTML=
+    '<span class="kv">x̄₁ − x̄₂ <b>'+(v.m1-v.m2).toFixed(2)+'</b></span>'+
+    '<span class="kv">W <b>'+W.toFixed(3)+'</b></span>'+
+    '<span class="kv">p <b>'+p.toFixed(4)+'</b></span>'+
+    '<span class="pill '+(sig?'sig':'no')+'">'+(sig?'reject H₀':'fail to reject H₀')+'</span>';
+}
+waldTest();
+</script>
+</body>
+</html>

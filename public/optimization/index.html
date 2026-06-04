@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nonlinear Optimization — Optimization_096237</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0B1220; --surface:#0F172A; --panel:#1E293B; --border:#243044;
+  --text:#E2E8F0; --muted:#94A3B8; --accent:#14B8A6; --blue:#60A5FA; --red:#F87171;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.5;}
+.wrap{max-width:1040px;margin:0 auto;padding:22px 18px 60px;}
+h1{font-size:1.5rem;margin:0 0 4px;}
+h2{font-size:1.1rem;margin:0 0 10px;color:var(--text);}
+.sub{color:var(--muted);font-size:.92rem;margin:0 0 18px;}
+.mono{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:10px;}
+.tab{background:var(--panel);border:1px solid var(--border);color:var(--muted);
+  padding:7px 14px;border-radius:9px;cursor:pointer;font-size:.88rem;transition:.15s;}
+.tab:hover{color:var(--text);border-color:var(--accent);}
+.tab.active{background:var(--accent);color:#04201c;border-color:var(--accent);font-weight:600;}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:18px 20px;margin-bottom:16px;}
+.view{display:none;}
+.view.active{display:block;}
+code,pre{font-family:'JetBrains Mono',ui-monospace,monospace;}
+pre{background:#0a0f1c;border:1px solid var(--border);border-radius:10px;padding:14px 16px;
+  overflow:auto;font-size:.82rem;color:#cbd5e1;}
+.k{color:var(--accent);} .b{color:var(--blue);} .c{color:#64748b;}
+.tag{display:inline-block;background:var(--panel);border:1px solid var(--border);
+  color:var(--muted);border-radius:20px;padding:3px 11px;font-size:.76rem;margin:0 6px 6px 0;}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:14px;}
+.card h3{margin:0 0 6px;font-size:.95rem;color:var(--accent);}
+.card p{margin:0;color:var(--muted);font-size:.85rem;}
+.pipe{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;margin:6px 0 4px;}
+.stage{flex:1;min-width:130px;background:var(--panel);border:1px solid var(--border);
+  border-radius:10px;padding:12px;cursor:pointer;transition:.15s;}
+.stage:hover{border-color:var(--accent);transform:translateY(-2px);}
+.stage.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;}
+.stage .n{font-size:.7rem;color:var(--blue);} .stage .t{font-weight:600;font-size:.9rem;margin:3px 0;}
+.stage .d{font-size:.78rem;color:var(--muted);}
+.btn{background:var(--accent);color:#04201c;border:none;border-radius:9px;padding:9px 16px;
+  font-weight:600;cursor:pointer;font-size:.88rem;}
+.btn:hover{filter:brightness(1.08);}
+.btn.alt{background:var(--panel);color:var(--text);border:1px solid var(--border);}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+label{font-size:.83rem;color:var(--muted);}
+input[type=range]{accent-color:var(--accent);}
+.out{font-family:'JetBrains Mono',monospace;font-size:.82rem;background:#0a0f1c;
+  border:1px solid var(--border);border-radius:9px;padding:12px;color:#cbd5e1;white-space:pre-wrap;}
+.muted{color:var(--muted);font-size:.85rem;}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:760px){.split{grid-template-columns:1fr;}}
+a{color:var(--blue);}
+.hwlist{list-style:none;padding:0;margin:0;}
+.hwlist li{padding:8px 0;border-bottom:1px solid var(--border);font-size:.87rem;}
+.hwlist li:last-child{border-bottom:none;}
+.hwlist b{color:var(--accent);}
+.chartbox{background:#0a0f1c;border:1px solid var(--border);border-radius:10px;padding:10px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Nonlinear &amp; Convex Optimization</h1>
+  <p class="sub mono">Technion 096237 · Amir Beck, "Introduction to Nonlinear Optimization" · coursework repo</p>
+
+  <div class="tabs">
+    <div class="tab active" data-v="overview">Overview</div>
+    <div class="tab" data-v="methods">Methods</div>
+    <div class="tab" data-v="gd">Live: Gradient Descent</div>
+    <div class="tab" data-v="compare">Live: GD vs Exact vs FISTA</div>
+    <div class="tab" data-v="demo">Live: Projected Gradient</div>
+    <div class="tab" data-v="facility">Live: Facility Location</div>
+    <div class="tab" data-v="fit">Live: Curve Fit</div>
+    <div class="tab" data-v="code">Real Code</div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="view active" id="overview">
+    <div class="panel">
+      <h2>What the course covers</h2>
+      <p class="muted">An introductory course in nonlinear continuous optimization, emphasizing
+      convex optimization. From the repo README, the goals are to <b>model</b> real problems as
+      convex programs, <b>solve</b> them with basic algorithms and CVXPY, <b>analyze</b> algorithm
+      performance, and <b>develop</b> new methods from convex theory.</p>
+      <div style="margin-top:10px">
+        <span class="tag">Bisection / Newton (1-D)</span>
+        <span class="tag">Gradient method</span>
+        <span class="tag">Armijo &amp; exact line search</span>
+        <span class="tag">Convex sets &amp; functions</span>
+        <span class="tag">Orthogonal projection</span>
+        <span class="tag">Projected gradient</span>
+        <span class="tag">KKT conditions</span>
+        <span class="tag">Lagrangian duality</span>
+        <span class="tag">CVXPY</span>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="card"><h3>Image processing</h3><p>Deblurring a 256×256 image via least squares,
+        solved with gradient descent and FISTA acceleration (HW05).</p></div>
+      <div class="card"><h3>Signal denoising</h3><p>Recovering a clean step signal from noise with
+        a smoothness-regularized objective (HW02).</p></div>
+      <div class="card"><h3>Model fitting</h3><p>Fitting a rational function to scattered data via
+        linear least squares and a normalized eigenvector solve (HW01).</p></div>
+      <div class="card"><h3>Constrained &amp; KKT</h3><p>Conic / quadratic-over-linear constrained
+        programs modeled and solved with CVXPY; projected gradient by hand (HW08).</p></div>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <h2>Repository contents</h2>
+      <ul class="hwlist">
+        <li><b>HW01</b> — matrix algebra exercises + rational curve fitting (<span class="mono">HW01.py</span>, <span class="mono">X.txt</span>)</li>
+        <li><b>HW02</b> — 1-D signal denoising demo (<span class="mono">script_ex4.ipynb</span>)</li>
+        <li><b>HW05</b> — image deblurring: gradient method, exact-quadratic step, accelerated gradient (<span class="mono">HW05.py</span>, <span class="mono">blur.ipynb</span>)</li>
+        <li><b>HW08</b> — CVXPY constrained programs + projected gradient; facility-location (<span class="mono">HW08.py</span>, <span class="mono">HW08_q1_b.py</span>, <span class="mono">Q2.ipynb</span>)</li>
+        <li><b>HW03/04/06/07/09/10</b> — instructions + solution PDFs (theory)</li>
+      </ul>
+      <p class="muted" style="margin-top:8px">This page reproduces the real algorithms from the
+      Python sources in the repo. The PDFs are written analytical solutions and are not rendered here.</p>
+    </div>
+  </div>
+
+  <!-- METHODS -->
+  <div class="view" id="methods">
+    <div class="panel">
+      <h2>Methods implemented in code</h2>
+      <p class="muted">Click a stage to see what the repo's code actually does at that step.</p>
+      <div class="pipe" id="pipe">
+        <div class="stage sel" data-s="0"><div class="n">objective</div><div class="t">Model</div><div class="d">Write f(x) (often ‖Ax−b‖²)</div></div>
+        <div class="stage" data-s="1"><div class="n">gradient</div><div class="t">∇f(x)</div><div class="d">Analytic gradient</div></div>
+        <div class="stage" data-s="2"><div class="n">step</div><div class="t">Step size</div><div class="d">Exact / 1/L</div></div>
+        <div class="stage" data-s="3"><div class="n">iterate</div><div class="t">Update</div><div class="d">GD · FISTA · projection</div></div>
+        <div class="stage" data-s="4"><div class="n">stop</div><div class="t">Converge</div><div class="d">‖xₖ₊₁−xₖ‖ &lt; ε</div></div>
+      </div>
+      <div class="out" id="stagebox" style="margin-top:12px"></div>
+    </div>
+
+    <div class="split">
+      <div class="panel">
+        <h2>Exact step for ‖Ax−b‖²</h2>
+        <p class="muted">For the quadratic least-squares objective the exact line-search step has a
+        closed form. From <span class="mono">HW05.py</span>:</p>
+        <pre><span class="k">def</span> <span class="b">exact_quad</span>(f, xk, gk, A):
+    <span class="c"># t = ‖g‖² / (2‖A·g‖)²  — exact step for the quadratic</span>
+    <span class="k">return</span> (np.linalg.norm(gk)**<span class="b">2</span>) / ((<span class="b">2</span>*np.linalg.norm(A.dot(gk)))**<span class="b">2</span>)</pre>
+      </div>
+      <div class="panel">
+        <h2>Accelerated gradient (FISTA)</h2>
+        <p class="muted">HW05 also implements Nesterov-style acceleration with the tₖ momentum
+        recursion:</p>
+        <pre><span class="c"># inside AG(f, gf, L, x0, max_iter)</span>
+x.append(y[k] - g/L)
+t.append((<span class="b">1</span> + sqrt(<span class="b">1</span> + <span class="b">4</span>*t[k]**<span class="b">2</span>))/<span class="b">2</span>)
+y.append(x[k] + ((t[k]-<span class="b">1</span>)/t[k+<span class="b">1</span>])*(x[k]-x[k-<span class="b">1</span>]))</pre>
+        <p class="muted">L is the Lipschitz constant of ∇f (twice the top eigenvalue of AᵀA;
+        in the repo L≈1.9995).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- GD: unconstrained gradient descent on a contour plot -->
+  <div class="view" id="gd">
+    <div class="panel">
+      <h2>Gradient method — watch it descend (or diverge)</h2>
+      <p class="muted">The plain <span class="mono">generic_grad</span> rule from the repo,
+      <span class="mono">x_{k+1} = x_k − t·∇f(x_k)</span>, run on a convex test function. Drag the white start
+      point anywhere on the contour map; move the <b>step size t</b> slider. With a small enough step the iterates
+      march down to the minimum (●); push t past the stability limit <span class="mono">2/L</span> and the same
+      method <b>diverges</b>, exactly the convergence condition from the course.</p>
+      <div class="row" style="margin:12px 0">
+        <label>function
+          <select id="gdFn" style="background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:5px 8px;font-family:inherit">
+            <option value="bowl">quadratic bowl (anisotropic)</option>
+            <option value="rosen">Rosenbrock (banana)</option>
+          </select>
+        </label>
+        <label>step t <input id="gdT" type="range" min="0.001" max="1.05" step="0.001" value="0.10" oninput="gdRun()"></label>
+        <span class="mono" id="gdTv" style="color:var(--blue)">0.100</span>
+        <label>iterations <input id="gdN" type="range" min="1" max="120" step="1" value="60" oninput="gdRun()"></label>
+        <span class="mono" id="gdNv" style="color:var(--blue)">60</span>
+        <button class="btn" onclick="gdAnimate()">Animate</button>
+      </div>
+      <div class="split">
+        <div class="chartbox" style="padding:0">
+          <canvas id="gdCanvas" width="420" height="360" style="width:100%;display:block;border-radius:10px;cursor:crosshair;touch-action:none"></canvas>
+        </div>
+        <div class="out" id="gdOut"></div>
+      </div>
+      <p class="muted" style="margin-top:10px">For a quadratic <span class="mono">f(x)=½xᵀAx</span> the gradient
+      method converges iff <span class="mono">0 &lt; t &lt; 2/L</span> where L = largest eigenvalue of A (the
+      Lipschitz constant of ∇f). The slider's red zone marks <span class="mono">t &gt; 2/L</span> for the bowl,
+      where you'll see the path spiral out.</p>
+    </div>
+  </div>
+
+  <!-- COMPARE: method race on a least-squares quadratic -->
+  <div class="view" id="compare">
+    <div class="panel">
+      <h2>Step rules race — exact line search vs fixed 1/L vs FISTA</h2>
+      <p class="muted">HW05 implements three drivers on the least-squares objective
+      <span class="mono">f(x)=‖A·x − b‖²</span>: <b>generic_grad</b> (gradient method with the closed-form
+      <span class="mono">exact_quad</span> step), <b>generic_grad_b</b> (constant step <span class="mono">1/L</span>),
+      and <b>AG</b> (Nesterov/FISTA acceleration). Here all three are run live on a small 2-D instance of the
+      <i>same</i> objective so you can watch their iterates and the f-value curve — exactly the
+      <span class="mono">semilogy(fs)</span> plot the repo draws. Drag the white start point.</p>
+      <div class="row" style="margin:12px 0">
+        <label>iterations <input id="cmpN" type="range" min="2" max="60" step="1" value="30" oninput="cmpRun()"></label>
+        <span class="mono" id="cmpNv" style="color:var(--blue)">30</span>
+        <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="cmpExact" checked onchange="cmpRun()">exact line search</label>
+        <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="cmpFixed" checked onchange="cmpRun()">fixed 1/L</label>
+        <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="cmpFista" checked onchange="cmpRun()">FISTA (AG)</label>
+        <button class="btn" onclick="cmpAnimate()">Animate</button>
+      </div>
+      <div class="split">
+        <div class="chartbox" style="padding:0">
+          <canvas id="cmpCanvas" width="420" height="360" style="width:100%;display:block;border-radius:10px;cursor:crosshair;touch-action:none"></canvas>
+        </div>
+        <div class="chartbox"><canvas id="cmpChart" height="240"></canvas></div>
+      </div>
+      <div class="out" id="cmpOut" style="margin-top:12px"></div>
+      <p class="muted" style="margin-top:10px">On this convex quadratic all three converge to the same
+      least-squares solution <span class="mono">x* = (AᵀA)⁻¹Aᵀb</span>. FISTA's
+      <span class="mono">O(1/k²)</span> rate and the exact step both reach machine-tolerance in a handful of
+      iterations, while the fixed <span class="mono">1/L</span> step is the slowest — the very comparison
+      HW05 was set up to make.</p>
+    </div>
+  </div>
+
+  <!-- DEMO: projected gradient -->
+  <div class="view" id="demo">
+    <div class="panel">
+      <h2>Projected gradient descent — live</h2>
+      <p class="muted">This is the exact algorithm from <span class="mono">HW08.py</span>:
+      minimize <span class="mono">f(x)=‖x‖²</span> with <span class="mono">∇f(x)=2x</span>, projecting each
+      iterate onto the set the repo's <span class="mono">proj_section_b</span> projects to —
+      the line <span class="mono">x₀ − x₁ = 1</span>. Same starting point and step as the source.</p>
+      <div class="row" style="margin:12px 0">
+        <label>start x₀ <input id="px0" type="range" min="-100" max="100" value="100" oninput="pgUpdate()"></label>
+        <span class="mono" id="px0v" style="color:var(--blue)">100</span>
+        <label>start x₁ <input id="px1" type="range" min="-100" max="100" value="100" oninput="pgUpdate()"></label>
+        <span class="mono" id="px1v" style="color:var(--blue)">100</span>
+        <label>step t <input id="pt" type="range" min="0.05" max="0.95" step="0.05" value="0.5" oninput="pgUpdate()"></label>
+        <span class="mono" id="ptv" style="color:var(--blue)">0.50</span>
+        <button class="btn" onclick="pgRun()">Run</button>
+      </div>
+      <div class="split">
+        <div class="chartbox"><canvas id="pgChart" height="240"></canvas></div>
+        <div class="out" id="pgOut"></div>
+      </div>
+      <p class="muted" style="margin-top:10px">The objective minimizes the squared norm subject to
+      the constraint, so it converges to the point on the feasible line nearest the origin —
+      <span class="mono">(0.5, −0.5)</span>. With the repo's defaults it converges in a handful of steps.</p>
+    </div>
+  </div>
+
+  <!-- FACILITY: HW08 Q2 facility location / weighted geometric median -->
+  <div class="view" id="facility">
+    <div class="panel">
+      <h2>Facility location — find the best storage site</h2>
+      <p class="muted">HW08 Q2 (<span class="mono">q2_c_wet.ipynb</span>) places a storage location
+      <span class="mono">x</span> to minimise the weighted shipping cost to 50 customers:
+      <span class="mono">min_x  γ·Σᵢ pᵢ·α·‖Aᵢ − x‖</span>, where the repo builds the data with
+      <span class="mono">np.random.seed(314)</span> — 50 shipment points <span class="mono">Aᵢ</span>
+      (the first 10 are far-away <b>outliers</b>, shown in red), demand weights <span class="mono">pᵢ</span>,
+      and <span class="mono">α=0.01, γ=1.2</span>. The repo hands this convex program to CVXPY; here the
+      <i>identical</i> objective is minimised live by Weiszfeld iteration so you can watch the site converge.
+      Drag the white marker to set the start, or click <b>Step</b>.</p>
+      <div class="row" style="margin:12px 0">
+        <button class="btn" onclick="facStep()">Step</button>
+        <button class="btn" onclick="facRun()">Solve</button>
+        <button class="btn alt" onclick="facReset()">Reset</button>
+        <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="facWeight" checked onchange="facDraw()">size points by demand pᵢ</label>
+      </div>
+      <div class="split">
+        <div class="chartbox" style="padding:0">
+          <canvas id="facCanvas" width="420" height="360" style="width:100%;display:block;border-radius:10px;cursor:crosshair;touch-action:none"></canvas>
+        </div>
+        <div class="out" id="facOut"></div>
+      </div>
+      <p class="muted" style="margin-top:10px">Because cost is the (weighted) sum of <i>distances</i>, the
+      optimum is the <b>weighted geometric median</b> — robust to the outlier cluster, so it settles among the
+      dense customers rather than being pulled toward the far group. HW08's part B adds piecewise
+      <span class="mono">max(0, μ(α‖Aᵢ−x‖ − η))</span> over-distance penalties on top of this same term.</p>
+    </div>
+  </div>
+
+  <!-- FIT -->
+  <div class="view" id="fit">
+    <div class="panel">
+      <h2>Rational curve fitting — live</h2>
+      <p class="muted">HW01 fits a rational model
+      <span class="mono">f(x)=(u₀+u₁x+u₂x²)/(u₃+u₄x+u₅x²)</span> to 30 real data points stored in the
+      repo. Two methods are implemented: a linear least-squares fit
+      (<span class="mono">fit_rational</span>) and a normalized eigenvector solve of AᵀA
+      (<span class="mono">fit_rational_normed</span>). Below the LS coefficients are computed in-browser
+      from the actual repo data and plotted against the points.</p>
+      <div class="row" style="margin:12px 0">
+        <button class="btn" onclick="runFit()">Fit &amp; plot</button>
+        <span class="muted">data: 30 (xᵢ, yᵢ) pairs from HW01.py</span>
+      </div>
+      <div class="split">
+        <div class="chartbox"><canvas id="fitChart" height="240"></canvas></div>
+        <div class="out" id="fitOut"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CODE -->
+  <div class="view" id="code">
+    <div class="panel">
+      <h2>Projected gradient (HW08.py)</h2>
+      <pre><span class="k">def</span> <span class="b">grad_proj</span>(f, gf, proj, t, x0, eps):
+    x_prev = x0
+    xk = proj(x_prev - t * gf(x_prev))
+    fs = [f(xk)]
+    <span class="k">while</span> np.linalg.norm(xk - x_prev) &gt; eps:
+        x_prev = xk
+        xk = proj(x_prev - t * gf(x_prev))
+        fs.append(f(xk))
+    <span class="k">return</span> xk, fs
+
+<span class="k">def</span> <span class="b">proj_section_b</span>():
+    <span class="k">return</span> <span class="k">lambda</span> p: np.array([(p[0]-p[1]+1)/2, (p[1]-p[0]+1)/2])
+
+f  = <span class="k">lambda</span> x: np.linalg.norm(x)**2
+gf = <span class="k">lambda</span> x: 2*x
+x, fs = grad_proj(f, gf, proj_section_b(), 0.5, np.array([100, 100]), 1e-8)</pre>
+    </div>
+    <div class="panel">
+      <h2>CVXPY constrained program (HW08.py)</h2>
+      <pre>x = cp.Variable(3)
+A = np.array([[1, 1/2, 0],[1, 0, 0],[0, 15**0.5/2, 0],[0, 0, 0]])
+D = np.array([1, -1, 1]); E = np.array([1, 1, 0]); y = np.array([0,0,0,2]); b = 1
+objective = cp.Minimize(cp.square(x[0]+x[1]) + cp.square(x[1]) + cp.square(x[2])
+                        + 3*x[0] - 4*x[1])
+constraints = [cp.norm(A @ x + y) + cp.quad_over_lin(D @ x + b, E @ x) &lt;= 6, x &gt;= 1]
+result = cp.Problem(objective, constraints).solve()</pre>
+      <p class="muted">A conic + quadratic-over-linear constrained convex program handed straight to
+      the CVXPY solver — the "solving with off-the-shelf tools" objective from the README.</p>
+    </div>
+    <div class="panel">
+      <h2>Image deblur driver (HW05.py)</h2>
+      <pre><span class="c"># blur() builds a 256² Gaussian Toeplitz blur operator A (Kronecker of 1-D blurs)</span>
+A, b, x = blur(256, 5, 1)
+AA = A.T.dot(A)
+f  = <span class="k">lambda</span> x: np.linalg.norm(A.dot(x) - b) ** 2   <span class="c"># least-squares fidelity</span>
+gf = <span class="k">lambda</span> x: 2*AA.dot(x) - 2*A.T.dot(b)         <span class="c"># gradient</span>
+l  = 1.9994981175712248                          <span class="c"># Lipschitz const of ∇f</span>
+x0 = np.zeros(np.shape(b))
+x, fs, gs, ts = AG(f, gf, l, x0, max_iter=1000)  <span class="c"># accelerated gradient</span></pre>
+    </div>
+  </div>
+</div>
+
+<script>
+// tabs
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById(t.dataset.v).classList.add('active');
+});
+
+// methods stage descriptions (grounded in repo code)
+const stageTxt=[
+"Model — the repo writes the objective explicitly. Image deblur (HW05): f(x)=‖A·x − b‖², a least-squares fidelity term. Curve fit (HW01): a rational model. Constrained (HW08): a convex objective with conic/quad-over-linear constraints passed to CVXPY.",
+"Gradient — supplied analytically, e.g. HW05:  gf = lambda x: 2·AᵀA·x − 2·Aᵀb. The projected-gradient demo uses f=‖x‖², gf=2x.",
+"Step size — for the quadratic, HW05 uses the closed-form exact line search exact_quad(); FISTA uses the constant step 1/L where L≈1.9995 is the Lipschitz constant of ∇f. HW08's projected gradient uses a fixed t (0.5 in the source).",
+"Update — three update rules appear in the repo: plain gradient xₖ₊₁ = xₖ − t·gₖ (generic_grad), accelerated/FISTA with the tₖ momentum recursion (AG), and projected gradient xₖ₊₁ = P(xₖ − t·gₖ) (grad_proj).",
+"Stopping — grad_proj iterates while ‖xₖ₊₁ − xₖ‖ > ε (ε = 1e-8 in the source); the gradient/FISTA drivers run a fixed budget (≈1000 iterations) and snapshot the image at k = 1, 10, 100, 1000."
+];
+const pipe=document.getElementById('pipe'), sbox=document.getElementById('stagebox');
+function showStage(i){pipe.querySelectorAll('.stage').forEach(s=>s.classList.toggle('sel',+s.dataset.s===i));sbox.textContent=stageTxt[i];}
+pipe.querySelectorAll('.stage').forEach(s=>s.onclick=()=>showStage(+s.dataset.s));
+showStage(0);
+
+// ---- projected gradient demo ----
+let pgChart;
+function projB(p){return [(p[0]-p[1]+1)/2,(p[1]-p[0]+1)/2];}
+function pgUpdate(){
+  px0v.textContent=px0.value; px1v.textContent=px1.value; ptv.textContent=(+pt.value).toFixed(2);
+}
+function pgRun(){
+  const t=+pt.value, eps=1e-8;
+  let xprev=[+px0.value,+px1.value];
+  let xk=projB([xprev[0]-t*2*xprev[0], xprev[1]-t*2*xprev[1]]);
+  const pts=[xprev,xk]; const fs=[xprev[0]**2+xprev[1]**2, xk[0]**2+xk[1]**2];
+  let it=0;
+  while(Math.hypot(xk[0]-xprev[0],xk[1]-xprev[1])>eps && it<500){
+    xprev=xk;
+    xk=projB([xprev[0]-t*2*xprev[0], xprev[1]-t*2*xprev[1]]);
+    pts.push(xk); fs.push(xk[0]**2+xk[1]**2); it++;
+  }
+  // feasible line x0 - x1 = 1
+  const line=[]; for(let a=-3;a<=3;a+=0.5)line.push({x:a,y:a-1});
+  const data={datasets:[
+    {label:'feasible line x₀−x₁=1',data:line,showLine:true,borderColor:'#334155',pointRadius:0,borderDash:[5,4]},
+    {label:'iterates',data:pts.map(p=>({x:p[0],y:p[1]})),showLine:true,borderColor:'#14B8A6',backgroundColor:'#14B8A6',pointRadius:4,borderWidth:2},
+    {label:'optimum (0.5,−0.5)',data:[{x:0.5,y:-0.5}],borderColor:'#F87171',backgroundColor:'#F87171',pointRadius:6}
+  ]};
+  const opt={responsive:true,scales:{
+      x:{min:-3,max:3,grid:{color:'#1e293b'},ticks:{color:'#94A3B8'},title:{display:true,text:'x₀',color:'#94A3B8'}},
+      y:{min:-3,max:3,grid:{color:'#1e293b'},ticks:{color:'#94A3B8'},title:{display:true,text:'x₁',color:'#94A3B8'}}},
+    plugins:{legend:{labels:{color:'#cbd5e1',font:{size:10}}}}};
+  if(pgChart)pgChart.destroy();
+  pgChart=new Chart(document.getElementById('pgChart'),{type:'scatter',data,options:opt});
+  const last=pts[pts.length-1];
+  pgOut.textContent=
+`converged after ${pts.length} iterates
+final x = (${last[0].toFixed(6)}, ${last[1].toFixed(6)})
+f(x*)  = ${(last[0]**2+last[1]**2).toFixed(6)}
+‖step‖ < ε = 1e-8
+
+f decreases each iterate:
+${fs.slice(0,6).map((v,i)=>'  k='+i+'  f='+v.toFixed(4)).join('\n')}${fs.length>6?'\n  ...':''}`;
+}
+
+// ---- rational curve fit (real HW01 data) ----
+const FX=[-0.966175231649752,-0.920529100440521,-0.871040946427231,-0.792416754493313,-0.731997794083466,-0.707678784846507,-0.594776425699584,-0.542182374657374,-0.477652051223985,-0.414002394497506,-0.326351540865686,-0.301458382421319,-0.143486910424499,-0.0878464728184052,-0.0350835941699658,0.0334396260398352,0.0795033683251447,0.202974351567305,0.237382785959596,0.288908922672592,0.419851917880386,0.441532730387388,0.499570508388721,0.577394288619662,0.629734626483965,0.690534081997171,0.868883439039411,0.911733893303862,0.940260537535768,0.962286449219438];
+const FY=[1.61070071922315,2.00134259950511,2.52365719332252,2.33863055618848,2.46787274461421,2.92596278963705,4.49457749339454,5.01302648557115,5.53887922607839,5.59614305167494,5.3790027966219,4.96873291187938,3.56249278950514,2.31744895283007,2.39921966442751,1.52592143155874,1.42166345066052,1.19058953217964,1.23598301133586,0.461229833080578,0.940922128674924,0.73146046340835,0.444386541739061,0.332335616103906,0.285195114684272,0.219953363135822,0.234575259776606,0.228396325882262,0.451944920264431,0.655793276158532];
+
+// least-squares solve via normal equations for fit_rational columns: [1, x, x^2, -x*y, -x^2*y] -> y
+function lstsq(){
+  const m=FX.length;
+  const cols=FX.map((x,i)=>[1, x, x*x, -x*FY[i], -x*x*FY[i]]);
+  // build AtA (5x5) and Atb
+  const n=5; const AtA=Array.from({length:n},()=>Array(n).fill(0)); const Atb=Array(n).fill(0);
+  for(let i=0;i<m;i++){for(let a=0;a<n;a++){Atb[a]+=cols[i][a]*FY[i];for(let b=0;b<n;b++)AtA[a][b]+=cols[i][a]*cols[i][b];}}
+  // gaussian elimination
+  const M=AtA.map((r,i)=>[...r,Atb[i]]);
+  for(let c=0;c<n;c++){
+    let p=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r;[M[c],M[p]]=[M[p],M[c]];
+    const piv=M[c][c];for(let j=c;j<=n;j++)M[c][j]/=piv;
+    for(let r=0;r<n;r++)if(r!==c){const f=M[r][c];for(let j=c;j<=n;j++)M[r][j]-=f*M[c][j];}
+  }
+  const s=M.map(r=>r[n]);
+  // coefficients = [s0,s1,s2, 1, s3, s4]
+  return [s[0],s[1],s[2],1,s[3],s[4]];
+}
+let fitChart;
+function runFit(){
+  const u=lstsq();
+  const f=(x)=>(u[0]+u[1]*x+u[2]*x*x)/(u[3]+u[4]*x+u[5]*x*x);
+  const lo=Math.min(...FX),hi=Math.max(...FX);
+  const curve=[];for(let i=0;i<=120;i++){const x=lo+(hi-lo)*i/120;curve.push({x,y:f(x)});}
+  const data={datasets:[
+    {label:'data (xᵢ,yᵢ)',data:FX.map((x,i)=>({x,y:FY[i]})),borderColor:'#F87171',backgroundColor:'#F87171',pointRadius:3,showLine:false},
+    {label:'fitted f(x)',data:curve,showLine:true,borderColor:'#14B8A6',pointRadius:0,borderWidth:2}
+  ]};
+  if(fitChart)fitChart.destroy();
+  fitChart=new Chart(document.getElementById('fitChart'),{type:'scatter',data,options:{responsive:true,
+    scales:{x:{grid:{color:'#1e293b'},ticks:{color:'#94A3B8'}},y:{grid:{color:'#1e293b'},ticks:{color:'#94A3B8'}}},
+    plugins:{legend:{labels:{color:'#cbd5e1',font:{size:10}}}}}});
+  fitOut.textContent=
+`fit_rational  (least squares, computed in-browser)
+coefficients u = [u0..u5]:
+  u0 = ${u[0].toFixed(4)}
+  u1 = ${u[1].toFixed(4)}
+  u2 = ${u[2].toFixed(4)}
+  u3 = ${u[3].toFixed(4)}  (fixed = 1, normalization)
+  u4 = ${u[4].toFixed(4)}
+  u5 = ${u[5].toFixed(4)}
+
+model: f(x) = (u0+u1·x+u2·x²)/(u3+u4·x+u5·x²)
+The repo also solves it as the smallest-eigenvector
+of AᵀA in fit_rational_normed().`;
+}
+// ---- unconstrained gradient descent on a contour plot (canvas) ----
+(function(){
+  const cv=document.getElementById('gdCanvas'), ctx=cv.getContext('2d');
+  const W=cv.width, H=cv.height;
+  // view window in (x0,x1) space
+  let view={xmin:-3,xmax:3,ymin:-2.5,ymax:2.5};
+  // functions: f, grad, Lipschitz L of grad (for stability annotation), min point
+  const FNS={
+    bowl:{
+      // f = 0.5*(a*x^2 + b*y^2), anisotropic quadratic; A=diag(a,b)
+      a:6, b:1,
+      f:(x,y)=>0.5*(6*x*x+1*y*y),
+      g:(x,y)=>[6*x, 1*y],
+      L:6, min:[0,0], view:{xmin:-3,xmax:3,ymin:-3,ymax:3}
+    },
+    rosen:{
+      f:(x,y)=>(1-x)*(1-x)+100*(y-x*x)*(y-x*x),
+      g:(x,y)=>[-2*(1-x)-400*x*(y-x*x), 200*(y-x*x)],
+      L:null, min:[1,1], view:{xmin:-2,xmax:2,ymin:-1,ymax:3}
+    }
+  };
+  let fn='bowl';
+  let start=[-2.2,2.0];
+  function cur(){return FNS[fn];}
+
+  function toPx(x,y){
+    const v=view;
+    return [ (x-v.xmin)/(v.xmax-v.xmin)*W, H-(y-v.ymin)/(v.ymax-v.ymin)*H ];
+  }
+  function fromPx(px,py){
+    const v=view;
+    return [ v.xmin+px/W*(v.xmax-v.xmin), v.ymin+(H-py)/H*(v.ymax-v.ymin) ];
+  }
+
+  // draw filled contour via per-pixel-ish coloring + contour lines
+  function drawContours(){
+    const F=cur(); const step=4;
+    // sample grid for color
+    let fmin=Infinity,fmax=-Infinity;
+    const NX=Math.ceil(W/step), NY=Math.ceil(H/step);
+    const grid=[];
+    for(let j=0;j<NY;j++){grid.push([]);for(let i=0;i<NX;i++){
+      const[x,y]=fromPx(i*step,j*step);
+      let val=F.f(x,y); val=Math.log(1+val); // log scale for dynamic range
+      grid[j].push(val);
+      if(val<fmin)fmin=val; if(val>fmax)fmax=val;
+    }}
+    for(let j=0;j<NY;j++)for(let i=0;i<NX;i++){
+      const v=(grid[j][i]-fmin)/(fmax-fmin||1);
+      // teal-to-dark colormap
+      const r=Math.round(11+v*30), g=Math.round(18+(1-v)*150), b=Math.round(32+(1-v)*110);
+      ctx.fillStyle=`rgb(${r},${g},${b})`;
+      ctx.fillRect(i*step,j*step,step,step);
+    }
+    // contour lines (iso-levels of v)
+    ctx.strokeStyle='rgba(226,232,240,0.12)'; ctx.lineWidth=1;
+    const levels=10;
+    for(let L=1;L<levels;L++){
+      const thr=L/levels;
+      ctx.beginPath();
+      for(let j=0;j<NY-1;j++)for(let i=0;i<NX-1;i++){
+        const a=(grid[j][i]-fmin)/(fmax-fmin||1);
+        const bb=(grid[j][i+1]-fmin)/(fmax-fmin||1);
+        const cc=(grid[j+1][i]-fmin)/(fmax-fmin||1);
+        if((a<thr)!==(bb<thr)){ctx.moveTo(i*step,j*step);ctx.lineTo((i+1)*step,j*step);}
+        if((a<thr)!==(cc<thr)){ctx.moveTo(i*step,j*step);ctx.lineTo(i*step,(j+1)*step);}
+      }
+      ctx.stroke();
+    }
+  }
+
+  // run GD, return iterate list (clamped to avoid Infinity blowups in drawing)
+  function iterate(t,n){
+    const F=cur(); const pts=[start.slice()];
+    let x=start[0], y=start[1];
+    for(let k=0;k<n;k++){
+      const[gx,gy]=F.g(x,y);
+      x=x-t*gx; y=y-t*gy;
+      if(!isFinite(x)||!isFinite(y)||Math.abs(x)>1e6||Math.abs(y)>1e6){pts.push([x,y]);break;}
+      pts.push([x,y]);
+    }
+    return pts;
+  }
+
+  let animTimer=null, animN=0;
+  function render(nShown){
+    const F=cur();
+    view=F.view;
+    drawContours();
+    // min marker
+    const mp=toPx(F.min[0],F.min[1]);
+    ctx.fillStyle='#14B8A6'; ctx.beginPath(); ctx.arc(mp[0],mp[1],5,0,7); ctx.fill();
+    ctx.strokeStyle='#04201c'; ctx.lineWidth=1.5; ctx.stroke();
+    const t=+document.getElementById('gdT').value;
+    const n=+document.getElementById('gdN').value;
+    const show=(nShown===undefined)?n:nShown;
+    const pts=iterate(t,n);
+    // path
+    ctx.lineWidth=1.8;
+    for(let k=0;k<Math.min(show,pts.length)-1;k++){
+      const a=toPx(pts[k][0],pts[k][1]);
+      let bx=pts[k+1][0], by=pts[k+1][1];
+      // clamp drawing of runaway points to canvas border so the line stays visible
+      const b=toPx(bx,by);
+      const grow=(Math.abs(bx-F.min[0])+Math.abs(by-F.min[1])) > (Math.abs(pts[k][0]-F.min[0])+Math.abs(pts[k][1]-F.min[1]));
+      ctx.strokeStyle= grow ? 'rgba(248,113,113,0.9)' : 'rgba(224,180,74,0.9)';
+      ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
+    }
+    // iterate dots
+    for(let k=0;k<Math.min(show,pts.length);k++){
+      const p=toPx(pts[k][0],pts[k][1]);
+      if(p[0]<-20||p[0]>W+20||p[1]<-20||p[1]>H+20) continue;
+      ctx.fillStyle= k===0?'#E2E8F0':'rgba(224,180,74,0.85)';
+      ctx.beginPath(); ctx.arc(p[0],p[1],k===0?5:2.6,0,7); ctx.fill();
+      if(k===0){ctx.strokeStyle='#0B1220';ctx.lineWidth=1.5;ctx.stroke();}
+    }
+    // readout
+    const last=pts[pts.length-1];
+    const fl=F.f(last[0],last[1]);
+    const diverged=!isFinite(fl)||Math.abs(last[0])>1e4||Math.abs(last[1])>1e4;
+    const stabLimit=F.L? (2/F.L) : null;
+    document.getElementById('gdTv').textContent=t.toFixed(3);
+    document.getElementById('gdNv').textContent=n;
+    document.getElementById('gdOut').textContent=
+`f(x,y) = ${fn==='bowl'?'½(6·x² + y²)':'(1−x)² + 100(y−x²)²'}
+update:  x_{k+1} = x_k − t·∇f(x_k)   (generic_grad)
+
+start    = (${start[0].toFixed(2)}, ${start[1].toFixed(2)})
+step t   = ${t.toFixed(3)}${stabLimit?'   stability limit 2/L = '+stabLimit.toFixed(3):''}
+iters    = ${n}
+
+x_${Math.min(show,pts.length)-1} = (${last[0].toFixed(4)}, ${last[1].toFixed(4)})
+f(x_k)   = ${isFinite(fl)?fl.toExponential(3):'∞'}
+status   : ${diverged?'DIVERGED — step too large (t exceeds 2/L)':'converging toward the minimum ✓'}`;
+  }
+
+  window.gdRun=function(){ if(animTimer){clearInterval(animTimer);animTimer=null;} render(); };
+  window.gdAnimate=function(){
+    if(animTimer){clearInterval(animTimer);animTimer=null;}
+    const n=+document.getElementById('gdN').value;
+    animN=0;
+    animTimer=setInterval(()=>{ animN++; render(animN); if(animN>=n){clearInterval(animTimer);animTimer=null;} },45);
+  };
+
+  document.getElementById('gdFn').onchange=function(){ fn=this.value; start=fn==='rosen'?[-1.4,2.0]:[-2.2,2.0]; render(); };
+
+  // drag start point
+  function setStart(e){
+    const rect=cv.getBoundingClientRect();
+    const px=((e.touches?e.touches[0].clientX:e.clientX)-rect.left)*(cv.width/rect.width);
+    const py=((e.touches?e.touches[0].clientY:e.clientY)-rect.top)*(cv.height/rect.height);
+    const[x,y]=fromPx(px,py);
+    start=[x,y]; gdRun();
+  }
+  let dragging=false;
+  cv.addEventListener('mousedown',e=>{dragging=true;setStart(e);});
+  window.addEventListener('mousemove',e=>{if(dragging)setStart(e);});
+  window.addEventListener('mouseup',()=>dragging=false);
+  cv.addEventListener('touchstart',e=>{dragging=true;setStart(e);e.preventDefault();},{passive:false});
+  cv.addEventListener('touchmove',e=>{if(dragging){setStart(e);e.preventDefault();}},{passive:false});
+  cv.addEventListener('touchend',()=>dragging=false);
+
+  render();
+})();
+
+// ---- COMPARE: GD(exact) vs GD(1/L) vs FISTA on a least-squares quadratic (HW05) ----
+(function(){
+  const cv=document.getElementById('cmpCanvas'), ctx=cv.getContext('2d');
+  const W=cv.width, H=cv.height;
+  // small 2-D least squares f(x)=||A x - b||^2, mirrors HW05's f/gf structure
+  const A=[[2.0,0.3],[0.3,0.6],[0.1,1.4]];   // 3x2
+  const b=[1.0,-0.5,0.8];
+  // AA = A^T A (2x2), Atb = A^T b
+  const AA=[[0,0],[0,0]]; const Atb=[0,0];
+  for(let i=0;i<3;i++)for(let r=0;r<2;r++){Atb[r]+=A[i][r]*b[i];for(let c=0;c<2;c++)AA[r][c]+=A[i][r]*A[i][c];}
+  const f=(x)=>{let s=0;for(let i=0;i<3;i++){const r=A[i][0]*x[0]+A[i][1]*x[1]-b[i];s+=r*r;}return s;};
+  const gf=(x)=>[2*(AA[0][0]*x[0]+AA[0][1]*x[1])-2*Atb[0], 2*(AA[1][0]*x[0]+AA[1][1]*x[1])-2*Atb[1]];
+  // L = 2 * largest eigenvalue of AA (Lipschitz const of grad), closed form for 2x2
+  const tr=AA[0][0]+AA[1][1], det=AA[0][0]*AA[1][1]-AA[0][1]*AA[1][0];
+  const lamMax=(tr+Math.sqrt(Math.max(tr*tr-4*det,0)))/2; const L=2*lamMax;
+  // exact_quad step from HW05.py:  ||g||^2 / (2||A g||)^2  (A here = full 3x2 design)
+  function exactQuad(g){
+    let ng2=g[0]*g[0]+g[1]*g[1], nAg2=0;
+    for(let i=0;i<3;i++){const v=A[i][0]*g[0]+A[i][1]*g[1]; nAg2+=v*v;}
+    return ng2/(4*nAg2);
+  }
+  // closed-form least-squares optimum (AA)^{-1} Atb
+  const idet=1/det; const xstar=[idet*(AA[1][1]*Atb[0]-AA[0][1]*Atb[1]), idet*(-AA[1][0]*Atb[0]+AA[0][0]*Atb[1])];
+  const fmin=f(xstar);
+
+  let start=[-1.4,1.9];
+  // view window
+  const view={xmin:-2,xmax:1.5,ymin:-1.5,ymax:2.3};
+  function toPx(x,y){return [(x-view.xmin)/(view.xmax-view.xmin)*W, H-(y-view.ymin)/(view.ymax-view.ymin)*H];}
+  function fromPx(px,py){return [view.xmin+px/W*(view.xmax-view.xmin), view.ymin+(H-py)/H*(view.ymax-view.ymin)];}
+
+  function drawContours(){
+    const stepc=4; const NX=Math.ceil(W/stepc), NY=Math.ceil(H/stepc);
+    let fmn=Infinity,fmx=-Infinity; const grid=[];
+    for(let j=0;j<NY;j++){grid.push([]);for(let i=0;i<NX;i++){
+      const[x,y]=fromPx(i*stepc,j*stepc); let v=Math.log(1+f([x,y])); grid[j].push(v);
+      if(v<fmn)fmn=v; if(v>fmx)fmx=v;}}
+    for(let j=0;j<NY;j++)for(let i=0;i<NX;i++){
+      const v=(grid[j][i]-fmn)/(fmx-fmn||1);
+      ctx.fillStyle=`rgb(${Math.round(11+v*30)},${Math.round(18+(1-v)*150)},${Math.round(32+(1-v)*110)})`;
+      ctx.fillRect(i*stepc,j*stepc,stepc,stepc);}
+    ctx.strokeStyle='rgba(226,232,240,0.12)'; ctx.lineWidth=1;
+    for(let Lv=1;Lv<10;Lv++){const thr=Lv/10; ctx.beginPath();
+      for(let j=0;j<NY-1;j++)for(let i=0;i<NX-1;i++){
+        const a=(grid[j][i]-fmn)/(fmx-fmn||1),bb=(grid[j][i+1]-fmn)/(fmx-fmn||1),cc=(grid[j+1][i]-fmn)/(fmx-fmn||1);
+        if((a<thr)!==(bb<thr)){ctx.moveTo(i*stepc,j*stepc);ctx.lineTo((i+1)*stepc,j*stepc);}
+        if((a<thr)!==(cc<thr)){ctx.moveTo(i*stepc,j*stepc);ctx.lineTo(i*stepc,(j+1)*stepc);}}
+      ctx.stroke();}
+  }
+  // build iterate lists for each method
+  function runExact(n){let x=start.slice();const P=[x.slice()],F=[f(x)];for(let k=0;k<n;k++){const g=gf(x);const t=exactQuad(g);x=[x[0]-t*g[0],x[1]-t*g[1]];P.push(x.slice());F.push(f(x));}return{P,F};}
+  function runFixed(n){let x=start.slice();const P=[x.slice()],F=[f(x)];for(let k=0;k<n;k++){const g=gf(x);x=[x[0]-g[0]/L,x[1]-g[1]/L];P.push(x.slice());F.push(f(x));}return{P,F};}
+  function runFista(n){let y=start.slice(),xprev=start.slice(),t=1;const P=[start.slice()],F=[f(start)];
+    for(let k=0;k<n;k++){const g=gf(y);const xnew=[y[0]-g[0]/L,y[1]-g[1]/L];
+      const tnew=(1+Math.sqrt(1+4*t*t))/2; y=[xnew[0]+((t-1)/tnew)*(xnew[0]-xprev[0]), xnew[1]+((t-1)/tnew)*(xnew[1]-xprev[1])];
+      xprev=xnew; t=tnew; P.push(xnew.slice()); F.push(f(xnew));}return{P,F};}
+
+  const METHODS=[
+    {id:'cmpExact',name:'exact line search (generic_grad)',color:'#14B8A6',run:runExact},
+    {id:'cmpFixed',name:'fixed step 1/L (generic_grad_b)',color:'#60A5FA',run:runFixed},
+    {id:'cmpFista',name:'FISTA / accelerated (AG)',color:'#E0B44A',run:runFista}
+  ];
+  let cmpChart;
+  function drawPaths(runs,show){
+    for(const r of runs){
+      ctx.strokeStyle=r.color; ctx.lineWidth=1.8; ctx.beginPath();
+      const lim=Math.min(show,r.P.length);
+      for(let k=0;k<lim;k++){const p=toPx(r.P[k][0],r.P[k][1]); if(k===0)ctx.moveTo(p[0],p[1]);else ctx.lineTo(p[0],p[1]);}
+      ctx.stroke();
+      for(let k=0;k<lim;k++){const p=toPx(r.P[k][0],r.P[k][1]); ctx.fillStyle=r.color; ctx.beginPath(); ctx.arc(p[0],p[1],2.4,0,7); ctx.fill();}
+    }
+    // optimum
+    const mp=toPx(xstar[0],xstar[1]); ctx.fillStyle='#F87171'; ctx.beginPath(); ctx.arc(mp[0],mp[1],5,0,7); ctx.fill();
+    // start
+    const sp=toPx(start[0],start[1]); ctx.fillStyle='#E2E8F0'; ctx.beginPath(); ctx.arc(sp[0],sp[1],5,0,7); ctx.fill();
+    ctx.strokeStyle='#0B1220'; ctx.lineWidth=1.5; ctx.stroke();
+  }
+  function render(show){
+    const n=+document.getElementById('cmpN').value;
+    document.getElementById('cmpNv').textContent=n;
+    const sh=(show===undefined)?n+1:show;
+    drawContours();
+    const active=METHODS.filter(m=>document.getElementById(m.id).checked);
+    const runs=active.map(m=>({color:m.color,name:m.name,...m.run(n)}));
+    drawPaths(runs,sh);
+    // convergence chart f(x_k)-fmin (semilogy like the repo)
+    const ds=runs.map(r=>({label:r.name,data:r.F.map((v,i)=>({x:i,y:Math.max(v-fmin,1e-16)})),
+      showLine:true,borderColor:r.color,backgroundColor:r.color,pointRadius:0,borderWidth:2}));
+    if(cmpChart)cmpChart.destroy();
+    cmpChart=new Chart(document.getElementById('cmpChart'),{type:'scatter',data:{datasets:ds},options:{
+      responsive:true,scales:{
+        x:{title:{display:true,text:'iteration k',color:'#94A3B8'},grid:{color:'#1e293b'},ticks:{color:'#94A3B8'}},
+        y:{type:'logarithmic',title:{display:true,text:'f(xₖ) − f*',color:'#94A3B8'},grid:{color:'#1e293b'},ticks:{color:'#94A3B8'}}},
+      plugins:{legend:{labels:{color:'#cbd5e1',font:{size:10}}}}}});
+    const lines=runs.map(r=>{const last=r.P[r.P.length-1]; return `  ${r.name.split(' (')[0].padEnd(22)}  f−f* = ${(r.F[r.F.length-1]-fmin).toExponential(2)}`;});
+    document.getElementById('cmpOut').textContent=
+`f(x) = ‖A·x − b‖²   (A is 3×2, the HW05 least-squares form)
+L = 2·λmax(AᵀA) = ${L.toFixed(4)}      step rules from HW05.py
+exact step  t = ‖g‖² / (2‖A·g‖)²   (exact_quad)
+start x₀ = (${start[0].toFixed(2)}, ${start[1].toFixed(2)})   iters = ${n}
+least-squares optimum x* = (${xstar[0].toFixed(4)}, ${xstar[1].toFixed(4)}),  f* = ${fmin.toFixed(6)}
+
+after ${n} iterations:
+${lines.join('\n')}`;
+  }
+  let aTimer=null;
+  window.cmpRun=function(){ if(aTimer){clearInterval(aTimer);aTimer=null;} render(); };
+  window.cmpAnimate=function(){ if(aTimer){clearInterval(aTimer);aTimer=null;}
+    const n=+document.getElementById('cmpN').value; let k=0;
+    aTimer=setInterval(()=>{k++; render(k); if(k>n){clearInterval(aTimer);aTimer=null;}},80); };
+  function setStart(e){const rect=cv.getBoundingClientRect();
+    const px=((e.touches?e.touches[0].clientX:e.clientX)-rect.left)*(cv.width/rect.width);
+    const py=((e.touches?e.touches[0].clientY:e.clientY)-rect.top)*(cv.height/rect.height);
+    start=fromPx(px,py); cmpRun();}
+  let drag=false;
+  cv.addEventListener('mousedown',e=>{drag=true;setStart(e);});
+  window.addEventListener('mousemove',e=>{if(drag)setStart(e);});
+  window.addEventListener('mouseup',()=>drag=false);
+  cv.addEventListener('touchstart',e=>{drag=true;setStart(e);e.preventDefault();},{passive:false});
+  cv.addEventListener('touchmove',e=>{if(drag){setStart(e);e.preventDefault();}},{passive:false});
+  cv.addEventListener('touchend',()=>drag=false);
+  window.__cmpRender=render;
+})();
+
+// ---- FACILITY LOCATION: HW08 Q2 weighted geometric median (seed-314 dataset) ----
+(function(){
+  // dataset reproduced from q2_c_wet.ipynb (np.random.seed(314)); first 10 are outliers
+  const AC=[[5750.621,3251.165],[4765.626,4580.392],[3795.143,4830.706],[5349.616,5602.167],[5754.003,3446.805],[5482.065,5592.187],[5183.854,4349.742],[3781.441,5180.547],[5735.29,3465.287],[3782.27,4251.202],[2299.128,427.138],[784.593,1017.847],[366.874,2108.403],[1158.017,231.179],[2520.244,211.368],[834.538,2945.9],[209.741,124.687],[1899.329,297.914],[1754.298,661.448],[1743.696,1980.066],[2031.616,2988.445],[2061.465,2909.334],[1316.782,2029.661],[962.78,2995.442],[1711.657,363.471],[1439.546,1308.728],[2583.223,501.883],[2504.414,1642.052],[317.298,2313.227],[181.224,1699.275],[1790.647,919.85],[2377.185,2933.385],[679.067,2666.069],[1605.602,709.997],[408.198,2056.757],[1116.733,247.253],[455.93,2604.49],[1289.466,1022.888],[2378.119,1894.698],[1220.87,1108.134],[533.55,2435.291],[2727.756,1156.844],[1635.993,1407.572],[301.49,638.42],[2156.162,637.342],[2935.288,936.943],[929.327,1618.999],[780.377,2478.73],[1988.699,1971.344],[419.16,1293.01]];
+  const PW=[18,11,15,17,10,17,13,12,14,15,12,16,13,16,11,17,19,16,15,19,16,12,13,10,20,18,18,19,12,15,19,12,19,19,16,10,18,18,17,15,20,15,13,13,19,18,14,17,17,15];
+  const OUT=10; const alpha=0.01, gamma=1.2;
+  const cv=document.getElementById('facCanvas'), ctx=cv.getContext('2d');
+  const W=cv.width, H=cv.height, PAD=24;
+  const xs=AC.map(a=>a[0]), ys=AC.map(a=>a[1]);
+  const xmin=Math.min(...xs), xmax=Math.max(...xs), ymin=Math.min(...ys), ymax=Math.max(...ys);
+  function toPx(x,y){return [PAD+(x-xmin)/(xmax-xmin)*(W-2*PAD), H-PAD-(y-ymin)/(ymax-ymin)*(H-2*PAD)];}
+  function fromPx(px,py){return [xmin+(px-PAD)/(W-2*PAD)*(xmax-xmin), ymin+(H-PAD-py)/(H-2*PAD)*(ymax-ymin)];}
+  // objective: gamma * sum p_i * alpha * ||A_i - x||
+  function cost(x){let s=0;for(let i=0;i<AC.length;i++){const dx=AC[i][0]-x[0],dy=AC[i][1]-x[1];s+=PW[i]*alpha*Math.hypot(dx,dy);}return gamma*s;}
+  // Weiszfeld step for weighted geometric median (weights p_i)
+  function weiszfeld(x){let nx=0,ny=0,den=0;
+    for(let i=0;i<AC.length;i++){const d=Math.max(Math.hypot(AC[i][0]-x[0],AC[i][1]-x[1]),1e-6);
+      const w=PW[i]/d; nx+=w*AC[i][0]; ny+=w*AC[i][1]; den+=w;}
+    return [nx/den, ny/den];}
+  let cur, iter, hist;
+  function reset(){ let sx=0,sy=0; for(const a of AC){sx+=a[0];sy+=a[1];} cur=[sx/AC.length, sy/AC.length]; iter=0; hist=[cur.slice()]; draw(); }
+  function draw(){
+    ctx.fillStyle='#0a0f1c'; ctx.fillRect(0,0,W,H);
+    // grid
+    ctx.strokeStyle='rgba(36,48,68,0.7)'; ctx.lineWidth=1;
+    for(let g=0;g<=4;g++){const gx=PAD+g/4*(W-2*PAD); ctx.beginPath();ctx.moveTo(gx,PAD);ctx.lineTo(gx,H-PAD);ctx.stroke();
+      const gy=PAD+g/4*(H-2*PAD); ctx.beginPath();ctx.moveTo(PAD,gy);ctx.lineTo(W-PAD,gy);ctx.stroke();}
+    const byW=document.getElementById('facWeight').checked;
+    for(let i=0;i<AC.length;i++){const p=toPx(AC[i][0],AC[i][1]);
+      const r=byW?2+(PW[i]-10)/10*4:3.2;
+      ctx.fillStyle = i<OUT ? 'rgba(248,113,113,0.85)' : 'rgba(96,165,250,0.8)';
+      ctx.beginPath(); ctx.arc(p[0],p[1],r,0,7); ctx.fill();}
+    // path of the storage site
+    ctx.strokeStyle='rgba(224,180,74,0.8)'; ctx.lineWidth=1.6; ctx.beginPath();
+    hist.forEach((h,k)=>{const p=toPx(h[0],h[1]); if(k===0)ctx.moveTo(p[0],p[1]);else ctx.lineTo(p[0],p[1]);}); ctx.stroke();
+    // current site
+    const c=toPx(cur[0],cur[1]); ctx.fillStyle='#14B8A6'; ctx.beginPath(); ctx.arc(c[0],c[1],6,0,7); ctx.fill();
+    ctx.strokeStyle='#04201c'; ctx.lineWidth=2; ctx.stroke();
+    document.getElementById('facOut').textContent=
+`objective:  γ·Σ pᵢ·α·‖Aᵢ − x‖   (α=${alpha}, γ=${gamma})
+50 shipment points, first ${OUT} are outliers (red)
+solver:     Weiszfeld iteration (weighted geometric median)
+
+iteration   = ${iter}
+storage x   = (${cur[0].toFixed(1)}, ${cur[1].toFixed(1)})
+total cost  = ${cost(cur).toFixed(2)}
+${iter>0?'Δ from prev = '+Math.hypot(cur[0]-hist[Math.max(hist.length-2,0)][0],cur[1]-hist[Math.max(hist.length-2,0)][1]).toExponential(2):'click Step or Solve to optimise'}`;
+  }
+  window.facStep=function(){ cur=weiszfeld(cur); iter++; hist.push(cur.slice()); draw(); };
+  window.facRun=function(){ for(let k=0;k<60;k++){const nx=weiszfeld(cur); if(Math.hypot(nx[0]-cur[0],nx[1]-cur[1])<1e-4){cur=nx;break;} cur=nx; iter++; hist.push(cur.slice());} draw(); };
+  window.facReset=reset; window.facDraw=draw;
+  function setStart(e){const rect=cv.getBoundingClientRect();
+    const px=((e.touches?e.touches[0].clientX:e.clientX)-rect.left)*(cv.width/rect.width);
+    const py=((e.touches?e.touches[0].clientY:e.clientY)-rect.top)*(cv.height/rect.height);
+    cur=fromPx(px,py); iter=0; hist=[cur.slice()]; draw();}
+  let drag=false;
+  cv.addEventListener('mousedown',e=>{drag=true;setStart(e);});
+  window.addEventListener('mousemove',e=>{if(drag)setStart(e);});
+  window.addEventListener('mouseup',()=>drag=false);
+  cv.addEventListener('touchstart',e=>{drag=true;setStart(e);e.preventDefault();},{passive:false});
+  cv.addEventListener('touchmove',e=>{if(drag){setStart(e);e.preventDefault();}},{passive:false});
+  cv.addEventListener('touchend',()=>drag=false);
+  reset();
+})();
+
+pgUpdate(); pgRun(); runFit(); cmpRun();
+</script>
+</body>
+</html>

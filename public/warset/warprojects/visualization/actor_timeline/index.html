@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Warset — Actor Timeline</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap');
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --bg: #0a0c10;
+  --panel: #111318;
+  --border: #1e2230;
+  --accent: #f5a623;
+  --text: #e8eaf0;
+  --muted: #6b7280;
+  --hover: #1a1f2e;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+}
+.topbar h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem;
+}
+.meta {
+  font-size: 0.7rem;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+input[type=search] {
+  background: var(--hover);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 0.78rem;
+  width: 220px;
+}
+
+.toggle-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-left: auto;
+  font-size: 0.78rem;
+}
+.toggle-row label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+}
+.toggle-row label.on {
+  border-color: rgba(245,166,35,0.4);
+  color: var(--accent);
+  background: rgba(245,166,35,0.07);
+}
+.toggle-row input { display: none; }
+
+.timeline-wrap {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+.sidebar {
+  width: 220px;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 14px;
+}
+.sidebar h2 {
+  font-size: 0.7rem;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.actor-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.76rem;
+  margin-bottom: 2px;
+}
+.actor-pill:hover { background: var(--hover); }
+.actor-pill .swatch { width: 12px; height: 12px; border-radius: 2px; flex-shrink: 0; }
+.actor-pill.dim { opacity: 0.3; }
+
+.chart {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+svg#chart {
+  display: block;
+  background: #06080c;
+}
+.tick text {
+  fill: var(--muted);
+  font-size: 11px;
+}
+.tick line { stroke: #1a1f28; }
+.axis path { stroke: #2a2f3a; }
+
+.actor-bar {
+  cursor: pointer;
+}
+.actor-bar rect.lifespan {
+  rx: 3;
+  fill-opacity: 0.18;
+  stroke-width: 1;
+}
+.actor-bar rect.epoch {
+  rx: 2;
+  fill-opacity: 0.85;
+}
+.actor-bar text.label {
+  fill: var(--text);
+  font-size: 11px;
+  dominant-baseline: middle;
+  pointer-events: none;
+}
+.actor-bar text.label.dim { fill: var(--muted); }
+.war-tick {
+  stroke: var(--accent);
+  stroke-width: 1.5px;
+  opacity: 0.7;
+}
+.war-tick:hover { opacity: 1; stroke-width: 2.5px; }
+
+.gridline {
+  stroke: #15181f;
+  stroke-width: 0.6;
+}
+.gridline.major {
+  stroke: #1f242e;
+  stroke-width: 1;
+}
+.gridline-label {
+  fill: #444a55;
+  font-size: 10px;
+}
+.zero-line {
+  stroke: rgba(245,166,35,0.4);
+  stroke-width: 1.4;
+  stroke-dasharray: 4,3;
+}
+
+#tooltip {
+  position: fixed;
+  background: rgba(10,12,16,0.97);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 0.76rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 50;
+  max-width: 280px;
+}
+#tooltip .name { font-weight: 600; margin-bottom: 4px; }
+#tooltip .sub { color: var(--muted); font-size: 0.7rem; }
+#tooltip .accent { color: var(--accent); }
+
+.empty-state {
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 60px 30px;
+  text-align: center;
+  line-height: 1.5;
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h1>Actor Timeline</h1>
+    <div class="meta" id="meta">loading…</div>
+  </div>
+  <input type="search" id="search" placeholder="Filter actors…">
+  <div class="toggle-row">
+    <label id="t-epochs" class="on"><input type="checkbox" checked> Territorial epochs</label>
+    <label id="t-wars"><input type="checkbox"> War markers</label>
+    <label id="t-sort"><input type="checkbox"> Sort by length</label>
+  </div>
+</div>
+
+<div class="timeline-wrap">
+  <aside class="sidebar">
+    <h2>Actors (<span id="actor-count">0</span>)</h2>
+    <div id="actor-list"></div>
+  </aside>
+  <div class="chart">
+    <svg id="chart"></svg>
+  </div>
+</div>
+
+<div id="tooltip"></div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="../territory.js?v=b0c9ae42"></script>
+<script src="../wars.js?v=278add4e"></script>
+
+<script>
+const ROW_H = 30;
+const PADDING = { top: 50, right: 30, bottom: 30, left: 200 };
+
+let visibleActors = [];
+let sortByLength = false;
+let showEpochs = true;
+let showWars = false;
+const tooltip = document.getElementById('tooltip');
+
+function fmtYear(y) {
+  if (y === 9999) return 'present';
+  if (y === null || y === undefined) return '?';
+  if (y < 0) return `${-y} BCE`;
+  if (y === 0) return '1 BCE';
+  return `${y} CE`;
+}
+
+/* ─── Build the data model ─── */
+
+function buildActorRows() {
+  const out = [];
+  const epochsByActor = {};
+  for (const ep of territoryData.epochs) {
+    if (!epochsByActor[ep.a]) epochsByActor[ep.a] = [];
+    epochsByActor[ep.a].push(ep);
+  }
+
+  for (const [aid, a] of Object.entries(territoryData.actors)) {
+    if (aid === 'unknown') continue;  // skip sentinel
+    const epochs = epochsByActor[aid] || [];
+    let start = a.start;
+    let end = a.end;
+    // Fallback to epoch range if actor has no lifespan recorded
+    if (start === null && epochs.length) start = Math.min(...epochs.map(e => e.s));
+    if (end === null && epochs.length) end = Math.max(...epochs.map(e => e.e));
+    if (start === null) continue;  // unrenderable
+
+    // Map wars from dataset.csv via fuzzy name match
+    const names = [a.name, ...(a.aliases || [])].map(s => s.toLowerCase()).filter(Boolean);
+    const wars = (typeof warsData !== 'undefined' ? warsData : [])
+      .filter(w => {
+        const blob = ((w.aggressors || '') + '|' + (w.defenders || '')).toLowerCase();
+        return names.some(n => n && blob.includes(n));
+      })
+      .map(w => ({ id: w.id, name: w.name, start: w.start, end: w.end }));
+
+    out.push({
+      id: aid,
+      name: a.name || aid,
+      type: a.type,
+      color: a.color,
+      start,
+      end: (end === 9999 || end === null) ? new Date().getFullYear() : end,
+      ongoing: end === 9999 || a.extant,
+      epochs,
+      wars,
+      length: ((end === 9999 || end === null) ? new Date().getFullYear() : end) - start,
+    });
+  }
+  return out;
+}
+
+const allActors = buildActorRows();
+
+/* ─── Filtering / sorting ─── */
+
+function refilter() {
+  const q = (document.getElementById('search').value || '').toLowerCase().trim();
+  visibleActors = allActors.filter(a => !q || a.name.toLowerCase().includes(q) || a.id.includes(q));
+  visibleActors.sort((a, b) => sortByLength ? b.length - a.length : a.start - b.start);
+  draw();
+  drawSidebar();
+}
+
+/* ─── Drawing ─── */
+
+let svg, xScale, chartW, chartH;
+
+function setupScale() {
+  if (!visibleActors.length) return;
+  const minY = Math.min(...visibleActors.map(a => a.start));
+  const maxY = Math.max(...visibleActors.map(a => a.end));
+  const pad = Math.max(50, Math.round((maxY - minY) * 0.02));
+  chartW = Math.max(1100, window.innerWidth - 260);
+  chartH = PADDING.top + PADDING.bottom + visibleActors.length * ROW_H;
+  xScale = d3.scaleLinear()
+    .domain([minY - pad, maxY + pad])
+    .range([PADDING.left, chartW - PADDING.right]);
+}
+
+function draw() {
+  if (!visibleActors.length) {
+    d3.select('#chart').html('').attr('width', 1100).attr('height', 300);
+    d3.select('#chart').append('foreignObject').attr('width', 1100).attr('height', 300)
+      .append('xhtml:div').attr('class', 'empty-state')
+      .html('No actors match the current filter, or <code>actors.csv</code> is empty.');
+    return;
+  }
+  setupScale();
+  svg = d3.select('#chart').html('').attr('width', chartW).attr('height', chartH);
+
+  drawGridlines();
+  drawAxis();
+  drawActors();
+}
+
+function drawGridlines() {
+  // major every 500 yrs, minor every 100 yrs
+  const [d0, d1] = xScale.domain();
+  const span = d1 - d0;
+  const major = span > 2000 ? 500 : span > 500 ? 100 : 50;
+  const minor = major / 5;
+  const start = Math.floor(d0 / minor) * minor;
+
+  for (let y = start; y <= d1; y += minor) {
+    const isMajor = y % major === 0;
+    svg.append('line')
+      .attr('class', 'gridline' + (isMajor ? ' major' : ''))
+      .attr('x1', xScale(y)).attr('x2', xScale(y))
+      .attr('y1', PADDING.top).attr('y2', chartH - PADDING.bottom);
+    if (isMajor) {
+      svg.append('text')
+        .attr('class', 'gridline-label')
+        .attr('x', xScale(y) + 3)
+        .attr('y', PADDING.top - 5)
+        .text(fmtYear(y));
+    }
+  }
+
+  // Zero line (BCE/CE boundary)
+  if (d0 < 0 && d1 > 0) {
+    svg.append('line').attr('class', 'zero-line')
+      .attr('x1', xScale(0)).attr('x2', xScale(0))
+      .attr('y1', PADDING.top - 12).attr('y2', chartH - PADDING.bottom);
+    svg.append('text')
+      .attr('class', 'gridline-label')
+      .attr('fill', 'var(--accent)')
+      .attr('x', xScale(0) + 3).attr('y', PADDING.top - 16)
+      .text('1 BCE / 1 CE');
+  }
+}
+
+function drawAxis() {
+  // Top axis labels are handled by gridline-label. No bottom axis needed.
+}
+
+function drawActors() {
+  const rows = svg.append('g').attr('class', 'rows');
+  visibleActors.forEach((a, i) => {
+    const y = PADDING.top + i * ROW_H + 4;
+    const g = rows.append('g').attr('class', 'actor-bar')
+      .attr('data-id', a.id)
+      .on('mouseover', (ev) => showActorTip(ev, a))
+      .on('mousemove', moveTooltip)
+      .on('mouseout', () => tooltip.style.opacity = 0);
+
+    // Row label
+    g.append('text').attr('class', 'label')
+      .attr('x', PADDING.left - 12).attr('y', y + ROW_H/2 - 4)
+      .attr('text-anchor', 'end')
+      .text(a.name.length > 28 ? a.name.slice(0, 26) + '…' : a.name);
+
+    // Lifespan bar
+    const x0 = xScale(a.start), x1 = xScale(a.end);
+    g.append('rect').attr('class', 'lifespan')
+      .attr('x', x0).attr('y', y)
+      .attr('width', Math.max(2, x1 - x0))
+      .attr('height', ROW_H - 8)
+      .attr('fill', a.color)
+      .attr('stroke', a.color);
+
+    // Epoch overlays
+    if (showEpochs) {
+      for (const ep of a.epochs) {
+        const ex0 = xScale(ep.s);
+        const ex1 = xScale(ep.e === 9999 ? new Date().getFullYear() : ep.e);
+        g.append('rect').attr('class', 'epoch')
+          .attr('x', ex0).attr('y', y + 4)
+          .attr('width', Math.max(2, ex1 - ex0))
+          .attr('height', ROW_H - 16)
+          .attr('fill', a.color)
+          .on('mouseover', (ev) => { ev.stopPropagation(); showEpochTip(ev, a, ep); })
+          .on('mouseout', () => tooltip.style.opacity = 0);
+      }
+    }
+
+    // War markers
+    if (showWars) {
+      for (const w of a.wars) {
+        if (typeof w.start !== 'number') continue;
+        g.append('line').attr('class', 'war-tick')
+          .attr('x1', xScale(w.start)).attr('x2', xScale(w.start))
+          .attr('y1', y - 3).attr('y2', y + ROW_H - 5)
+          .on('mouseover', (ev) => { ev.stopPropagation(); showWarTip(ev, w); })
+          .on('mouseout', () => tooltip.style.opacity = 0);
+      }
+    }
+  });
+}
+
+/* ─── Sidebar ─── */
+function drawSidebar() {
+  document.getElementById('actor-count').textContent = visibleActors.length;
+  document.getElementById('actor-list').innerHTML = visibleActors.map(a =>
+    `<div class="actor-pill" data-id="${a.id}">
+      <span class="swatch" style="background:${a.color}"></span>
+      <span>${a.name}</span>
+    </div>`).join('');
+  document.querySelectorAll('.actor-pill').forEach(el => {
+    el.addEventListener('mouseover', () => highlightActor(el.dataset.id));
+    el.addEventListener('mouseout', () => clearHighlight());
+  });
+}
+
+function highlightActor(id) {
+  d3.selectAll('.actor-bar').style('opacity', 0.25);
+  d3.selectAll(`.actor-bar[data-id="${id}"]`).style('opacity', 1);
+}
+function clearHighlight() {
+  d3.selectAll('.actor-bar').style('opacity', 1);
+}
+
+/* ─── Tooltips ─── */
+function showActorTip(ev, a) {
+  tooltip.innerHTML = `
+    <div class="name">${a.name}</div>
+    <div class="sub">${a.type || 'unknown type'}</div>
+    <div class="sub accent">${fmtYear(a.start)} – ${a.ongoing ? 'present' : fmtYear(a.end)}</div>
+    <div class="sub">${a.epochs.length} territorial epoch(s) · ${a.wars.length} matching war(s)</div>
+  `;
+  tooltip.style.opacity = 1;
+  moveTooltip(ev);
+}
+function showEpochTip(ev, a, ep) {
+  const terr = territoryData.territories[ep.t];
+  tooltip.innerHTML = `
+    <div class="name">${a.name} → ${terr ? terr.name : ep.t}</div>
+    <div class="sub accent">${fmtYear(ep.s)} – ${fmtYear(ep.e)}</div>
+    <div class="sub">${ep.ct} · ${ep.c} certainty</div>
+    ${ep.notes ? `<div class="sub" style="margin-top:4px;color:var(--text)">${ep.notes.slice(0, 140)}${ep.notes.length > 140 ? '…' : ''}</div>` : ''}
+  `;
+  tooltip.style.opacity = 1;
+  moveTooltip(ev);
+}
+function showWarTip(ev, w) {
+  tooltip.innerHTML = `
+    <div class="name">${w.name}</div>
+    <div class="sub accent">${fmtYear(w.start)}${w.end !== w.start ? ' – ' + fmtYear(w.end) : ''}</div>
+  `;
+  tooltip.style.opacity = 1;
+  moveTooltip(ev);
+}
+function moveTooltip(ev) {
+  tooltip.style.left = (ev.clientX + 14) + 'px';
+  tooltip.style.top  = (ev.clientY + 14) + 'px';
+}
+
+/* ─── Wire up ─── */
+document.getElementById('search').addEventListener('input', refilter);
+document.getElementById('t-epochs').addEventListener('click', function() {
+  showEpochs = !showEpochs;
+  this.classList.toggle('on', showEpochs);
+  draw();
+});
+document.getElementById('t-wars').addEventListener('click', function() {
+  showWars = !showWars;
+  this.classList.toggle('on', showWars);
+  draw();
+});
+document.getElementById('t-sort').addEventListener('click', function() {
+  sortByLength = !sortByLength;
+  this.classList.toggle('on', sortByLength);
+  refilter();
+});
+window.addEventListener('resize', draw);
+
+document.getElementById('meta').textContent =
+  `${allActors.length} actors · ${territoryData.meta.n_epochs} epochs · ${(typeof warsData !== 'undefined' ? warsData.length : 0)} wars cross-referenced`;
+
+refilter();
+</script>
+</body>
+</html>

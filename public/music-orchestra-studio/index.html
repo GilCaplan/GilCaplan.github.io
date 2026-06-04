@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Music Orchestra Studio — Explainer</title>
+<style>
+  :root{
+    --bg:#0B1220; --surface:#0F172A; --panel:#1E293B; --border:#243044;
+    --text:#E2E8F0; --muted:#94A3B8; --teal:#14B8A6; --blue:#60A5FA; --red:#F87171;
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);color:var(--text);
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    line-height:1.5;font-size:14px;
+  }
+  .wrap{max-width:1060px;margin:0 auto;padding:22px 18px 60px}
+  header h1{margin:0 0 4px;font-size:22px;letter-spacing:-.3px}
+  header .sub{color:var(--muted);font-size:13px;max-width:760px}
+  .pill{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 8px;border:1px solid var(--border);border-radius:20px;color:var(--muted);margin-right:6px;margin-top:8px}
+  .pill.teal{color:var(--teal);border-color:rgba(20,184,166,.4)}
+  .pill.blue{color:var(--blue);border-color:rgba(96,165,250,.4)}
+
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:20px 0 16px;border-bottom:1px solid var(--border)}
+  .tab{background:none;border:none;color:var(--muted);font-family:inherit;font-size:13px;padding:9px 14px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--teal);border-bottom-color:var(--teal)}
+
+  .view{display:none;animation:fade .25s ease}
+  .view.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px}
+  .panel h2{margin:0 0 10px;font-size:15px}
+  .panel h3{margin:18px 0 8px;font-size:13px;color:var(--blue)}
+  .grid{display:grid;gap:12px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:720px){.g2,.g3{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:13px}
+  .card .t{font-weight:600;font-size:13px;margin-bottom:3px}
+  .card .d{color:var(--muted);font-size:12.5px}
+  code,.mono{font-family:var(--mono)}
+  .codeblock{background:#0a0f1a;border:1px solid var(--border);border-radius:8px;padding:12px 13px;overflow:auto;font-family:var(--mono);font-size:12px;color:#cbd5e1;white-space:pre}
+  .muted{color:var(--muted)}
+  a{color:var(--blue)}
+  .tag{font-family:var(--mono);font-size:11px;color:var(--teal)}
+  .note{font-size:12px;color:var(--muted);font-style:italic}
+  .kbd{font-family:var(--mono);font-size:11px;background:#0a0f1a;border:1px solid var(--border);border-radius:4px;padding:1px 5px;color:var(--blue)}
+  ul.tight{margin:6px 0;padding-left:18px}
+  ul.tight li{margin:3px 0;color:var(--muted);font-size:12.5px}
+  ul.tight li b{color:var(--text);font-weight:600}
+  table{border-collapse:collapse;width:100%;font-size:12.5px}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--border)}
+  th{color:var(--blue);font-weight:600}
+  td.mono{font-family:var(--mono);color:#cbd5e1}
+
+  /* pipeline */
+  .flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap}
+  .stage{flex:1;min-width:130px;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px;cursor:pointer;transition:.15s;position:relative}
+  .stage:hover{border-color:var(--teal);transform:translateY(-2px)}
+  .stage.sel{border-color:var(--teal);box-shadow:0 0 0 1px var(--teal) inset}
+  .stage .n{font-family:var(--mono);font-size:10px;color:var(--teal)}
+  .stage .ti{font-weight:600;font-size:13px;margin:3px 0}
+  .stage .f{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+  .arrow{align-self:center;color:var(--muted);padding:0 4px;font-size:18px}
+  @media(max-width:720px){.arrow{display:none}.stage{min-width:100%}}
+  #stageDetail{margin-top:12px;background:#0a0f1a;border:1px solid var(--border);border-radius:8px;padding:13px;font-size:12.5px;color:var(--muted)}
+  #stageDetail b{color:var(--text)}
+
+  /* piano roll demo */
+  .rollwrap{background:#0a0f14;border:1px solid var(--border);border-radius:10px;padding:0;overflow:hidden}
+  #rollCanvas{display:block;width:100%;height:300px;cursor:crosshair}
+  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}
+  button.btn{background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 13px;font-family:inherit;font-size:12.5px;cursor:pointer;transition:.15s}
+  button.btn:hover{border-color:var(--teal);color:var(--teal)}
+  button.btn.primary{background:rgba(20,184,166,.12);border-color:var(--teal);color:var(--teal)}
+  button.btn.primary:hover{background:rgba(20,184,166,.2)}
+  button.btn.stop{background:rgba(248,113,113,.12);border-color:var(--red);color:var(--red)}
+  select.btn{appearance:none}
+  .legend{font-size:11.5px;color:var(--muted)}
+  .badge-live{display:inline-block;font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(20,184,166,.14);border:1px solid rgba(20,184,166,.5);color:var(--teal)}
+  .badge-ill{display:inline-block;font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.4);color:var(--blue)}
+  .demobar{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+  .demobar .lab{font-size:11.5px;color:var(--muted);align-self:center;margin-right:4px}
+  footer{margin-top:24px;color:var(--muted);font-size:11.5px;border-top:1px solid var(--border);padding-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🎹 Music Orchestra Studio</h1>
+    <div class="sub">AI-powered music composition &amp; synthesis studio. Compose with 9 instruments, edit notes in a canvas piano roll, arrange tracks on a timeline, and generate music with a local LLM (Ollama) or MusicGen. Pure algorithmic synthesis — no samples. Export to WAV.</div>
+    <div>
+      <span class="pill teal">Python 3.10+ · Flask</span>
+      <span class="pill blue">NumPy / SciPy synthesis</span>
+      <span class="pill">Canvas SPA</span>
+      <span class="pill">Ollama · MusicGen</span>
+    </div>
+  </header>
+
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-v="overview">Overview</button>
+    <button class="tab" data-v="flow">How it works</button>
+    <button class="tab" data-v="synth">Synthesis</button>
+    <button class="tab" data-v="roll">Piano Roll (live)</button>
+    <button class="tab" data-v="formats">Note formats</button>
+    <button class="tab" data-v="api">Code &amp; API</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <section class="view active" id="overview">
+    <div class="panel">
+      <h2>What it is</h2>
+      <p class="muted" style="margin-top:0">A self-hosted music studio that runs entirely locally — no internet needed for synthesis or Ollama composition. Every instrument sound is generated from scratch with NumPy (no audio samples or external files). A Flask server holds the session state; a vanilla-JS single-page app drives a canvas piano roll and arrangement timeline.</p>
+      <div class="grid g3" style="margin-top:12px">
+        <div class="card"><div class="t">9 instruments</div><div class="d">piano, violin, cello, flute, saxophone, trumpet, guitar, bass, drums — each with its own synthesis algorithm in <code>core/synthesizer.py</code>.</div></div>
+        <div class="card"><div class="t">Canvas piano roll</div><div class="d">Click to add notes, drag to move/resize, grid quantize (1/16…bar), per-note speed &amp; volume, local undo/redo, auto-save.</div></div>
+        <div class="card"><div class="t">Arrangement timeline</div><div class="d">Note-density heatmap per track, animated playhead (~60fps), zoom 0.25×–8×, drag to offset, right-click context menu.</div></div>
+        <div class="card"><div class="t">AI composition</div><div class="d">Ollama LLM turns a text style into structured tracks (melody/chords/bass/drums). MusicGen generates raw audio.</div></div>
+        <div class="card"><div class="t">Multi-format input</div><div class="d">Scientific (C4), MIDI (60), Hz (440.0), solfège (Do4), ABC (c), rests (R) — freely mixed in one line.</div></div>
+        <div class="card"><div class="t">Export &amp; playback</div><div class="d">WAV export for each track, the orchestra mix, and MusicGen output; in-browser playback, no plugin.</div></div>
+      </div>
+      <p class="note" style="margin-top:14px">All features above are described in the repo's <code>README.md</code>. This page is an interactive explainer; the full app is a Flask server you run locally with <code>python3 app.py</code> at <code>http://localhost:5000</code>. The <b>Piano Roll (live)</b> tab here ports all nine <code>synth_*()</code> functions to the Web Audio API so you can hear the real voices in your browser.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Repository structure</h2>
+      <div class="codeblock">music-orchestra-studio/
+├── app.py                  Flask web server + REST endpoints (~1590 lines)
+├── main.py                 CLI entry point
+├── core/
+│   ├── note_formats.py     NoteEvent / Track dataclasses; all format conversions
+│   ├── synthesizer.py      per-instrument waveform synthesis (NumPy)
+│   └── orchestra.py        multi-track render, mix, pan, reverb, WAV export
+├── instruments/            piano, violin, cello, flute, saxophone, trumpet,
+│   │                       guitar, bass, drums  (each: &lt;name&gt;.py + tunes.py)
+│   └── base_instrument.py
+├── synthesis/
+│   ├── tab_parser.py       guitar tab → NoteEvents
+│   ├── chord_parser.py     chord symbols → NoteEvents
+│   ├── midi_parser.py      MIDI files → Tracks
+│   ├── song_builder.py     auto-detect input type → tracks
+│   ├── ai_composer.py      Ollama LLM → structured tracks
+│   └── ai_music_gen.py     MusicGen → raw audio WAV
+├── interface/              cli.py (argparse) + ui.py (Rich terminal UI)
+└── web/
+    ├── templates/index.html
+    └── static/  app.js · piano_roll.js · timeline.js · style.css</div>
+    </div>
+  </section>
+
+  <!-- FLOW -->
+  <section class="view" id="flow">
+    <div class="panel">
+      <h2>Compose → synthesize → export</h2>
+      <p class="muted" style="margin-top:0">Click a stage to see what happens. This flow is grounded in <code>SYSTEM.md</code> and <code>core/orchestra.py</code>.</p>
+      <div class="flow" id="pipe">
+        <div class="stage sel" data-s="0"><div class="n">01 · input</div><div class="ti">Note input</div><div class="f">parse_note_sequence()</div></div>
+        <div class="arrow">→</div>
+        <div class="stage" data-s="1"><div class="n">02 · model</div><div class="ti">NoteEvent / Track</div><div class="f">note_formats.py</div></div>
+        <div class="arrow">→</div>
+        <div class="stage" data-s="2"><div class="n">03 · synth</div><div class="ti">Render note</div><div class="f">synthesizer.py</div></div>
+        <div class="arrow">→</div>
+        <div class="stage" data-s="3"><div class="n">04 · track</div><div class="ti">Render track</div><div class="f">orchestra.render_track</div></div>
+        <div class="arrow">→</div>
+        <div class="stage" data-s="4"><div class="n">05 · mix</div><div class="ti">Mix tracks</div><div class="f">orchestra.mix_tracks</div></div>
+        <div class="arrow">→</div>
+        <div class="stage" data-s="5"><div class="n">06 · out</div><div class="ti">WAV export</div><div class="f">GET /audio/&lt;file&gt;</div></div>
+      </div>
+      <div id="stageDetail"></div>
+    </div>
+
+    <div class="panel">
+      <h2>System architecture</h2>
+      <div class="codeblock">Browser (single-page app)
+      │  REST / JSON (HTTP)
+      ▼
+Flask server  (app.py)
+      ├── OrchestraEngine  (core/orchestra.py)
+      │        ├── Track / NoteEvent  (core/note_formats.py)
+      │        └── Instrument instances  (instruments/*)
+      │                 └── synthesizer.py  (waveform math, NumPy)
+      ├── Synthesis helpers  (synthesis/*)
+      │        ├── chord_parser · tab_parser · midi_parser · song_builder
+      │        ├── ai_composer.py   →  Ollama (local LLM)
+      │        └── ai_music_gen.py  →  MusicGen (HuggingFace)
+      └── Audio files (exports/, /tmp/)  →  served via GET /audio/&lt;filename&gt;</div>
+      <p class="note">Source: <code>SYSTEM.md</code> "High-Level Architecture". The Flask server is stateful — one <code>OrchestraEngine</code> per process holds <code>{track_id: Track}</code> in memory until restart.</p>
+    </div>
+
+    <div class="panel">
+      <h2>AI composition (Ollama)</h2>
+      <p class="muted" style="margin-top:0">In <code>synthesis/ai_composer.py</code>, a system prompt instructs a local LLM (<code>llama3.2</code>) to emit a JSON array of tracks. Real constraints from that prompt:</p>
+      <ul class="tight">
+        <li><b>instrument</b> ∈ piano · violin · cello · flute · saxophone · trumpet · guitar · bass · drums</li>
+        <li><b>role</b> ∈ chords · melody · bass · rhythm (only drums may use <code>rhythm</code>)</li>
+        <li><b>chords</b>: 6–8 chord symbols as an array · <b>melody/bass</b>: 8–12 note objects</li>
+        <li>Bass notes use octave 2–3 only; melody notes use octave 4–5</li>
+        <li><b>drums pattern</b> ∈ rock · jazz · waltz · march · bossa_nova · reggae · funk</li>
+        <li>Write 3–4 tracks; if the style has rhythm, always include drums <i>and</i> bass</li>
+      </ul>
+      <p class="note">The request is sent with <code>format: 'json'</code> to the Ollama chat API. Modes (from README): <i>add tracks</i>, <i>extend session</i>, <i>replace all</i>.</p>
+    </div>
+  </section>
+
+  <!-- SYNTH -->
+  <section class="view" id="synth">
+    <div class="panel">
+      <h2>Synthesis methods</h2>
+      <p class="muted" style="margin-top:0">Every instrument has a dedicated <code>synth_*</code> function in <code>core/synthesizer.py</code>. Each returns a float32 NumPy array in [−1, 1] at 44100 Hz. The table is verbatim from the repo; the live piano-roll tab ports each one to the Web Audio API.</p>
+      <table>
+        <thead><tr><th>Instrument</th><th>Algorithm (from synthesizer.py)</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">piano</td><td>Additive: 8 harmonics <code>[1, .5, .25, …]</code>, per-harmonic exponential decay <code>exp(−t·(1+h·0.25))</code>, fast attack + short release</td></tr>
+          <tr><td class="mono">violin</td><td>Phase-integrated vibrato (5.5 Hz, fades in after 120 ms), 10 harmonics <code>[1,.72,.52,…]</code>, high-pass bow noise, slow ADSR</td></tr>
+          <tr><td class="mono">cello</td><td>Darker bowed string: 9 harmonics (<code>1/k</code>, then <code>0.5/k</code> above the 4th), slower 4.5 Hz vibrato, long 120 ms attack</td></tr>
+          <tr><td class="mono">flute</td><td>Sine-dominant (<code>1 + .15·h2 + .05·h3</code>) + low-passed breath noise + delayed 4.8 Hz vibrato</td></tr>
+          <tr><td class="mono">saxophone</td><td>Rich harmonics <code>[1,.8,.6,…]</code> + reed-buzz transient <code>exp(−15t)</code>, ADSR with 0.85 sustain</td></tr>
+          <tr><td class="mono">trumpet</td><td>Bright 8 harmonics <code>[1,.9,.7,…]</code> + brassy attack buzz <code>exp(−25t)</code>, punchy 15 ms attack</td></tr>
+          <tr><td class="mono">guitar</td><td>Karplus-Strong plucked string: noise burst through a damped delay line (damping 0.996)</td></tr>
+          <tr><td class="mono">bass</td><td>Karplus-Strong with higher damping (0.998) → warmer, longer-sustaining tone</td></tr>
+          <tr><td class="mono">drums</td><td>GM-mapped: kick = pitch-swept sine (150→50 Hz), snare = noise + 200 Hz body, hi-hat = high-passed noise</td></tr>
+        </tbody>
+      </table>
+      <p class="note">Drums decode MIDI numbers as drum types (<code>36=kick, 38=snare, 42=hihat, 46=openhat, 49=crash, 45/47/50=toms</code>) — see <code>instruments/drums/drums.py</code>.</p>
+    </div>
+    <div class="panel">
+      <h2>Reference: <code>synth_piano()</code> &amp; <code>synth_violin()</code></h2>
+      <p class="muted" style="margin-top:0">The two voices below show the additive-decay vs. phase-integrated-vibrato approaches the WebAudio port mirrors. The browser uses oscillators + gain envelopes instead of NumPy arrays, but the harmonic amplitudes and decay/envelope shapes are the same.</p>
+      <div class="codeblock">PIANO_HARMONIC_AMPS = [1.0, 0.50, 0.25, 0.125, 0.063, 0.031, 0.016, 0.008]
+
+def synth_piano(freq, duration, velocity=0.8, sr=44100):
+    t = np.linspace(0, duration, int(duration*sr), endpoint=False)
+    wave = np.zeros_like(t)
+    for h, amp in enumerate(PIANO_HARMONIC_AMPS, start=1):
+        decay = np.exp(-t * (1.0 + h * 0.25))   # higher harmonics decay faster
+        wave += amp * np.sin(2*np.pi*freq*h*t) * decay
+    env = make_adsr(n, attack_s=0.005, decay_s=0.0, sustain=1.0,
+                    release_s=min(0.12, duration*0.2))
+    return _normalize(wave * env * velocity)
+
+def synth_violin(freq, duration, velocity=0.8, sr=44100):
+    vibrato_env = np.clip((t - 0.12) / 0.10, 0.0, 1.0)            # fades in after 120 ms
+    vibrato = 1.0 + 0.0028 * vibrato_env * np.sin(2*np.pi*5.5*t)
+    fund_phase = np.cumsum(2*np.pi*freq*vibrato / sr)             # locked harmonics
+    amps = [1.0, 0.72, 0.52, 0.35, 0.22, 0.14, 0.09, 0.05, 0.03, 0.02]
+    wave = sum(a * np.sin(k*fund_phase) for k, a in enumerate(amps, 1))
+    wave += highpass(np.random.standard_normal(n) * 0.018)       # bow noise
+    return _normalize(wave * make_adsr(...) * velocity)</div>
+      <p class="note">core/synthesizer.py, lines 61–151. In the live tab, vibrato is an <code>OscillatorNode</code> LFO on the carrier frequencies and bow/breath noise is a filtered <code>AudioBufferSourceNode</code>.</p>
+    </div>
+  </section>
+
+  <!-- PIANO ROLL LIVE -->
+  <section class="view" id="roll">
+    <div class="panel">
+      <h2>Piano roll <span class="badge-live">live WebAudio · all 9 instruments</span></h2>
+      <p class="muted" style="margin-top:0">A working, in-browser port of the studio. Pick any of the 9 instruments, <b>left-click the grid to add a note</b>, drag a note's right edge to lengthen it, drag its body to move it, or right-click to delete. Choose a tempo, hit <span class="kbd">▶ Play</span>, or load a demo melody. The audio is genuine additive/Karplus-Strong/noise synthesis matching <code>core/synthesizer.py</code> — not a recording or sample.</p>
+      <div class="controls">
+        <button class="btn primary" id="play">▶ Play</button>
+        <button class="btn stop" id="stop">■ Stop</button>
+        <button class="btn" id="clear">Clear</button>
+        <label class="legend">Instrument
+          <select class="btn" id="inst">
+            <option value="piano" selected>Piano</option>
+            <option value="violin">Violin</option>
+            <option value="cello">Cello</option>
+            <option value="flute">Flute</option>
+            <option value="saxophone">Saxophone</option>
+            <option value="trumpet">Trumpet</option>
+            <option value="guitar">Guitar</option>
+            <option value="bass">Bass</option>
+            <option value="drums">Drums</option>
+          </select>
+        </label>
+        <label class="legend">Tempo
+          <select class="btn" id="bpm">
+            <option value="72">72 BPM</option>
+            <option value="90">90 BPM</option>
+            <option value="120" selected>120 BPM</option>
+            <option value="160">160 BPM</option>
+          </select>
+        </label>
+        <label class="legend">Grid
+          <select class="btn" id="quant">
+            <option value="1">1/4 (beat)</option>
+            <option value="0.5" selected>1/8</option>
+            <option value="0.25">1/16</option>
+          </select>
+        </label>
+      </div>
+      <div class="demobar">
+        <span class="lab">Load demo:</span>
+        <button class="btn" data-demo="fur_elise">Für Elise</button>
+        <button class="btn" data-demo="ode_to_joy">Ode to Joy</button>
+        <button class="btn" data-demo="twinkle">Twinkle</button>
+        <button class="btn" data-demo="c_major_scale">C-major scale</button>
+        <button class="btn" data-demo="rock_beat">Rock beat (→ drums)</button>
+      </div>
+      <div class="controls" style="margin-top:0"><span class="legend" id="status">— pick an instrument and click the grid to draw notes</span></div>
+      <div class="rollwrap"><canvas id="rollCanvas"></canvas></div>
+      <p class="note">The grid geometry, C-row highlighting and beat ruler follow <code>web/static/piano_roll.js</code>. Demo melodies are the real preset tunes from <code>instruments/piano/tunes.py</code> (and a rock pattern from <code>instruments/drums/patterns.py</code>). When <b>Drums</b> is selected, rows are labelled by drum type (kick/snare/hihat/…) instead of pitch names, matching the GM mapping in <code>drums.py</code>.</p>
+    </div>
+  </section>
+
+  <!-- FORMATS -->
+  <section class="view" id="formats">
+    <div class="panel">
+      <h2>Multi-format note input</h2>
+      <p class="muted" style="margin-top:0">All formats below can be freely mixed in a single line. Auto-detected by <code>detect_format()</code> in <code>core/note_formats.py</code>.</p>
+      <table>
+        <thead><tr><th>Format</th><th>Examples</th><th>Detection rule</th></tr></thead>
+        <tbody>
+          <tr><td>Scientific pitch</td><td class="mono">C4 · D#5 · Eb3</td><td class="muted">letter + optional accidental + digit</td></tr>
+          <tr><td>MIDI number</td><td class="mono">60 · 72 · 45</td><td class="muted">pure integer 0–127</td></tr>
+          <tr><td>Frequency Hz</td><td class="mono">440.0 · 261.63</td><td class="muted">float with decimal point</td></tr>
+          <tr><td>Solfège</td><td class="mono">Do4 · Re4 · Sol</td><td class="muted">Do/Re/Mi/Fa/Sol/La/Si/Ti</td></tr>
+          <tr><td>ABC notation</td><td class="mono">C · d · e' · C,</td><td class="muted">single letter + octave markers</td></tr>
+          <tr><td>Rest</td><td class="mono">R · _ · z</td><td class="muted">special token</td></tr>
+        </tbody>
+      </table>
+      <h3>Duration &amp; speed overrides</h3>
+      <div class="codeblock">C4 E4 G4 C5:2        C5 held for 2 beats
+C4:1:2.0             C4, 1 beat, 2× speed (staccato)
+C4 D4 60 440.0 Do4 c R G4     mixed formats in one line</div>
+      <p class="note">A=440 reference: <code>midi_to_hz(midi) = 440 · 2^((midi−69)/12)</code>. velocity is a <b>speed</b> multiplier (1.0 = normal, 2.0 = twice as fast), distinct from per-note <b>volume</b> (loudness 0–1).</p>
+    </div>
+    <div class="panel">
+      <h2>Real preset tunes</h2>
+      <p class="muted" style="margin-top:0">Verbatim from <code>instruments/piano/tunes.py</code> — each tune is a list of <code>(note, duration_beats)</code> tuples. The repo ships 80+ presets across instruments (12 piano tunes shown abbreviated below; the live tab loads <code>FUR_ELISE</code>, <code>ODE_TO_JOY</code>, <code>TWINKLE_TWINKLE</code> and <code>C_MAJOR_SCALE</code> directly).</p>
+      <div class="codeblock">FUR_ELISE = [
+    ('E5',0.25),('D#5',0.25),('E5',0.25),('D#5',0.25),('E5',0.25),
+    ('B4',0.25),('D5',0.25),('C5',0.25),
+    ('A4',0.75),('R',0.25),('C4',0.25),('E4',0.25),('A4',0.25), ... ]
+
+ODE_TO_JOY = [
+    ('E4',1),('E4',1),('F4',1),('G4',1),('G4',1),('F4',1),('E4',1),('D4',1),
+    ('C4',1),('C4',1),('D4',1),('E4',1),('E4',1.5),('D4',0.5),('D4',2), ... ]
+
+PIANO_TUNES = { 'c_major_scale', 'chromatic_scale', 'fur_elise',
+    'moonlight_sonata', 'ode_to_joy', 'twinkle_twinkle', 'happy_birthday',
+    'autumn_leaves', 'the_entertainer', 'let_it_be', ... }</div>
+    </div>
+  </section>
+
+  <!-- API -->
+  <section class="view" id="api">
+    <div class="panel">
+      <h2>REST API (selected endpoints)</h2>
+      <p class="muted" style="margin-top:0">Verbatim from <code>README.md</code> / <code>SYSTEM.md</code>. All endpoints read/write the shared in-memory <code>OrchestraEngine</code>.</p>
+      <div class="codeblock">GET    /api/instruments                 all instruments and preset tunes
+GET    /api/tracks                      current track list and state
+POST   /api/tracks/add  { instrument }  add a new track
+DELETE /api/tracks/&lt;id&gt;                 remove a track
+
+GET    /api/track/&lt;id&gt;/notes            get notes for a track
+PUT    /api/track/&lt;id&gt;/notes  { notes } replace notes for a track
+POST   /api/track/&lt;id&gt;/duplicate        duplicate a track
+POST   /api/track/&lt;id&gt;/clear            clear all notes
+
+POST   /api/orchestra  { bpm }          render all active tracks → WAV
+POST   /api/settings   { track_id,... } volume/pan/reverb/bpm/transpose
+
+POST   /api/generate   { prompt,...}    Ollama LLM composition
+POST   /api/musicgen   { prompt,...}    MusicGen audio generation
+
+GET    /api/arrangement                 per-track note density (timeline)
+POST   /api/synth  { type,data,bpm }    synthesize from chords/tab/notes
+POST   /api/midi   { file }             import MIDI file
+GET    /audio/&lt;filename&gt;.wav            serve generated audio</div>
+    </div>
+    <div class="panel">
+      <h2>CLI</h2>
+      <div class="codeblock">python3 main.py list piano
+python3 main.py play piano fur_elise
+python3 main.py play violin canon_in_d --bpm 72
+python3 main.py notes piano "C4 E4 G4 C5:2"
+python3 main.py synth --chords "Am G C F" --bpm 100
+python3 main.py export piano fur_elise --output fur_elise.wav
+python3 main.py compose "slow jazz trio" --bars 8 --tempo slow
+python3 main.py musicgen "jazz piano with walking bass" --duration 15</div>
+      <p class="note">From <code>README.md</code> "Running the CLI". The interactive terminal UI (<code>interface/ui.py</code>) uses Rich + prompt_toolkit.</p>
+    </div>
+  </section>
+
+  <footer>
+    Faithful explainer of <b>GilCaplan/music-orchestra-studio</b>. Grounded in README.md, SYSTEM.md, core/synthesizer.py, core/note_formats.py, web/static/piano_roll.js, instruments/drums/drums.py, and instruments/piano/tunes.py. The live Piano Roll ports all nine <code>synth_*()</code> voices to the Web Audio API.
+  </footer>
+</div>
+
+<script>
+/* ---------- tabs ---------- */
+const tabs=document.getElementById('tabs');
+tabs.addEventListener('click',e=>{
+  const b=e.target.closest('.tab'); if(!b)return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  b.classList.add('active');
+  document.getElementById(b.dataset.v).classList.add('active');
+  if(b.dataset.v==='roll') setTimeout(fitRoll,30);
+});
+
+/* ---------- pipeline detail ---------- */
+const stageInfo=[
+  "<b>Note input.</b> Text like <code>C4 E4 G4 C5:2</code>, chord symbols (<code>Am G C F</code>), guitar tab, or a MIDI file. <code>parse_note_sequence()</code> tokenizes by whitespace, auto-detects each token's format, and assigns sequential <code>start_beat</code>s. <code>song_builder.py</code> auto-routes which parser to use.",
+  "<b>Data model.</b> Each token becomes a <code>NoteEvent(pitch_hz, duration_beats, velocity, start_beat, is_rest, raw_input, volume)</code>. Notes belong to a <code>Track(track_id, instrument_type, bpm, volume, pan, reverb, transpose_semitones, ...)</code>. Both are dataclasses in <code>core/note_formats.py</code>.",
+  "<b>Per-note synthesis.</b> <code>instrument.render_note()</code> calls the matching <code>synth_*()</code> in <code>synthesizer.py</code> (additive harmonics for piano, vibrato+bow-noise for violin/cello, Karplus-Strong for guitar/bass, GM drum synths for drums). Returns a mono float32 NumPy array at 44100 Hz.",
+  "<b>Render track.</b> For each note: transpose by <code>transpose_semitones</code> → scale duration by 1/velocity (speed) → synthesize chunk → multiply by per-note <code>volume</code> → accumulate into the output buffer. Then <code>apply_reverb()</code> (convolution) and peak-normalize to 0.95.",
+  "<b>Mix tracks.</b> Each mono track is panned to stereo (constant-power), scaled by its track fader, and summed into a stereo buffer. The full mix is peak-normalized to 0.92.",
+  "<b>WAV export.</b> The stereo float32 array is written as 16-bit PCM, 44100 Hz, stereo WAV into <code>exports/</code> and served by <code>GET /audio/&lt;filename&gt;</code> for in-browser playback or download."
+];
+const pipe=document.getElementById('pipe'), detail=document.getElementById('stageDetail');
+function showStage(i){
+  document.querySelectorAll('.stage').forEach(s=>s.classList.toggle('sel',+s.dataset.s===i));
+  detail.innerHTML=stageInfo[i];
+}
+pipe.addEventListener('click',e=>{const s=e.target.closest('.stage');if(s)showStage(+s.dataset.s);});
+showStage(0);
+
+/* =====================================================================
+   Live piano-roll editor + WebAudio engine.
+   Ports all nine core/synthesizer.py voices to the Web Audio API.
+   ===================================================================== */
+const canvas=document.getElementById('rollCanvas');
+const ctx=canvas.getContext('2d');
+const statusEl=document.getElementById('status');
+
+const MIN_MIDI=45, MAX_MIDI=84;   // A2..C6 (covers drum-row mapping 36..50 too via special drum view)
+const NOTE_H=14, BEAT_W=58, KEY_W=58;
+let totalBeats=8, quantize=0.5, bpm=120;
+let instrument='piano';
+let notes=[];            // {midi, start, dur}
+let drag=null;
+const NAMES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+const midiToHz=m=>440*Math.pow(2,(m-69)/12);
+const isBlack=m=>[1,3,6,8,10].includes(((m%12)+12)%12);
+const midiName=m=>NAMES[((m%12)+12)%12]+(Math.floor(m/12)-1);
+
+/* ---- drum mode: rows map to drum MIDI numbers, shown as named lanes ---- */
+const DRUM_LANES=[ // top -> bottom
+  {midi:49,label:'crash'},
+  {midi:46,label:'open hat'},
+  {midi:42,label:'hi-hat'},
+  {midi:50,label:'tom hi'},
+  {midi:47,label:'tom mid'},
+  {midi:45,label:'tom low'},
+  {midi:38,label:'snare'},
+  {midi:37,label:'rim'},
+  {midi:36,label:'kick'},
+];
+const DRUM_NAME={36:'kick',38:'snare',42:'hi-hat',46:'open hat',37:'rim',49:'crash',50:'tom hi',47:'tom mid',45:'tom low'};
+const isDrums=()=>instrument==='drums';
+const numRows=()=> isDrums()? DRUM_LANES.length : (MAX_MIDI-MIN_MIDI+1);
+const TOP=18;
+
+/* geometry — pitch mode vs drum mode share the same row-index machinery */
+function rowOfMidi(m){
+  if(isDrums()){ const i=DRUM_LANES.findIndex(d=>d.midi===m); return i<0?0:i; }
+  return MAX_MIDI-m;
+}
+function midiOfRow(r){
+  if(isDrums()){ return (DRUM_LANES[r]||DRUM_LANES[DRUM_LANES.length-1]).midi; }
+  return MAX_MIDI-r;
+}
+function rowY(r){return r*NOTE_H+TOP;}
+function yToRow(y){return Math.floor((y-TOP)/NOTE_H);}
+
+function fitRoll(){
+  const w=canvas.parentElement.clientWidth||760;
+  canvas.width=w; canvas.height=numRows()*NOTE_H+TOP;
+  render();
+}
+function beatToX(b){return KEY_W+b*BEAT_W;}
+function xToBeat(x){return (x-KEY_W)/BEAT_W;}
+function snap(b){return Math.max(0,Math.round(b/quantize)*quantize);}
+
+function noteAt(x,y){
+  const beat=xToBeat(x), row=yToRow(y), midi=midiOfRow(row);
+  for(let i=notes.length-1;i>=0;i--){
+    const n=notes[i];
+    if(rowOfMidi(n.midi)===row && beat>=n.start && beat<n.start+n.dur) return i;
+  }
+  return -1;
+}
+function resizeZone(x,i){ return beatToX(notes[i].start+notes[i].dur)-x<9; }
+
+function render(){
+  const W=canvas.width,H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#0a0f14';ctx.fillRect(0,0,W,H);
+  const rows=numRows();
+  // rows background
+  for(let r=0;r<rows;r++){
+    const y=rowY(r), m=midiOfRow(r);
+    if(isDrums()){
+      ctx.fillStyle=r%2?'#0d1320':'#101826';
+    }else{
+      ctx.fillStyle=isBlack(m)?'#0d1320':'#101826';
+    }
+    ctx.fillRect(KEY_W,y,W-KEY_W,NOTE_H);
+    if(!isDrums() && ((m%12)+12)%12===0){ctx.fillStyle='rgba(20,184,166,0.07)';ctx.fillRect(KEY_W,y,W-KEY_W,NOTE_H);}
+  }
+  // bar/beat lines
+  for(let b=0;b<=totalBeats;b++){
+    const x=beatToX(b); if(x>W)break;
+    const bar=b%4===0;
+    ctx.strokeStyle=bar?'#243044':'#172033';ctx.lineWidth=bar?1.4:.6;
+    ctx.beginPath();ctx.moveTo(x,16);ctx.lineTo(x,H);ctx.stroke();
+  }
+  if(quantize<1){
+    for(let b=0;b<totalBeats;b++)for(let q=quantize;q<1;q+=quantize){
+      const x=beatToX(b+q);if(x>W)continue;
+      ctx.strokeStyle='#121a28';ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(x,16);ctx.lineTo(x,H);ctx.stroke();
+    }
+  }
+  // ruler
+  ctx.fillStyle='#0c1322';ctx.fillRect(KEY_W,0,W-KEY_W,18);
+  for(let b=0;b<=totalBeats;b++){const x=beatToX(b);if(x>W)break;
+    if(b%4===0){ctx.fillStyle='#14B8A6';ctx.font='500 10px Inter,sans-serif';ctx.fillText(b,x+3,13);}
+    else{ctx.fillStyle='#243044';ctx.fillRect(x,14,1,4);}}
+  // notes
+  notes.forEach((n,i)=>{
+    const r=rowOfMidi(n.midi);
+    const x=Math.max(beatToX(n.start),KEY_W), y=rowY(r);
+    const w=Math.max(5,n.dur*BEAT_W-1), h=NOTE_H-3;
+    const g=ctx.createLinearGradient(x,y,x,y+h);
+    g.addColorStop(0,'rgba(20,184,166,0.95)');g.addColorStop(1,'rgba(13,148,136,0.85)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.roundRect(x,y+1,w,h,3);ctx.fill();
+    ctx.fillStyle='rgba(11,18,32,0.55)';ctx.beginPath();ctx.roundRect(x+w-4,y+2,4,h-2,2);ctx.fill();
+    const lbl=isDrums()?(DRUM_NAME[n.midi]||''):midiName(n.midi);
+    if(w>26){ctx.fillStyle='#04261f';ctx.font='600 9px Inter,sans-serif';ctx.fillText(lbl,x+4,y+h-1);}
+  });
+  // left gutter (keys / lane labels)
+  ctx.fillStyle='#0a0f16';ctx.fillRect(0,0,KEY_W,H);
+  if(isDrums()){
+    for(let r=0;r<rows;r++){const y=rowY(r);
+      ctx.fillStyle=r%2?'#16202e':'#1b2738';ctx.fillRect(0,y,KEY_W-1,NOTE_H-1);
+      ctx.fillStyle='#9fb4cc';ctx.font='500 9px Inter,sans-serif';ctx.fillText(DRUM_LANES[r].label,4,y+NOTE_H-3);}
+  }else{
+    for(let r=0;r<rows;r++){const y=rowY(r),m=midiOfRow(r);
+      if(!isBlack(m)){ctx.fillStyle=((m%12)+12)%12===0?'#1b2a3a':'#16202e';ctx.fillRect(0,y,KEY_W-1,NOTE_H-1);
+        if(((m%12)+12)%12===0){ctx.fillStyle='#14B8A6';ctx.font='500 9px Inter,sans-serif';ctx.fillText(midiName(m),4,y+NOTE_H-3);}}}
+    for(let r=0;r<rows;r++){const y=rowY(r),m=midiOfRow(r);
+      if(isBlack(m)){ctx.fillStyle='#070b12';ctx.fillRect(0,y,Math.floor(KEY_W*0.62),NOTE_H-1);}}
+  }
+  ctx.fillStyle='rgba(20,184,166,0.3)';ctx.fillRect(KEY_W-1,0,1,H);
+  // playhead
+  if(playheadBeat!=null){const x=beatToX(playheadBeat);
+    ctx.strokeStyle='#60A5FA';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,16);ctx.lineTo(x,H);ctx.stroke();}
+}
+
+/* interaction */
+function pos(e){const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
+canvas.addEventListener('mousedown',e=>{
+  if(e.button!==0)return;const{x,y}=pos(e);if(x<KEY_W||y<TOP)return;
+  const i=noteAt(x,y);
+  if(i>=0){ drag=resizeZone(x,i)?{type:'resize',idx:i}:{type:'move',idx:i,bx:x,by:y,ob:notes[i].start,or:rowOfMidi(notes[i].midi)}; }
+  else{
+    const row=yToRow(y); if(row<0||row>=numRows())return;
+    const midi=midiOfRow(row);
+    notes.push({midi,start:snap(xToBeat(x)),dur:quantize});
+    drag={type:'resize',idx:notes.length-1};
+    previewNote(midi);
+    statusEl.textContent=`${notes.length} note(s) · drag right edge to lengthen`;
+  }
+  render();
+});
+canvas.addEventListener('mousemove',e=>{
+  const{x,y}=pos(e);
+  if(!drag){canvas.style.cursor = x>=KEY_W && noteAt(x,y)>=0 && resizeZone(x,noteAt(x,y))?'ew-resize':'crosshair';return;}
+  const n=notes[drag.idx];
+  if(drag.type==='resize'){ n.dur=Math.max(quantize, snap(xToBeat(x))-n.start || quantize); }
+  else{ const db=(x-drag.bx)/BEAT_W, dr=Math.round((y-drag.by)/NOTE_H);
+        n.start=Math.max(0,snap(drag.ob+db));
+        const nr=Math.max(0,Math.min(numRows()-1,drag.or+dr));
+        n.midi=midiOfRow(nr); }
+  render();
+});
+window.addEventListener('mouseup',()=>{drag=null;});
+canvas.addEventListener('contextmenu',e=>{e.preventDefault();const{x,y}=pos(e);const i=noteAt(x,y);
+  if(i>=0){notes.splice(i,1);render();statusEl.textContent=`${notes.length} note(s)`;}});
+
+/* =====================================================================
+   WebAudio engine — one builder function per instrument.
+   Each schedules oscillators / noise buffers + gain envelopes at time t0.
+   ===================================================================== */
+let actx=null, playheadBeat=null, rafId=null, activeNodes=[];
+function ensureCtx(){ if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)(); return actx; }
+function track(node){ activeNodes.push(node); return node; }
+
+function adsrGain(ac,t0,dur,peak,a,d,sustain,r){
+  const g=ac.createGain();
+  const s=Math.max(0,dur-a-d-r);
+  g.gain.setValueAtTime(0.0001,t0);
+  g.gain.linearRampToValueAtTime(peak, t0+a);
+  g.gain.linearRampToValueAtTime(peak*sustain, t0+a+d);
+  g.gain.setValueAtTime(peak*sustain, t0+a+d+s);
+  g.gain.linearRampToValueAtTime(0.0001, t0+a+d+s+r);
+  return g;
+}
+
+/* shared noise buffer */
+let _noiseBuf=null;
+function noiseBuffer(ac){
+  if(_noiseBuf) return _noiseBuf;
+  const len=ac.sampleRate*2, b=ac.createBuffer(1,len,ac.sampleRate), d=b.getChannelData(0);
+  for(let i=0;i<len;i++) d[i]=Math.random()*2-1;
+  _noiseBuf=b; return b;
+}
+function noiseSource(ac,t0,dur){
+  const s=ac.createBufferSource(); s.buffer=noiseBuffer(ac);
+  s.loop=true; s.start(t0); s.stop(t0+dur+0.05); return s;
+}
+
+/* vibrato LFO applied to a list of oscillators (depth in cents-ish ratio) */
+function attachVibrato(ac,oscs,baseFreqs,t0,rateHz,depthRatio,delay){
+  const lfo=ac.createOscillator(); lfo.type='sine'; lfo.frequency.value=rateHz;
+  // depth ramps in after `delay` to mimic vibrato_env
+  oscs.forEach((osc,i)=>{
+    const g=ac.createGain();
+    g.gain.setValueAtTime(0.0001,t0);
+    g.gain.linearRampToValueAtTime(baseFreqs[i]*depthRatio, t0+delay+0.1);
+    lfo.connect(g); g.connect(osc.frequency);
+    track(g);
+  });
+  lfo.start(t0); lfo.stop(t0+8); track(lfo);
+}
+
+/* ---- additive harmonic voices (piano/violin/cello/flute/sax/trumpet) ---- */
+const VOICES={
+  piano:{
+    amps:[1.0,0.50,0.25,0.125,0.063,0.031,0.016,0.008],
+    perHarmDecay:true, attack:0.005, decay:0, sustain:1.0, releaseFrac:0.2, releaseMax:0.12,
+    gain:0.5
+  },
+  violin:{
+    amps:[1.0,0.72,0.52,0.35,0.22,0.14,0.09,0.05,0.03,0.02],
+    attack:0.13, attackFrac:0.18, decay:0, sustain:1.0, releaseMax:0.09, releaseFrac:0.15,
+    vib:{rate:5.5,depth:0.0028,delay:0.12}, noise:{amp:0.05,hp:1800}, gain:0.32
+  },
+  cello:{
+    amps:[1.0,0.5,0.333,0.25,0.1,0.083,0.071,0.0625,0.0556], // 1/k then 0.5/k above 4th
+    attack:0.12, decay:0, sustain:1.0, release:0.1,
+    vib:{rate:4.5,depth:0.003,delay:0.15}, gain:0.34
+  },
+  flute:{
+    amps:[1.0,0.15,0.05],
+    attack:0.08, decay:0, sustain:1.0, release:0.06,
+    vib:{rate:4.8,depth:0.003,delay:0.10}, noise:{amp:0.14,lp:2000}, gain:0.42
+  },
+  saxophone:{
+    amps:[1.0,0.8,0.6,0.5,0.4,0.3,0.2,0.15,0.1,0.08],
+    attack:0.03, decay:0.05, sustain:0.85, releaseMax:0.15, releaseFrac:0.15,
+    vib:{rate:5.5,depth:0.005,delay:0.10}, reed:{amp:0.18,decay:15}, gain:0.26
+  },
+  trumpet:{
+    amps:[1.0,0.9,0.7,0.6,0.5,0.4,0.3,0.2],
+    attack:0.015, decay:0.04, sustain:0.88, releaseMax:0.12, releaseFrac:0.12,
+    vib:{rate:6.0,depth:0.004,delay:0.15}, buzz:{amp:0.3,decay:25}, gain:0.24
+  },
+};
+
+function playAdditive(name,freq,t0,dur,vel){
+  const ac=ensureCtx(), V=VOICES[name];
+  const a=V.attackFrac?Math.min(V.attack, dur*V.attackFrac):V.attack;
+  const d=V.decay||0;
+  let r=V.release;
+  if(r==null) r=Math.min(V.releaseMax, dur*V.releaseFrac);
+  const sustain=V.sustain;
+  const master=track(ac.createGain());
+  master.connect(ac.destination);
+  const env=adsrGain(ac,t0,dur, V.gain*vel, a,d,sustain,r);
+  env.connect(master);
+  const oscs=[], bases=[];
+  V.amps.forEach((amp,idx)=>{
+    const h=idx+1;
+    const osc=ac.createOscillator(); osc.type='sine'; osc.frequency.value=freq*h;
+    const g=ac.createGain();
+    if(V.perHarmDecay){
+      // mirror exp(-t*(1+h*0.25)) on each harmonic's amplitude
+      const rate=1.0+h*0.25;
+      g.gain.setValueAtTime(amp,t0);
+      const steps=18;
+      for(let s=1;s<=steps;s++){const tt=dur*(s/steps);
+        g.gain.linearRampToValueAtTime(Math.max(0.0001,amp*Math.exp(-tt*rate)), t0+tt);}
+    }else{
+      g.gain.value=amp;
+    }
+    osc.connect(g); g.connect(env);
+    osc.start(t0); osc.stop(t0+dur+r+0.05);
+    track(osc); track(g);
+    oscs.push(osc); bases.push(freq*h);
+  });
+  if(V.vib) attachVibrato(ac,oscs,bases,t0,V.vib.rate,V.vib.depth,V.vib.delay);
+  // breath / bow noise
+  if(V.noise){
+    const ns=noiseSource(ac,t0,dur);
+    const filt=ac.createBiquadFilter();
+    if(V.noise.hp){filt.type='highpass';filt.frequency.value=V.noise.hp;}
+    else{filt.type='lowpass';filt.frequency.value=V.noise.lp;}
+    const ng=ac.createGain(); ng.gain.value=V.noise.amp*vel;
+    ns.connect(filt);filt.connect(ng);ng.connect(env);
+    track(ns);track(ng);
+  }
+  // reed buzz / brass buzz transient (decaying noise burst)
+  const buzz=V.reed||V.buzz;
+  if(buzz){
+    const ns=noiseSource(ac,t0,0.4);
+    const bg=ac.createGain();
+    bg.gain.setValueAtTime(buzz.amp*vel,t0);
+    bg.gain.setTargetAtTime(0.0001,t0,1/buzz.decay);
+    ns.connect(bg);bg.connect(env);
+    track(ns);track(bg);
+  }
+}
+
+/* ---- Karplus-Strong (guitar / bass) via short feedback delay + noise burst ---- */
+function playPluck(name,freq,t0,dur,vel){
+  const ac=ensureCtx();
+  const damping = name==='bass'?0.998:0.996;
+  const master=track(ac.createGain());
+  master.connect(ac.destination);
+  master.gain.value=(name==='bass'?0.5:0.42)*vel;
+  // excitation: short noise burst
+  const burst=ac.createBufferSource();
+  const blen=Math.max(1,Math.floor(ac.sampleRate/freq));
+  const bb=ac.createBuffer(1,blen,ac.sampleRate), bd=bb.getChannelData(0);
+  for(let i=0;i<blen;i++) bd[i]=(Math.random()*2-1);
+  burst.buffer=bb; burst.loop=false;
+  // feedback comb delay tuned to the pitch period = Karplus-Strong string
+  const delay=ac.createDelay(1.0); delay.delayTime.value=1/freq;
+  const fb=ac.createGain();
+  // damping 0.996/0.998 per sample -> per-loop feedback near unity; map to a high feedback gain
+  fb.gain.value=Math.pow(damping, ac.sampleRate/freq); // energy lost per round-trip
+  if(fb.gain.value>0.995) fb.gain.value=0.995;
+  // one-pole lowpass in the loop = string damping (averaging of adjacent samples)
+  const lp=ac.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=Math.min(8000,freq*8);
+  const env=ac.createGain();
+  env.gain.setValueAtTime(1,t0);
+  env.gain.setTargetAtTime(0.0001,t0+Math.max(0.05,dur*0.9),0.18); // pluck decay/release
+  burst.connect(delay); delay.connect(lp); lp.connect(fb); fb.connect(delay);
+  lp.connect(env); env.connect(master);
+  burst.start(t0); burst.stop(t0+0.05);
+  // stop the feedback loop cleanly by ramping master down
+  master.gain.setValueAtTime(master.gain.value,t0+dur+0.3);
+  master.gain.linearRampToValueAtTime(0.0001,t0+dur+0.6);
+  track(burst);track(delay);track(fb);track(lp);track(env);
+  // schedule disconnect
+  setTimeout(()=>{try{delay.disconnect();fb.disconnect();lp.disconnect();}catch(e){}},(t0-ac.currentTime+dur+0.7)*1000);
+}
+
+/* ---- drums (kick/snare/hihat/openhat/rim/crash/toms) ---- */
+function playDrum(midi,t0,vel){
+  const ac=ensureCtx();
+  const master=track(ac.createGain()); master.connect(ac.destination);
+  master.gain.value=0.9*vel;
+  if(midi===36){ // kick: 150->50 Hz sweep, exp(-8t) amp
+    const o=ac.createOscillator(); o.type='sine';
+    o.frequency.setValueAtTime(150,t0); o.frequency.exponentialRampToValueAtTime(50,t0+0.18);
+    const g=ac.createGain(); g.gain.setValueAtTime(1,t0); g.gain.setTargetAtTime(0.0001,t0,0.07);
+    o.connect(g);g.connect(master);o.start(t0);o.stop(t0+0.6);track(o);track(g);
+  }else if(midi===38){ // snare: noise + 200Hz body, exp(-18t)
+    const ns=noiseSource(ac,t0,0.25), ng=ac.createGain();
+    ng.gain.setValueAtTime(0.6,t0); ng.gain.setTargetAtTime(0.0001,t0,0.05);
+    const hp=ac.createBiquadFilter();hp.type='highpass';hp.frequency.value=900;
+    ns.connect(hp);hp.connect(ng);ng.connect(master);track(ns);track(ng);
+    const o=ac.createOscillator();o.type='triangle';o.frequency.value=200;
+    const og=ac.createGain();og.gain.setValueAtTime(0.4,t0);og.gain.setTargetAtTime(0.0001,t0,0.05);
+    o.connect(og);og.connect(master);o.start(t0);o.stop(t0+0.3);track(o);track(og);
+  }else if(midi===42||midi===46){ // hi-hat: high-passed noise, closed/open decay
+    const open=midi===46, dur=open?0.5:0.1;
+    const ns=noiseSource(ac,t0,dur), hp=ac.createBiquadFilter();
+    hp.type='highpass';hp.frequency.value=7000;
+    const g=ac.createGain();g.gain.setValueAtTime(0.7,t0);
+    g.gain.setTargetAtTime(0.0001,t0,open?0.18:0.03);
+    ns.connect(hp);hp.connect(g);g.connect(master);track(ns);track(g);
+  }else if(midi===49){ // crash: colored noise, long decay
+    const ns=noiseSource(ac,t0,1.2), hp=ac.createBiquadFilter();
+    hp.type='highpass';hp.frequency.value=5000;
+    const g=ac.createGain();g.gain.setValueAtTime(0.6,t0);g.gain.setTargetAtTime(0.0001,t0,0.4);
+    ns.connect(hp);hp.connect(g);g.connect(master);track(ns);track(g);
+  }else if(midi===37){ // rim: noise + 400Hz sine, fast decay
+    const o=ac.createOscillator();o.type='square';o.frequency.value=400;
+    const og=ac.createGain();og.gain.setValueAtTime(0.5,t0);og.gain.setTargetAtTime(0.0001,t0,0.02);
+    o.connect(og);og.connect(master);o.start(t0);o.stop(t0+0.2);track(o);track(og);
+    const ns=noiseSource(ac,t0,0.18),ng=ac.createGain();
+    ng.gain.setValueAtTime(0.4,t0);ng.gain.setTargetAtTime(0.0001,t0,0.02);
+    ns.connect(ng);ng.connect(master);track(ns);track(ng);
+  }else{ // toms 50/47/45: pitched sine + noise
+    const base={50:200,47:130,45:90}[midi]||130;
+    const o=ac.createOscillator();o.type='sine';
+    o.frequency.setValueAtTime(base*1.5,t0);o.frequency.exponentialRampToValueAtTime(base*0.6,t0+0.2);
+    const g=ac.createGain();g.gain.setValueAtTime(0.8,t0);g.gain.setTargetAtTime(0.0001,t0,0.12);
+    o.connect(g);g.connect(master);o.start(t0);o.stop(t0+0.5);track(o);track(g);
+  }
+}
+
+/* dispatch one note to the right voice */
+function playNoteAt(inst,midi,t0,dur,vel){
+  if(inst==='drums'){ playDrum(midi,t0,vel); return; }
+  if(inst==='guitar'||inst==='bass'){ playPluck(inst,midiToHz(midi),t0,dur,vel); return; }
+  playAdditive(inst,midiToHz(midi),t0,dur,vel);
+}
+
+function previewNote(midi){
+  const ac=ensureCtx(); if(ac.state==='suspended')ac.resume();
+  const dur=isDrums()?0.3:Math.max(0.25,quantize*60/bpm);
+  playNoteAt(instrument,midi,ac.currentTime+0.01,dur,0.85);
+}
+
+/* ---- transport ---- */
+function stopAll(){
+  cancelAnimationFrame(rafId); playheadBeat=null;
+  activeNodes.forEach(n=>{try{n.stop&&n.stop();}catch(e){} try{n.disconnect&&n.disconnect();}catch(e){}});
+  activeNodes=[]; render();
+}
+document.getElementById('play').addEventListener('click',()=>{
+  if(!notes.length){statusEl.textContent='draw some notes first ✎';return;}
+  const ac=ensureCtx(); if(ac.state==='suspended')ac.resume();
+  stopAll();
+  const spb=60/bpm;
+  const t0=ac.currentTime+0.08;
+  let maxEnd=0;
+  notes.forEach(n=>{
+    const start=t0+n.start*spb, dur=Math.max(0.05,n.dur*spb);
+    playNoteAt(instrument,n.midi,start,dur,0.85);
+    maxEnd=Math.max(maxEnd,n.start+n.dur);
+  });
+  statusEl.textContent='▶ playing… ('+instrument+')';
+  const begin=performance.now();
+  (function tick(){
+    const elapsed=(performance.now()-begin)/1000;
+    playheadBeat=elapsed/spb;
+    if(playheadBeat>maxEnd+0.5){playheadBeat=null;render();statusEl.textContent=`${notes.length} note(s) · done`;return;}
+    render(); rafId=requestAnimationFrame(tick);
+  })();
+});
+document.getElementById('stop').addEventListener('click',()=>{stopAll();statusEl.textContent='■ stopped';});
+document.getElementById('clear').addEventListener('click',()=>{stopAll();notes=[];render();statusEl.textContent='cleared — click to draw';});
+document.getElementById('bpm').addEventListener('change',e=>bpm=+e.target.value);
+document.getElementById('quant').addEventListener('change',e=>{quantize=+e.target.value;render();});
+document.getElementById('inst').addEventListener('change',e=>{
+  const wasDrums=isDrums(); instrument=e.target.value;
+  if(isDrums()!==wasDrums){ notes=[]; } // grid geometry changes, clear to avoid orphans
+  fitRoll();
+  statusEl.textContent= isDrums()
+    ? 'Drums selected — lanes map to kick/snare/hihat/… (GM mapping)'
+    : instrument+' selected — click the grid to draw notes';
+});
+
+/* ---- demos (real tunes from instruments tunes.py & drums patterns.py) ---- */
+function nameToMidi(s){const m=s.match(/^([A-G])(#|b)?(\d)$/);
+  let base={C:0,D:2,E:4,F:5,G:7,A:9,B:11}[m[1]];
+  if(m[2]==='#')base++; if(m[2]==='b')base--;
+  return 12*(+m[3]+1)+base;}
+
+const FUR_ELISE=[['E5',.25],['D#5',.25],['E5',.25],['D#5',.25],['E5',.25],
+  ['B4',.25],['D5',.25],['C5',.25],['A4',.75],['R',.25],
+  ['C4',.25],['E4',.25],['A4',.25],['B4',.75],['R',.25],
+  ['E4',.25],['G#4',.25],['B4',.25],['C5',.75],['R',.25],
+  ['E5',.25],['D#5',.25],['E5',.25],['D#5',.25],['E5',.25],
+  ['B4',.25],['D5',.25],['C5',.25],['A4',.75]];
+const ODE_TO_JOY=[['E4',1],['E4',1],['F4',1],['G4',1],['G4',1],['F4',1],['E4',1],['D4',1],
+  ['C4',1],['C4',1],['D4',1],['E4',1],['E4',1.5],['D4',.5],['D4',2]];
+const TWINKLE=[['C4',1],['C4',1],['G4',1],['G4',1],['A4',1],['A4',1],['G4',2],
+  ['F4',1],['F4',1],['E4',1],['E4',1],['D4',1],['D4',1],['C4',2]];
+const C_MAJOR=[['C4',.5],['D4',.5],['E4',.5],['F4',.5],['G4',.5],['A4',.5],['B4',.5],['C5',1],
+  ['B4',.5],['A4',.5],['G4',.5],['F4',.5],['E4',.5],['D4',.5],['C4',1]];
+
+/* rock beat = drum hit schedule, 2 bars (instruments/drums/patterns.py _ROCK) */
+const ROCK=[ // [drumMidi, beat, dur]
+  ...[0,4].flatMap(off=>[
+    [36,0+off,.5],[36,2+off,.5],[36,2.5+off,.5],[36,3.5+off,.5],
+    [38,1+off,1],[38,3+off,1],
+    [42,0+off,.5],[42,.5+off,.5],[42,1+off,.5],[42,1.5+off,.5],
+    [42,2+off,.5],[42,2.5+off,.5],[42,3+off,.5],[42,3.5+off,.5],
+  ])
+];
+
+function loadMelody(seq){
+  notes=[];let cur=0;let maxB=0;
+  seq.forEach(([nm,d])=>{ if(nm!=='R'){notes.push({midi:nameToMidi(nm),start:cur,dur:d});} cur+=d; maxB=cur; });
+  totalBeats=Math.max(8,Math.ceil(maxB));
+}
+document.querySelectorAll('[data-demo]').forEach(b=>b.addEventListener('click',()=>{
+  stopAll();
+  const which=b.dataset.demo;
+  if(which==='rock_beat'){
+    instrument='drums'; document.getElementById('inst').value='drums';
+    notes=ROCK.map(([m,s,d])=>({midi:m,start:s,dur:d}));
+    totalBeats=8; quantize=0.5; document.getElementById('quant').value='0.5';
+    fitRoll();
+    statusEl.textContent='Rock beat loaded (drums) — press ▶ Play';
+    return;
+  }
+  // melodic demos: switch back to a pitched instrument if currently drums
+  if(isDrums()){ instrument='piano'; document.getElementById('inst').value='piano'; }
+  const map={fur_elise:FUR_ELISE,ode_to_joy:ODE_TO_JOY,twinkle:TWINKLE,c_major_scale:C_MAJOR};
+  loadMelody(map[which]);
+  quantize = which==='fur_elise'?0.25:0.5;
+  document.getElementById('quant').value=String(quantize);
+  fitRoll();
+  const label={fur_elise:'Für Elise',ode_to_joy:'Ode to Joy',twinkle:'Twinkle Twinkle',c_major_scale:'C-major scale'}[which];
+  statusEl.textContent=label+' loaded ('+instrument+') — press ▶ Play';
+}));
+
+window.addEventListener('resize',()=>{ if(document.getElementById('rollCanvas').offsetParent) fitRoll(); });
+fitRoll();
+</script>
+</body>
+</html>

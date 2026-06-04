@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Traffic Crisis Analysis Dashboard — Tableau</title>
+<style>
+  :root{
+    --bg:#0B1220; --surface:#0F172A; --panel:#1E293B; --border:#243044;
+    --text:#E2E8F0; --muted:#94A3B8; --teal:#14B8A6; --blue:#60A5FA; --red:#F87171; --amber:#FBBF24;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    line-height:1.55;font-size:15px;}
+  .wrap{max-width:1120px;margin:0 auto;padding:24px 20px 64px;}
+  .mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;}
+  h1{font-size:25px;margin:0 0 6px;}
+  h2{font-size:18px;margin:26px 0 10px;}
+  h3{font-size:15px;margin:16px 0 6px;color:var(--teal);}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 8px;}
+  .badge{display:inline-block;font-size:11px;padding:2px 9px;border-radius:999px;
+    border:1px solid var(--border);color:var(--muted);background:var(--surface);
+    margin:0 6px 6px 0;font-family:"JetBrains Mono",ui-monospace,monospace;}
+  .badge.teal{border-color:var(--teal);color:var(--teal);}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 16px;border-bottom:1px solid var(--border);padding-bottom:10px;}
+  .tab{padding:7px 14px;border-radius:9px;border:1px solid var(--border);background:var(--surface);
+    color:var(--muted);cursor:pointer;font-size:13px;transition:.15s;}
+  .tab:hover{color:var(--text);border-color:var(--teal);}
+  .tab.active{background:var(--panel);color:var(--teal);border-color:var(--teal);}
+  .view{display:none;animation:fade .25s ease;}
+  .view.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:14px 0;}
+  .panel.surface{background:var(--surface);}
+  .muted{color:var(--muted);} .teal{color:var(--teal);} .blue{color:var(--blue);} .red{color:var(--red);} .amber{color:var(--amber);}
+  a{color:var(--blue);}
+  .cols{display:flex;gap:14px;flex-wrap:wrap;}
+  .cols>.panel{flex:1 1 280px;margin:0;}
+  .note{font-size:13px;color:var(--muted);border-left:2px solid var(--teal);padding-left:12px;margin:12px 0;}
+  ul{margin:8px 0;padding-left:20px;} li{margin:5px 0;}
+  .kvs{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;}
+  .kv{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12.5px;}
+  .kv b{color:var(--teal);font-family:"JetBrains Mono",monospace;}
+  /* embed */
+  .embedbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px;}
+  .vizbox{position:relative;width:100%;background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;
+    min-height:680px;}
+  .vizbox iframe{display:block;width:100%;height:760px;border:0;}
+  .fallback{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:30px;background:var(--surface);color:var(--text);}
+  .fallback img{max-width:90%;border-radius:10px;border:1px solid var(--border);margin:14px 0;}
+  .btn{display:inline-block;background:var(--teal);color:#04201c;font-weight:600;border-radius:9px;
+    padding:9px 16px;font-size:13px;text-decoration:none;border:1px solid var(--teal);}
+  .btn.ghost{background:transparent;color:var(--teal);}
+  /* gallery */
+  .gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px;}
+  .shot{background:var(--surface);border:1px solid var(--border);border-radius:11px;overflow:hidden;}
+  .shot img{width:100%;display:block;cursor:zoom-in;background:#fff;}
+  .shot .cap{padding:9px 12px;font-size:12.5px;color:var(--muted);}
+  .shot .cap b{color:var(--text);font-weight:600;}
+  /* lightbox */
+  .lb{position:fixed;inset:0;background:rgba(2,6,14,.92);display:none;align-items:center;justify-content:center;z-index:50;padding:24px;cursor:zoom-out;}
+  .lb.open{display:flex;} .lb img{max-width:100%;max-height:100%;border-radius:10px;border:1px solid var(--border);}
+  /* info pills */
+  .info{display:inline-flex;align-items:center;gap:5px;background:var(--surface);border:1px solid var(--border);
+    border-radius:999px;padding:3px 10px;font-size:11.5px;color:var(--muted);margin:3px 4px 3px 0;cursor:help;}
+  .info b{color:var(--teal);}
+  .grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;}
+  .card h4{margin:0 0 6px;font-size:13.5px;color:var(--teal);}
+  .card p{margin:0;font-size:12.8px;color:var(--muted);}
+  .find{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--border);
+    border-radius:10px;padding:13px 15px;margin:10px 0;}
+  .find .dot{flex:0 0 auto;width:10px;height:10px;border-radius:50%;margin-top:6px;}
+  footer{margin-top:30px;padding-top:16px;border-top:1px solid var(--border);color:var(--muted);font-size:12.5px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="badge teal">Tableau Public</span>
+  <span class="badge">Team project · Team 5</span>
+  <span class="badge">Data Visualization</span>
+  <h1>Traffic Crisis Analysis Dashboard</h1>
+  <p class="sub">An interactive Tableau dashboard analyzing the impact of the <b>October 7, 2023</b> events on
+  internet traffic, device usage, and network-layer (L3) cyberattack activity directed at Israel —
+  built for the general public, using familiar charts and plain-language labels.</p>
+  <div>
+    <span class="badge">Tableau</span><span class="badge">Cloudflare Radar</span>
+    <span class="badge">Python</span><span class="badge">Data Viz</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-v="dashboard">Live dashboard</div>
+    <div class="tab" data-v="overview">Overview</div>
+    <div class="tab" data-v="data">Data &amp; prep</div>
+    <div class="tab" data-v="viz">Core visualizations</div>
+    <div class="tab" data-v="design">Design strategies</div>
+    <div class="tab" data-v="findings">Key findings</div>
+    <div class="tab" data-v="gallery">Gallery</div>
+  </div>
+
+  <!-- ================= LIVE DASHBOARD ================= -->
+  <div class="view active" id="dashboard">
+    <div class="embedbar">
+      <p class="sub" style="margin:0">Interactive embed of the Tableau Public viz — filter, pan the maps, and
+      drag the time sliders right here. (If your browser blocks the embed, a preview &amp; direct link appear.)</p>
+      <a class="btn" href="https://public.tableau.com/app/profile/gil.caplan/viz/Team5Presentation09_07_17522180851300/TrafficCrisisAnalysisDashboard" target="_blank" rel="noopener">Open full dashboard on Tableau Public ↗</a>
+    </div>
+    <div class="vizbox" id="vizbox">
+      <!-- Graceful fallback shown until/unless the iframe loads -->
+      <div class="fallback" id="fallback">
+        <p class="muted" style="max-width:560px;margin:0 0 6px">Loading the interactive Tableau dashboard…
+          If it doesn't appear, your browser or this frame may be blocking embedded content.</p>
+        <img src="img/shot1.png" alt="Traffic Crisis dashboard preview">
+        <a class="btn" href="https://public.tableau.com/app/profile/gil.caplan/viz/Team5Presentation09_07_17522180851300/TrafficCrisisAnalysisDashboard" target="_blank" rel="noopener">Open the full dashboard on Tableau Public ↗</a>
+      </div>
+      <iframe id="tabframe"
+        title="Traffic Crisis Analysis Dashboard (Tableau Public)"
+        src="https://public.tableau.com/views/Team5Presentation09_07_17522180851300/TrafficCrisisAnalysisDashboard?:embed=y&:showVizHome=no&:toolbar=yes&:display_count=no&:tabs=yes"
+        loading="lazy"
+        allowfullscreen></iframe>
+    </div>
+    <div class="note">The dashboard is multi-view: use the tab strip at the top of the embed to move between
+      <b>Traffic &amp; Crisis Analysis</b>, the <b>L3 Attacks</b> choropleth, the <b>L3/7 Attacks &amp; Industries</b>
+      heatmap, the <b>Oct 7 Traffic</b> area chart and more. The on-canvas
+      <span class="info"><b>ⓘ</b> info-buttons</span> explain terms like “L3 attack” in plain language.</div>
+  </div>
+
+  <!-- ================= OVERVIEW ================= -->
+  <div class="view" id="overview">
+    <div class="panel">
+      <h2 style="margin-top:4px">Overview &amp; objectives</h2>
+      <p>This project analyzes how the events of <b>October 7, 2023</b> affected three things in and around Israel:
+      <b class="teal">internet traffic</b>, <b class="teal">device usage</b> (desktop vs. mobile), and
+      <b class="teal">cyberattack activity</b> — specifically network-layer (L3) attacks. The goal is to make a
+      complex, sensitive subject legible to a <b>general-public audience</b>.</p>
+      <p>Every design decision serves that audience: we use only <b>familiar chart types</b> (lines, areas, bars,
+      choropleth maps), <b>plain-language labels</b>, and small <span class="info"><b>ⓘ</b> info-buttons</span>
+      that explain technical terms in context — for example, what an <b>“L3 attack”</b> is — so a non-technical
+      reader can follow the story without a glossary.</p>
+      <div class="grid4">
+        <div class="card"><h4>Audience</h4><p>General public — no networking or security background assumed.</p></div>
+        <div class="card"><h4>Three lenses</h4><p>Traffic · device usage · L3 cyberattacks, all tied to Oct 7 2023.</p></div>
+        <div class="card"><h4>Geographic focus</h4><p>Israel, contextualized against world-wide baselines.</p></div>
+        <div class="card"><h4>Time span</h4><p>Oct 7 2023 crisis window, plus L3 trends across 2023–2025.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= DATA & PREP ================= -->
+  <div class="view" id="data">
+    <div class="panel">
+      <h2 style="margin-top:4px">Data sourcing &amp; preparation</h2>
+      <p>All data comes from <b class="teal">Cloudflare Radar</b>, exported as <span class="mono">JSON</span> and
+      <span class="mono">CSV</span>. Cloudflare’s public API restricts raw byte-volume figures, so the dashboard
+      relies <b>only on relative / normalized measures</b> — percentages and indexed values rather than absolute
+      traffic in bytes.</p>
+      <h3>Pipeline</h3>
+      <ul>
+        <li><b>Source:</b> Cloudflare Radar exports (traffic, device split, and L3 attack feeds).</li>
+        <li><b>Restriction handled:</b> raw byte volumes were unavailable, so we use normalized %/indexed measures
+          throughout — which also makes Israel-vs-World comparisons fair.</li>
+        <li><b>Cleaning &amp; reshaping in Python:</b> we cleaned the exports and reshaped them from
+          <b>wide → long</b> form so each metric/time/region became a tidy row, ready for Tableau.</li>
+      </ul>
+      <div class="note">Because only relative measures were available, the design deliberately frames every chart
+      around <b>change and proportion</b> (spikes, shares, %) rather than absolute magnitude.</div>
+    </div>
+  </div>
+
+  <!-- ================= CORE VIZ ================= -->
+  <div class="view" id="viz">
+    <div class="panel" style="margin-top:4px">
+      <h2 style="margin:0 0 4px">Core visualizations</h2>
+      <p class="sub" style="margin:0">Three coordinated dashboards, each answering one question.</p>
+    </div>
+    <div class="cols">
+      <div class="panel surface">
+        <h3>① Traffic Volume &amp; Device Usage</h3>
+        <ul>
+          <li><b>Area chart</b> of Oct 7 traffic over the 48-hour crisis window.</li>
+          <li><b>Desktop-vs-mobile multi-line</b> comparison — Israel vs. World.</li>
+          <li><b>Dual-line</b> general-traffic view.</li>
+        </ul>
+      </div>
+      <div class="panel surface">
+        <h3>② Network L3 attacks (2023 &amp; 2024)</h3>
+        <ul>
+          <li><b>Choropleth map</b> of global attack origins (where attacks come from).</li>
+          <li><b>Time-series</b> of attack volume with interactive <b>range sliders</b>.</li>
+        </ul>
+      </div>
+      <div class="panel surface">
+        <h3>③ Israel layer-attack &amp; industry targets (2023–2025)</h3>
+        <ul>
+          <li><b>Multi-line</b> trends of normalized L3 attack traffic.</li>
+          <li><b>Grouped bars</b> of attack share.</li>
+          <li><b>Color-coded heatmap</b> of which industries are targeted.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= DESIGN ================= -->
+  <div class="view" id="design">
+    <div class="panel" style="margin-top:4px">
+      <h2 style="margin:0 0 4px">Design strategies</h2>
+      <p class="sub" style="margin:0">Structured around Shneiderman’s mantra — <b class="teal">overview first,
+      zoom &amp; filter, details on demand</b> — with coordinated multiple views and cross-filtering. We applied the
+      four classic operators: <b>Derive · Manipulate · Facet · Reduce</b>.</p>
+    </div>
+    <div class="grid4">
+      <div class="card">
+        <h4>Derive</h4>
+        <p>Compute new values from the source: raw feeds → <b>normalized percentages</b> and indexed measures,
+        so different regions and metrics are comparable.</p>
+      </div>
+      <div class="card">
+        <h4>Manipulate</h4>
+        <p>Interactive controls: <b>time sliders</b>, <b>map pan/zoom</b>, and <b>linked filters</b> that
+        cross-filter the coordinated views.</p>
+      </div>
+      <div class="card">
+        <h4>Facet</h4>
+        <p>Partition the data into views: <b>juxtaposition</b> (side-by-side small multiples) and
+        <b>superimposition</b> (overlaid lines on shared axes).</p>
+      </div>
+      <div class="card">
+        <h4>Reduce</h4>
+        <p>Manage clutter: <b>aggregate</b> to hourly / weekly buckets and show only the
+        <b>Top-N industries</b> instead of the long tail.</p>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Shneiderman’s mantra, applied</h3>
+      <ul>
+        <li><b>Overview first</b> — the landing dashboard summarizes traffic, device split and attacks at a glance.</li>
+        <li><b>Zoom &amp; filter</b> — sliders, map pan and linked filters let readers drill into a window or region.</li>
+        <li><b>Details on demand</b> — tooltips and <span class="info"><b>ⓘ</b></span> info-buttons surface
+          definitions and exact values only when asked for.</li>
+        <li><b>Coordinated multiple views</b> — selecting in one chart cross-filters the others.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ================= FINDINGS ================= -->
+  <div class="view" id="findings">
+    <div class="panel" style="margin-top:4px">
+      <h2 style="margin:0 0 4px">Key findings</h2>
+    </div>
+    <div class="find">
+      <span class="dot" style="background:var(--red)"></span>
+      <div><b>Sharp Oct 7 traffic spikes.</b> Israeli internet traffic spiked sharply at
+      <b class="red">~03:30</b> and again at <b class="red">~16:00</b> on October 7, 2023 — visible as twin peaks
+      in the area chart.</div>
+    </div>
+    <div class="find">
+      <span class="dot" style="background:var(--teal)"></span>
+      <div><b>IT is the most-targeted sector.</b> From <b>Oct 2023 through Dec 2024</b>, Information Technology was
+      consistently the most-targeted industry — <b class="teal">often accounting for more than half</b> of L3
+      attacks against Israel.</div>
+    </div>
+    <div class="find">
+      <span class="dot" style="background:var(--amber)"></span>
+      <div><b>Attacks track geopolitics.</b> Attack spikes correlate with geopolitical events: a surge as
+      <b>ground operations</b> ramped up in <b class="amber">late October 2023</b>, and a “copycat” spike around the
+      <b class="amber">October 2024</b> anniversary.</div>
+    </div>
+    <div class="kvs">
+      <span class="kv">Twin spikes <b>03:30</b> &amp; <b>16:00</b></span>
+      <span class="kv">IT sector <b>&gt; 50%</b> of L3 attacks</span>
+      <span class="kv">Surge <b>late Oct 2023</b></span>
+      <span class="kv">Copycat <b>Oct 2024</b></span>
+    </div>
+  </div>
+
+  <!-- ================= GALLERY ================= -->
+  <div class="view" id="gallery">
+    <div class="panel" style="margin-top:4px">
+      <h2 style="margin:0 0 4px">Dashboard gallery</h2>
+      <p class="sub" style="margin:0">Static captures of each sub-view (click to enlarge) — these also serve as the
+      embed’s preview / fallback.</p>
+    </div>
+    <div class="gallery">
+      <div class="shot"><img src="img/shot1.png" alt="Traffic Volume & Device Usage Trends"><div class="cap"><b>Traffic &amp; Device Usage</b> — Oct 7 area chart, desktop-vs-mobile and general-traffic lines.</div></div>
+      <div class="shot"><img src="img/shot4.png" alt="Oct 7 Traffic Analysis area chart"><div class="cap"><b>Oct 7 Traffic Analysis</b> — 48-hour area chart; twin spikes near 03:30 &amp; 16:00 are visible.</div></div>
+      <div class="shot"><img src="img/shot2.png" alt="Network L3 Attacks on Israel choropleth and time-series"><div class="cap"><b>L3 Attacks</b> — choropleth of global origins + 2023/2024 time-series with range sliders.</div></div>
+      <div class="shot"><img src="img/shot3.png" alt="Israel Layer Attack & Industry Target Analysis heatmap"><div class="cap"><b>Layer Attack &amp; Industries</b> — normalized trends, share bars, color-coded industry heatmap.</div></div>
+    </div>
+  </div>
+
+  <footer>
+    <b>Traffic Crisis Analysis Dashboard</b> — team project (Team 5). Built by Gil Caplan and team in Tableau Public,
+    on Cloudflare Radar data prepared in Python. ·
+    <a href="https://public.tableau.com/app/profile/gil.caplan/viz/Team5Presentation09_07_17522180851300/TrafficCrisisAnalysisDashboard" target="_blank" rel="noopener">View on Tableau Public ↗</a> ·
+    <a href="https://public.tableau.com/app/profile/gil.caplan" target="_blank" rel="noopener">Gil Caplan’s Tableau profile ↗</a>
+  </footer>
+</div>
+
+<div class="lb" id="lb"><img id="lbimg" src="" alt="enlarged dashboard view"></div>
+
+<script>
+  // tab switching
+  document.querySelectorAll('.tab').forEach(function(t){
+    t.addEventListener('click', function(){
+      document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active');});
+      document.querySelectorAll('.view').forEach(function(x){x.classList.remove('active');});
+      t.classList.add('active');
+      document.getElementById(t.dataset.v).classList.add('active');
+    });
+  });
+  // lightbox
+  var lb=document.getElementById('lb'), lbimg=document.getElementById('lbimg');
+  document.querySelectorAll('.shot img').forEach(function(img){
+    img.addEventListener('click',function(){lbimg.src=img.src;lb.classList.add('open');});
+  });
+  lb.addEventListener('click',function(){lb.classList.remove('open');});
+  // hide the fallback overlay once the Tableau iframe actually loads
+  var frame=document.getElementById('tabframe'), fb=document.getElementById('fallback');
+  frame.addEventListener('load',function(){ if(fb) fb.style.display='none'; });
+</script>
+</body>
+</html>

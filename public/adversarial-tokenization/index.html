@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Adversarial Tokenization with LLMs</title>
+<style>
+  :root{--bg:#0B1220;--surface:#0F172A;--panel:#1E293B;--line:#243044;--text:#E2E8F0;--muted:#94A3B8;--accent:#14B8A6;--ocean:#60A5FA;--spice:#F87171;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;line-height:1.55;padding:20px}
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+  h1{font-size:1.5rem}h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:10px}
+  h3{font-size:.95rem;margin-bottom:4px}
+  .muted{color:var(--muted)} a{color:var(--ocean)}
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:16px 0 20px;flex-wrap:wrap}
+  .tab{padding:8px 14px;font-size:.85rem;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent}
+  .tab.active{color:var(--accent);border-color:var(--accent)}
+  .panel{background:rgba(30,41,59,.5);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+  .pill{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:.72rem;color:var(--muted)}
+  .hidden{display:none}
+  .grid{display:grid;gap:12px}
+  .step{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:10px 12px}
+  .tok{display:inline-block;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:2px 7px;margin:2px;font-size:.8rem}
+  .tok.alt{border-color:var(--spice);color:#fca5a5}
+  code{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:.82rem}
+  pre{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px;overflow:auto;font-size:.78rem}
+  img{max-width:100%;border:1px solid var(--line);border-radius:10px}
+  ul{margin:6px 0 0 18px}
+  li{margin:4px 0;font-size:.9rem}
+  .note{border-left:3px solid var(--spice);background:rgba(248,113,113,.06);border-radius:8px;padding:10px 12px;font-size:.82rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<div style="max-width:1000px;margin:0 auto">
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <h1>Adversarial Tokenization with LLMs</h1>
+    <span class="pill">LLM Safety</span><span class="pill">Llama 3 8B</span><span class="pill">Research</span>
+  </div>
+  <p class="muted" style="margin-top:6px">A Technion research project (Data &amp; Decision Sciences) investigating whether <b>non-canonical tokenizations</b> of a prompt can bypass an LLM's safety alignment — building on the <b>AdvTok</b> algorithm — and how this interacts with <b>decoder-layer truncation</b>. Guided by Prof. Roi Reichart and Nitay Calderon.</p>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="overview">Overview</div>
+    <div class="tab" data-tab="method">Method</div>
+    <div class="tab" data-tab="findings">Findings</div>
+    <div class="tab" data-tab="poster">Poster</div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <section id="overview">
+    <div class="panel">
+      <h2>The idea</h2>
+      <p>A single string can be tokenized in many valid ways. Safety training is done over the <b>canonical</b> tokenization, so a semantically-identical <b>non-canonical</b> tokenization can evade safety filters while preserving meaning. The project studies this as an attack surface across two settings — <b>jailbreaking</b> and <b>prompt injection</b> — and asks whether the effect survives when the model is made cheaper via layer truncation and fewer search iterations.</p>
+      <h3 style="margin-top:14px">Canonical vs. non-canonical (illustration)</h3>
+      <p class="muted" style="font-size:.82rem;margin-bottom:6px">Same text, two tokenizations of one example word:</p>
+      <div>canonical: <span class="tok">token</span><span class="tok">ization</span> &nbsp;→&nbsp; non-canonical: <span class="tok alt">to</span><span class="tok alt">ken</span><span class="tok alt">iz</span><span class="tok alt">ation</span></div>
+    </div>
+    <div class="panel">
+      <h2>Attack settings studied</h2>
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">
+        <div class="step"><h3>Jailbreaking</h3><p class="muted" style="font-size:.85rem">Reformulating a malicious request's tokenization so the model complies instead of refusing (target response e.g. "Sure, here's how"), over the AdvBench dataset.</p></div>
+        <div class="step"><h3>Prompt injection</h3><p class="muted" style="font-size:.85rem">Embedding malicious instructions in a prompt; AdvTok is applied to the malicious payload to study compliance across model depths.</p></div>
+      </div>
+    </div>
+    <div class="note">Responsible-research note: this is LLM <b>safety</b> research. This page describes the method and aggregate findings only — it deliberately does <b>not</b> reproduce any harmful model outputs or attack strings from the repository.</div>
+  </section>
+
+  <!-- METHOD -->
+  <section id="method" class="hidden">
+    <div class="panel">
+      <h2>AdvTok — greedy search over tokenizations (from advtok/)</h2>
+      <p>AdvTok greedily searches for an adversarial tokenization <span class="mono">v</span> of a request that maximizes the likelihood the model produces the target response:</p>
+      <pre>argmax_v  p_model( response | sys_prompt, v )      # advtok.run / advtok.search.greedy</pre>
+      <ul>
+        <li>Start from an initial tokenization <code>X₀</code> (<code>"canonical"</code> or <code>"random"</code>).</li>
+        <li>For <code>k</code> iterations: enumerate the neighbour tokenizations at edit-distance 2 using a <b>multi-rooted decision diagram</b> (<code>advtok/mdd.py</code>, <code>multi_rooted_mdd.py</code>), score each by the target-response likelihood, and move to the best (early-stop when no improvement).</li>
+        <li>The chat template is split into fixed prefix/suffix chunks so only the request's tokenization varies (<code>jailbreak.template_chunks</code>).</li>
+      </ul>
+      <p class="muted" style="font-size:.8rem;margin-top:10px">Grounded in: <span class="mono">advtok/__init__.py</span>, <span class="mono">advtok/search.py</span>, <span class="mono">advtok/jailbreak.py</span>, <span class="mono">advtok/mdd.py</span>, <span class="mono">advtok/multi_rooted_mdd.py</span>, <span class="mono">advtok/evaluate.py</span>.</p>
+    </div>
+    <div class="panel">
+      <h2>This project's additions</h2>
+      <ul>
+        <li><b>Layer-truncation analysis:</b> truncate decoder layers and measure the target log-probability / response quality vs. compute cost.</li>
+        <li><b>Compliance Score</b> (proposed metric): <b>40% Regex + 60% LLM-as-judge</b>, beyond a binary "target phrase present" success.</li>
+        <li><b>Multi-depth + reduced-iteration sweeps</b> for both jailbreaking and prompt injection.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>Model</h2>
+      <p>Llama 3 (8B) — optimized for dialogue and safety — used as the target; an LLM judge contributes 60% of the compliance score.</p>
+    </div>
+  </section>
+
+  <!-- FINDINGS -->
+  <section id="findings" class="hidden">
+    <div class="panel">
+      <h2>Conclusions &amp; takeaways (from the poster)</h2>
+      <ul>
+        <li><b>AdvTok decreased prompt-injection compliance</b> in the studied setting.</li>
+        <li><b>Successfully replicated</b> the jailbreaking experiment: adversarial tokenizations outperform the canonical baseline.</li>
+        <li><b>Reduced AdvTok cost</b> while maintaining jailbreaking success using <b>~10-layer truncation</b>; reduced search iterations cut runtime with minimal quality loss.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>Layer truncation</h2>
+      <p class="muted" style="font-size:.9rem">Method: truncate decoder layers, then measure the target log-probability. Fewer layers lowers response quality, but a targeted depth (~10 layers) balances attack effectiveness against compute cost.</p>
+    </div>
+    <div class="panel">
+      <h2>References</h2>
+      <ul>
+        <li>Zou et al. (2023) — AdvBench dataset.</li>
+        <li>Geh et al. — Adversarial Tokenization (AdvTok algorithm this project builds on).</li>
+      </ul>
+      <p class="muted" style="font-size:.78rem;margin-top:8px">Exact figures and author list are in the poster (next tab).</p>
+    </div>
+  </section>
+
+  <!-- POSTER -->
+  <section id="poster" class="hidden">
+    <div class="panel">
+      <h2>Research poster</h2>
+      <a href="poster.png" target="_blank" rel="noreferrer"><img src="poster.png" alt="Adversarial Tokenization with LLMs — research poster" /></a>
+      <p class="muted" style="font-size:.8rem;margin-top:8px">Click to open full size. Technion, Faculty of Data &amp; Decision Sciences.</p>
+    </div>
+  </section>
+</div>
+<script>
+  document.querySelectorAll('.tab').forEach(tab=>{
+    tab.onclick=()=>{
+      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); tab.classList.add('active');
+      ['overview','method','findings','poster'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+      document.getElementById(tab.dataset.tab).classList.remove('hidden');
+    };
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wikipedia Retrieval Pipeline — LabProject_940295</title>
+<style>
+  :root{
+    --bg:#0B1220; --surface:#0F172A; --panel:#1E293B; --border:#243044;
+    --text:#E2E8F0; --muted:#94A3B8; --teal:#14B8A6; --blue:#60A5FA; --red:#F87171;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    line-height:1.55;font-size:15px;}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 20px 60px;}
+  code,kbd,.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;}
+  h1{font-size:24px;margin:0 0 4px;}
+  h2{font-size:18px;margin:30px 0 10px;color:var(--text);}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 4px;}
+  .badge{display:inline-block;font-size:11px;padding:2px 9px;border-radius:999px;
+    border:1px solid var(--border);color:var(--muted);background:var(--surface);
+    margin-right:6px;font-family:"JetBrains Mono",ui-monospace,monospace;}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 14px;border-bottom:1px solid var(--border);padding-bottom:10px;}
+  .tab{padding:7px 14px;border-radius:9px;border:1px solid var(--border);background:var(--surface);
+    color:var(--muted);cursor:pointer;font-size:13px;transition:.15s;}
+  .tab:hover{color:var(--text);border-color:var(--teal);}
+  .tab.active{background:var(--panel);color:var(--teal);border-color:var(--teal);}
+  .view{display:none;animation:fade .25s ease;}
+  .view.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:14px 0;}
+  .panel.surface{background:var(--surface);}
+  pre{background:#0A0F1A;border:1px solid var(--border);border-radius:10px;padding:14px 16px;overflow:auto;
+    font-size:12.5px;line-height:1.5;}
+  pre .c{color:var(--muted);} pre .k{color:var(--blue);} pre .s{color:var(--teal);} pre .n{color:var(--red);}
+  .muted{color:var(--muted);}
+  .teal{color:var(--teal);} .blue{color:var(--blue);} .red{color:var(--red);}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0;}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em;}
+  td.mono,th.mono{font-family:"JetBrains Mono",ui-monospace,monospace;}
+  tr.best td{background:rgba(20,184,166,.08);}
+  .grid{display:grid;gap:12px;}
+  .pipeline{display:flex;flex-direction:column;gap:8px;}
+  .stage{display:flex;align-items:flex-start;gap:12px;background:var(--surface);border:1px solid var(--border);
+    border-radius:10px;padding:12px 14px;cursor:pointer;transition:.15s;}
+  .stage:hover{border-color:var(--teal);transform:translateX(2px);}
+  .stage.sel{border-color:var(--teal);box-shadow:0 0 0 1px var(--teal) inset;}
+  .stage .num{flex:0 0 auto;width:26px;height:26px;border-radius:7px;background:var(--panel);border:1px solid var(--border);
+    display:grid;place-items:center;font-size:12px;color:var(--teal);font-family:"JetBrains Mono",monospace;}
+  .stage .body h4{margin:0 0 2px;font-size:14px;}
+  .stage .body p{margin:0;color:var(--muted);font-size:12.5px;}
+  .stage .tag{font-size:10px;color:var(--blue);font-family:"JetBrains Mono",monospace;}
+  .cols{display:flex;gap:14px;flex-wrap:wrap;}
+  .cols>.panel{flex:1 1 280px;margin:0;}
+  img.fig{width:100%;border-radius:10px;border:1px solid var(--border);background:#fff;}
+  .kvs{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0;}
+  .kv{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 11px;font-size:12px;}
+  .kv b{color:var(--teal);font-family:"JetBrains Mono",monospace;}
+  .note{font-size:12px;color:var(--muted);border-left:2px solid var(--teal);padding-left:10px;margin:10px 0;}
+  .demo input{width:100%;background:#0A0F1A;border:1px solid var(--border);color:var(--text);border-radius:8px;
+    padding:10px 12px;font-size:13px;font-family:"JetBrains Mono",monospace;}
+  .chip{display:inline-block;background:var(--surface);border:1px solid var(--border);border-radius:6px;
+    padding:3px 8px;margin:3px 3px 0 0;font-size:11.5px;font-family:"JetBrains Mono",monospace;}
+  .chip.year{border-color:var(--blue);color:var(--blue);}
+  .chip.stem{border-color:var(--teal);color:var(--teal);}
+  .ex-btn{font-size:11.5px;}
+  a{color:var(--blue);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="badge">Technion Data Lab · Project A</span>
+  <span class="badge">Section B</span>
+  <h1>Wikipedia Retrieval Pipeline</h1>
+  <p class="sub">A hybrid information-retrieval system that answers natural-language queries over a synthetic
+  Wikipedia-style corpus of <span class="mono teal">437,108</span> chunks — built around a fast NumPy-CSR
+  <b>BM25</b> core with query decomposition, Porter stemming and weighted RRF fusion.</p>
+
+  <div class="tabs">
+    <div class="tab active" data-v="overview">Overview</div>
+    <div class="tab" data-v="pipeline">Pipeline</div>
+    <div class="tab" data-v="demo">Query demo</div>
+    <div class="tab" data-v="results">Results</div>
+    <div class="tab" data-v="code">Code</div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="view active" id="overview">
+    <div class="panel">
+      <p>The task: given a query, return the <b>top-10 page IDs</b> from the corpus, scored by NDCG@10, under a
+      strict <span class="mono">&le;60 s</span> autograder budget. The repo has two sections:</p>
+      <div class="cols">
+        <div class="panel surface">
+          <h4 class="teal" style="margin:0 0 6px">Section A — Vector index</h4>
+          <p class="muted" style="font-size:13px;margin:0">A dynamic dense vector index from scratch
+          (<span class="mono">vector_index.py</span>): dot-product similarity on L2-normalized vectors,
+          with <span class="mono">insert / delete / search</span> each constrained to &le;20 physical lines.
+          Uses a growable NumPy matrix + id&rarr;position map, swap-fill deletion, and
+          <span class="mono">argpartition</span> top-k.</p>
+        </div>
+        <div class="panel surface">
+          <h4 class="teal" style="margin:0 0 6px">Section B — Retrieval pipeline</h4>
+          <p class="muted" style="font-size:13px;margin:0">The full retrieval system (this artifact's focus):
+          offline chunking + embedding + indexing, then an online BM25 retriever with query decomposition,
+          decade expansion, stemming and RRF page aggregation.</p>
+        </div>
+      </div>
+    </div>
+
+    <h2>The central finding</h2>
+    <div class="panel">
+      <p>The corpus is <b class="red">synthetic / fictional</b> — entities like "Ulric Isenmar" or "winter cup
+      finals" don't exist in MiniLM's pretraining, so dense semantic retrieval has little to grab onto.
+      Exact lexical matching (BM25) shares vocabulary with the corpus even under paraphrase and
+      <b>decisively outperforms dense retrieval</b> (29/50 vs 16/50 hits). The team's headline result is that
+      dense retrieval actively <i>hurt</i> the score when fused, so the final system is BM25-only.</p>
+      <div class="kvs">
+        <span class="kv">Final <b>NDCG@10 = 0.2965</b></span>
+        <span class="kv">Query time <b>~7 s</b> / 50 queries</span>
+        <span class="kv">Dense-only baseline <b>0.1886</b></span>
+        <span class="kv">Corpus <b>437,108 chunks</b></span>
+      </div>
+    </div>
+
+    <h2>Why BM25 is fast here</h2>
+    <div class="panel surface">
+      <p class="muted" style="margin:0">BM25 scores are <b>precomputed at index time</b> and stored as a NumPy
+      <b>CSR</b> sparse matrix (<span class="mono">data / indices / indptr</span>). A query becomes a handful
+      of array-slice-and-sum operations over matched term rows — no Python loops over the 437k chunks —
+      giving roughly a 10× speedup over dict-based BM25.</p>
+    </div>
+  </div>
+
+  <!-- PIPELINE -->
+  <div class="view" id="pipeline">
+    <p class="muted">Click a stage to see what it does. Offline stages build the artifacts once; online stages
+    run per query inside the autograder.</p>
+    <div class="cols">
+      <div class="panel" style="flex:1 1 340px">
+        <h4 class="blue" style="margin:0 0 10px">Offline — build index (~35 min on GPU)</h4>
+        <div class="pipeline" id="pipe-off"></div>
+      </div>
+      <div class="panel" style="flex:1 1 340px">
+        <h4 class="teal" style="margin:0 0 10px">Online — per query (&le;60 s budget)</h4>
+        <div class="pipeline" id="pipe-on"></div>
+      </div>
+    </div>
+    <div class="panel surface" id="stage-detail">
+      <p class="muted" style="margin:0">Select a stage above to read the details grounded in the repo source.</p>
+    </div>
+  </div>
+
+  <!-- DEMO -->
+  <div class="view" id="demo">
+    <div class="panel demo">
+      <p class="muted" style="margin:0 0 8px">Type a query (or pick an example) to see exactly how
+      <span class="mono">retrieve.py</span> processes it: multi-hop decomposition, decade expansion, and the
+      pure-Python Porter stemmer. <span class="muted">(Runs the repo's real rules in JS — no scoring, since
+      the 437k-chunk index isn't shipped here.)</span></p>
+      <input id="q" value="What links Ulric Isenmar, the winter cup finals, and the 1820s?" />
+      <div style="margin-top:8px">
+        <button class="tab ex-btn" onclick="setQ('Which device combines a sundial with a compass?')">example: combines-with</button>
+        <button class="tab ex-btn" onclick="setQ('How the festival was modernized in the 1750s')">example: stemming + decade</button>
+        <button class="tab ex-btn" onclick="setQ('What links Ulric Isenmar, the winter cup finals, and the 1820s?')">example: multi-hop</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h4 style="margin:0 0 6px">1 · Query decomposition <span class="muted mono" style="font-size:11px">_decompose_query()</span></h4>
+      <div id="d-decomp"></div>
+    </div>
+    <div class="panel">
+      <h4 style="margin:0 0 6px">2 · Tokenize + decade expansion + stem <span class="muted mono" style="font-size:11px">_tokenize_query()</span></h4>
+      <div id="d-tok"></div>
+      <p class="note" style="margin-top:10px"><span class="chip year">blue</span> decade-expanded year &nbsp;
+      <span class="chip stem">teal</span> Porter-stemmed (root + original both kept)</p>
+    </div>
+    <div class="panel surface">
+      <h4 style="margin:0 0 6px">3 · Retrieval plan</h4>
+      <div id="d-plan" class="muted" style="font-size:13px"></div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="view" id="results">
+    <h2>Ablation — 50 public queries</h2>
+    <p class="muted">The real chart committed to the repo (<span class="mono">ablation_chart.png</span>).
+    NDCG@10 climbs left&rarr;right while query time collapses from 72 s to 7 s.</p>
+    <div class="panel"><img class="fig" src="ablation_chart.png" alt="Ablation results: NDCG@10 and query time across pipeline stages"></div>
+    <div class="panel surface">
+      <table>
+        <tr><th>System</th><th class="mono">NDCG@10</th><th class="mono">Query time</th><th>Notes</th></tr>
+        <tr><td>Dense only (FAISS)</td><td class="mono">0.1886</td><td class="mono">72 s</td><td class="muted">Baseline</td></tr>
+        <tr><td>Dense + BM25 + HyDE (RRF)</td><td class="mono">0.2562</td><td class="mono">44 s</td><td class="muted">Original hybrid</td></tr>
+        <tr><td>BM25 numpy only</td><td class="mono">0.2742</td><td class="mono">13 s</td><td class="muted">Sparse dominates</td></tr>
+        <tr><td>BM25 + query decomposition</td><td class="mono">0.2895</td><td class="mono">4 s</td><td class="muted">+4pp from decomposition</td></tr>
+        <tr class="best"><td><b>BM25 CSR + Porter + decomp</b></td><td class="mono"><b>0.2965</b></td><td class="mono"><b>7 s</b></td><td class="teal">Final system</td></tr>
+      </table>
+    </div>
+    <div class="panel">
+      <h4 class="teal" style="margin:0 0 6px">Biggest single win: query decomposition (+4pp)</h4>
+      <p class="muted" style="margin:0">Multi-hop queries like "What links X, Y and Z?" have one relevant page
+      <i>per entity</i>. Searching the full query penalizes each page for not mentioning the others. Splitting
+      into sub-queries <span class="mono">[X, Y, Z]</span>, searching each independently and fusing with RRF lets
+      every relevant page win on its own sub-query.</p>
+    </div>
+  </div>
+
+  <!-- CODE -->
+  <div class="view" id="code">
+    <p class="muted">Real excerpts from the repo. The retriever's entire scoring path is NumPy-vectorized.</p>
+    <h2 class="mono" style="font-size:15px">index.py — bm25_query (CSR scoring)</h2>
+    <pre><span class="c"># Fast BM25 query using numpy CSR operations — no Python loops over chunks.</span>
+scores = np.zeros(N, dtype=np.float32)
+seen = <span class="k">set</span>()
+<span class="k">for</span> token <span class="k">in</span> tokens:
+    <span class="k">if</span> token <span class="k">not in</span> vocab <span class="k">or</span> token <span class="k">in</span> seen: <span class="k">continue</span>
+    seen.add(token)
+    row = vocab[token]
+    start, end = <span class="k">int</span>(indptr[row]), <span class="k">int</span>(indptr[row + <span class="n">1</span>])
+    <span class="k">if</span> end &gt; start:
+        scores[indices[start:end]] += data[start:end]   <span class="c"># slice + sum</span>
+
+top_k = np.argpartition(scores, -k)[-k:]                 <span class="c"># O(n) top-k</span>
+top_k = top_k[np.argsort(scores[top_k])[::-<span class="n">1</span>]]</pre>
+
+    <h2 class="mono" style="font-size:15px">retrieve.py — page aggregation (summary boost)</h2>
+    <pre><span class="k">def</span> _to_pages(chunk_scores):
+    page_scores = defaultdict(<span class="k">float</span>)
+    <span class="k">for</span> cid, score <span class="k">in</span> chunk_scores.items():
+        m = meta[cid]
+        boosted = score * (<span class="n">1.5</span> <span class="k">if</span> m[<span class="s">"chunk_type"</span>] == <span class="s">"summary"</span> <span class="k">else</span> <span class="n">1.0</span>)
+        pid = <span class="k">int</span>(m[<span class="s">"page_id"</span>])
+        <span class="k">if</span> boosted &gt; page_scores[pid]:        <span class="c"># max-pool over chunks</span>
+            page_scores[pid] = boosted
+    <span class="k">return</span> <span class="k">sorted</span>(page_scores.items(), key=<span class="k">lambda</span> x: x[<span class="n">1</span>], reverse=<span class="k">True</span>)</pre>
+
+    <div class="panel surface">
+      <h4 style="margin:0 0 6px">Constants from <span class="mono">retrieve.py</span></h4>
+      <div class="kvs">
+        <span class="kv">BM25_TOP_K <b>200</b></span>
+        <span class="kv">RRF_K <b>60</b></span>
+        <span class="kv">FINAL_TOP_N <b>10</b></span>
+        <span class="kv">BM25_WEIGHT <b>8.0</b></span>
+        <span class="kv">YEAR_WEIGHT <b>4.0</b></span>
+        <span class="kv">window <b>200</b> / stride <b>150</b></span>
+        <span class="kv">summary boost <b>1.5×</b></span>
+      </div>
+    </div>
+    <p class="muted" style="font-size:12px">Grounded in: <span class="mono">ProjectA_PartB/{retrieve,index,chunk,embed,main}.py</span>,
+    <span class="mono">README.md</span>, <span class="mono">ablation_chart.png</span>, <span class="mono">artifacts/bm25_stats.json</span> (N=437108),
+    and <span class="mono">ProjectA_PartA/vector_index.py</span>.</p>
+  </div>
+</div>
+
+<script>
+// tabs
+document.querySelectorAll('.tab[data-v]').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab[data-v]').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById(t.dataset.v).classList.add('active');
+});
+
+// pipeline stages (grounded in chunk.py / embed.py / index.py / retrieve.py / README)
+const off=[
+ ['chunk.py','Chunk corpus','summary chunk (title + first 2 sentences) + sliding-window body chunks (window 200, stride 150, 50-token overlap); title prepended to every chunk.'],
+ ['embed.py','Embed','all-MiniLM-L6-v2, batched & CUDA-aware, L2-normalized 384-d vectors → chunk_vectors.npy (437108, 384).'],
+ ['index.py','Build indexes','FAISS IVFFlat over dense vectors + BM25 scores precomputed into a NumPy CSR matrix (data / indices / indptr) + vocab.'],
+ ['artifacts/','Persist','faiss.index, chunk_meta.json, bm25_*.npy, bm25_vocab.json, chunk_vectors.npy committed to the repo.'],
+];
+const on=[
+ ['retrieve.py','Decompose query','"What links X, Y, Z" → 3 independent sub-queries; "which … combines A with B" → [A, B].'],
+ ['retrieve.py','Tokenize','lowercase, strip punctuation, decade expansion (1820s → 1820..1829), pure-Python Porter stemmer (keeps root + original).'],
+ ['index.py','BM25 CSR search','vectorized slice+sum over matched term rows → top-200 chunks. No loops over 437k chunks.'],
+ ['retrieve.py','Weighted RRF fusion','sub-query lists (weight 8×), full query (4×), year stream (4×) fused: Σ w/(60+rank+1).'],
+ ['retrieve.py','Page aggregation','chunk→page via chunk_meta; max-pool, summary chunks ×1.5 boost → top-10 page IDs.'],
+];
+function render(list,el,prefix){
+  const c=document.getElementById(el);
+  list.forEach((s,i)=>{
+    const d=document.createElement('div'); d.className='stage';
+    d.innerHTML=`<div class="num">${prefix}${i+1}</div><div class="body">
+      <span class="tag">${s[0]}</span><h4>${s[1]}</h4><p>${s[2]}</p></div>`;
+    d.onclick=()=>{
+      document.querySelectorAll('.stage').forEach(x=>x.classList.remove('sel'));
+      d.classList.add('sel');
+      document.getElementById('stage-detail').innerHTML=
+        `<span class="badge">${s[0]}</span><h4 style="margin:8px 0 4px">${s[1]}</h4>
+         <p class="muted" style="margin:0">${s[2]}</p>`;
+    };
+    c.appendChild(d);
+  });
+}
+render(off,'pipe-off','O');
+render(on,'pipe-on','');
+
+// ---- demo: faithful JS re-implementation of retrieve.py rules ----
+function expandDecades(t){
+  let m=t.match(/^(\d{3})0s$/);
+  if(m){let b=parseInt(m[1])*10; return Array.from({length:10},(_,i)=>String(b+i));}
+  return [t];
+}
+const vowels=new Set(['a','e','i','o','u']);
+function stem(w){ // lightweight stand-in for the repo's Porter stemmer (step 1 suffixes)
+  if(w.length<=2) return w;
+  let x=w.toLowerCase();
+  if(x.endsWith('sses')) x=x.slice(0,-2);
+  else if(x.endsWith('ies')) x=x.slice(0,-2);
+  else if(x.endsWith('ss')){}
+  else if(x.endsWith('s')) x=x.slice(0,-1);
+  const hasV=s=>[...s].some(ch=>vowels.has(ch));
+  if(x.endsWith('eed')){ if(x.slice(0,-3).length>0&&hasV(x.slice(0,-3))) x=x.slice(0,-1);}
+  else if(x.endsWith('ed')){ let s=x.slice(0,-2); if(hasV(s)) x=s;}
+  else if(x.endsWith('ing')){ let s=x.slice(0,-3); if(hasV(s)) x=s;}
+  if(x.endsWith('y')&&hasV(x.slice(0,-1))) x=x.slice(0,-1)+'i';
+  for(const [suf,rep] of [['ization','ize'],['ation','ate'],['ized','ize'],['ize',''],['ness',''],['ful','']]){
+    if(x.endsWith(suf)&&x.slice(0,-suf.length).length>2){x=x.slice(0,-suf.length)+rep;break;}
+  }
+  return x;
+}
+function decompose(q){
+  q=q.trim();
+  let m=q.match(/^(?:what links|how do|how does|what connects)\s+(.+)/i);
+  if(m){
+    let parts=m[1].split(/,\s+(?:and\s+)?|\s+and\s+/).map(p=>p.trim().replace(/[?.,]+$/,'')).filter(p=>p.length>5);
+    if(parts.length>=2) return parts;
+  }
+  m=q.match(/which .+ combines (.+?) with (.+)/i);
+  if(m) return [m[1].trim(), m[2].trim().replace(/[?.,]+$/,'')];
+  return [q];
+}
+function tokenize(q){
+  let text=q.toLowerCase().replace(/[^a-z0-9\s]/g,' ');
+  let out=[];
+  for(const t of text.split(/\s+/).filter(Boolean)){
+    let exp=expandDecades(t);
+    if(exp.length>1 || /^\d{4}$/.test(exp[0])){ exp.forEach(y=>out.push({t:y,cls:'year'})); }
+    else { let s=stem(t); out.push({t:s,cls: s!==t?'stem':''}); if(s!==t) out.push({t:t,cls:''}); }
+  }
+  return out;
+}
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function run(){
+  const q=document.getElementById('q').value;
+  const subs=decompose(q);
+  const multi=subs.length>1;
+  // decomp
+  document.getElementById('d-decomp').innerHTML = multi
+    ? `<p class="muted" style="margin:0 0 6px">Multi-hop detected → ${subs.length} independent sub-queries:</p>`
+      + subs.map(s=>`<span class="chip" style="border-color:var(--blue);color:var(--blue)">${esc(s)}</span>`).join('')
+      + `<p class="note" style="margin-top:8px">Full query is also searched at half weight.</p>`
+    : `<p class="muted" style="margin:0">Single query — no decomposition.</p>
+       <span class="chip">${esc(q)}</span>`;
+  // tokens
+  const toks=tokenize(q);
+  document.getElementById('d-tok').innerHTML =
+    toks.map(o=>`<span class="chip ${o.cls}">${esc(o.t)}</span>`).join('');
+  // plan
+  const years=toks.filter(o=>o.cls==='year').length;
+  let plan=[];
+  if(multi){ subs.forEach(s=>plan.push(`BM25 search "<span class="blue">${esc(s)}</span>" — weight 8.0`));
+             plan.push('BM25 search full query — weight 4.0'); }
+  else plan.push('BM25 search query — weight 8.0');
+  if(years) plan.push(`Year stream (${years} expanded year token${years>1?'s':''}) — weight 4.0`);
+  plan.push('→ Weighted RRF fuse all lists (k=60) → max-pool to pages (summary ×1.5) → top-10 page IDs');
+  document.getElementById('d-plan').innerHTML = plan.map(p=>`• ${p}`).join('<br>');
+}
+function setQ(v){document.getElementById('q').value=v;run();}
+document.getElementById('q').addEventListener('input',run);
+run();
+</script>
+</body>
+</html>

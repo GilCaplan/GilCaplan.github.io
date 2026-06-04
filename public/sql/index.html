@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL_094241 — Databases Course</title>
+<style>
+  :root{
+    --bg:#0B1220; --surface:#0F172A; --panel:#1E293B; --border:#243044;
+    --text:#E2E8F0; --muted:#94A3B8; --accent:#14B8A6; --blue:#60A5FA; --red:#F87171;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    line-height:1.55; font-size:15px;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:22px 20px 60px}
+  h1{font-size:24px;margin:0 0 4px}
+  h2{font-size:18px;margin:26px 0 10px;color:var(--text)}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 16px}
+  code,pre,.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+  .tag{display:inline-block;background:var(--panel);border:1px solid var(--border);
+    color:var(--muted);border-radius:999px;padding:2px 10px;font-size:12px;margin:2px 4px 2px 0}
+  .tag.a{color:var(--accent);border-color:#1d4d47}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 14px;border-bottom:1px solid var(--border)}
+  .tab{background:none;border:none;color:var(--muted);padding:9px 14px;cursor:pointer;
+    font-size:14px;font-weight:600;border-bottom:2px solid transparent;border-radius:8px 8px 0 0}
+  .tab:hover{color:var(--text);background:var(--surface)}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .panel{display:none}
+  .panel.active{display:block}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin:12px 0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+  pre{background:#0a0f1a;border:1px solid var(--border);border-radius:10px;padding:14px;
+    overflow:auto;font-size:12.5px;line-height:1.5;margin:8px 0}
+  .kw{color:var(--blue)} .fn{color:var(--accent)} .str{color:#fca5a5} .cm{color:#5b6b82}
+  .muted{color:var(--muted)}
+  .pill{font-size:11px;color:var(--accent);border:1px solid #1d4d47;border-radius:6px;padding:1px 7px;margin-left:6px}
+  /* ERD */
+  .erd{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+  .ent{background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden;font-size:12.5px}
+  .ent h4{margin:0;background:#15304a;color:var(--blue);padding:7px 10px;font-size:13px;
+    border-bottom:1px solid var(--border);font-family:"JetBrains Mono",monospace}
+  .ent ul{list-style:none;margin:0;padding:6px 10px}
+  .ent li{padding:2px 0;color:var(--text);font-family:"JetBrains Mono",monospace}
+  .ent li .pk{color:var(--accent);font-weight:700}
+  .ent li .fk{color:var(--red)}
+  .ent li .ty{color:var(--muted);font-size:11px}
+  .legend{font-size:12px;color:var(--muted);margin:6px 0 0}
+  .legend b{color:var(--accent)} .legend i{color:var(--red);font-style:normal}
+  /* query selector */
+  .qbtns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .qbtn{background:var(--panel);border:1px solid var(--border);color:var(--text);
+    border-radius:8px;padding:8px 12px;cursor:pointer;font-size:13px;text-align:left}
+  .qbtn:hover{border-color:var(--accent)}
+  .qbtn.active{border-color:var(--accent);background:#13302c}
+  .qbody{display:none}.qbody.active{display:block}
+  .note{background:#13202e;border-left:3px solid var(--blue);padding:8px 12px;border-radius:6px;
+    font-size:13px;color:var(--muted);margin:10px 0}
+  a{color:var(--blue)}
+  .foot{color:var(--muted);font-size:12.5px;margin-top:26px;border-top:1px solid var(--border);padding-top:14px}
+  .step{display:flex;gap:10px;align-items:flex-start;margin:6px 0}
+  .num{flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#04201c;
+    font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;margin-top:2px}
+  /* live demo */
+  .subtabs{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 14px}
+  .subtab{background:var(--panel);border:1px solid var(--border);color:var(--muted);
+    padding:7px 13px;cursor:pointer;font-size:13px;font-weight:600;border-radius:8px}
+  .subtab:hover{color:var(--text);border-color:var(--accent)}
+  .subtab.active{color:var(--accent);border-color:var(--accent);background:#13302c}
+  .dpanel{display:none}.dpanel.active{display:block}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:6px 0}
+  .kpi{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+  .kpi .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .kpi .val{font-size:20px;font-weight:700;margin-top:3px}
+  .pos{color:var(--accent)} .neg{color:var(--red)}
+  form.df{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin:6px 0}
+  form.df .fld{display:flex;flex-direction:column;gap:4px}
+  form.df label{font-size:12px;color:var(--muted)}
+  form.df input,form.df select{background:#0a0f1a;border:1px solid var(--border);color:var(--text);
+    border-radius:8px;padding:8px 10px;font-size:13px;min-width:120px;font-family:inherit}
+  form.df input:focus,form.df select:focus{outline:none;border-color:var(--accent)}
+  .btn{background:var(--accent);color:#04201c;border:none;border-radius:8px;padding:9px 16px;
+    font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+  .btn:hover{filter:brightness(1.08)}
+  .btn.sec{background:var(--panel);color:var(--text);border:1px solid var(--border)}
+  table.dt{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0}
+  table.dt th{text-align:left;color:var(--blue);font-weight:600;padding:7px 10px;
+    border-bottom:1px solid var(--border);background:#0d1626;font-family:"JetBrains Mono",monospace;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em}
+  table.dt td{padding:7px 10px;border-bottom:1px solid var(--border);font-family:"JetBrains Mono",monospace;font-size:12.5px}
+  table.dt tr:hover td{background:#0d1626}
+  .msg{padding:9px 12px;border-radius:8px;font-size:13px;margin:8px 0;display:none}
+  .msg.show{display:block}
+  .msg.ok{background:#13302c;border:1px solid #1d4d47;color:var(--accent)}
+  .msg.err{background:#2a1518;border:1px solid #5a2a2f;color:var(--red)}
+  .empty{color:var(--muted);font-size:13px;padding:8px 0}
+  /* real Django-in-browser tab */
+  .bootlog{background:#070b14;border:1px solid var(--border);border-radius:10px;padding:12px 14px;
+    font-family:"JetBrains Mono",monospace;font-size:12.5px;line-height:1.7;max-height:230px;overflow:auto;margin:10px 0}
+  .bootlog .ln{white-space:pre-wrap;color:var(--muted)}
+  .bootlog .ln b{color:var(--accent)}
+  .bootlog .ln.ok{color:var(--accent)} .bootlog .ln.warn{color:#fbbf24} .bootlog .ln.err{color:var(--red)}
+  .spin{display:inline-block;width:13px;height:13px;border:2px solid var(--border);border-top-color:var(--accent);
+    border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px;margin-right:7px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .bbar{display:flex;gap:8px;align-items:center;background:var(--panel);border:1px solid var(--border);
+    border-radius:10px 10px 0 0;padding:8px 10px;flex-wrap:wrap}
+  .bbar .navbtn{background:#0a0f1a;border:1px solid var(--border);color:var(--text);border-radius:7px;
+    padding:5px 10px;cursor:pointer;font-size:13px;font-family:inherit}
+  .bbar .navbtn:hover{border-color:var(--accent)} .bbar .navbtn:disabled{opacity:.4;cursor:default}
+  .bbar .addr{flex:1;min-width:160px;background:#0a0f1a;border:1px solid var(--border);color:var(--blue);
+    border-radius:7px;padding:5px 10px;font-family:"JetBrains Mono",monospace;font-size:12px}
+  .miniframe{width:100%;height:560px;border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;
+    background:#fff;display:block}
+  .whatpanel{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:12px 0}
+  .whatcard{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+  .whatcard .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .whatcard .val{font-size:13.5px;margin-top:4px;font-family:"JetBrains Mono",monospace;word-break:break-all;color:var(--text)}
+  .sqlfeed{background:#070b14;border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin:6px 0;
+    font-family:"JetBrains Mono",monospace;font-size:11.5px;max-height:170px;overflow:auto;color:#8fb4e8}
+  .sqlfeed .q{padding:2px 0;border-bottom:1px solid #131c2b;white-space:pre-wrap}
+  .bootfail{background:#2a1518;border:1px solid #5a2a2f;color:var(--red);border-radius:10px;padding:14px 16px;margin:10px 0}
+  .bootfail b{color:#fca5a5}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>SQL_094241 <span class="pill">Technion · DB course</span></h1>
+  <p class="sub">Database systems coursework — ERD &rarr; DDL &rarr; SQL &rarr; views &rarr; a Django web app over a stock-trading schema.</p>
+  <div>
+    <span class="tag a">ERD &amp; DDL</span>
+    <span class="tag a">SQL queries</span>
+    <span class="tag a">SQL views</span>
+    <span class="tag a">Relational algebra</span>
+    <span class="tag a">Django</span>
+    <span class="tag a">Live demo</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-t="ov">Overview</button>
+    <button class="tab" data-t="schema">Schema (Project 2)</button>
+    <button class="tab" data-t="queries">Queries &amp; Views</button>
+    <button class="tab" data-t="app">Django app</button>
+    <button class="tab" data-t="real">Django app (real, in-browser)</button>
+    <button class="tab" data-t="demo">Stocks App (live demo)</button>
+    <button class="tab" data-t="p1">Project 1 schema</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="panel active" id="ov">
+    <div class="card">
+      <p>This repo contains Gil's solutions for the Technion <b>Databases</b> course (094241). Per the
+      README, the material covers <span class="mono">ERD, DDL, SQL, Relational Algebra, databases and Django</span>.
+      The work is split into two projects over a <b>stock-trading domain</b> (investors buying company stocks).</p>
+      <div class="grid">
+        <div>
+          <h4 style="margin:6px 0;color:var(--accent)">Project 1</h4>
+          <p class="muted" style="font-size:13.5px;margin:0">A full DDL schema (<code>p1_Q2.sql</code>) modelling
+          investors, a Premium/Worker/Beginner hierarchy, companies, rivalries, trading accounts, transactions and
+          purchases — with rich <code>CHECK</code>/<code>UNIQUE</code>/composite-key constraints. Analytic queries
+          (<code>p1_Queries.py</code>) and helper views (<code>p1_Views.py</code>) ship with an
+          <code>Automatic_Checker.py</code>.</p>
+        </div>
+        <div>
+          <h4 style="margin:6px 0;color:var(--accent)">Project 2</h4>
+          <p class="muted" style="font-size:13.5px;margin:0">A simplified 5-table schema
+          (<code>create_commands.sql.txt</code>) loaded from CSVs, wrapped in a <b>Django</b> web app
+          (<code>Stocks_App</code>) that lets you add transactions, buy stocks, and run analytic
+          <b>views</b> (<code>view_queries.sql</code>) over the data.</p>
+        </div>
+      </div>
+      <div class="note">Everything shown on this page is copied verbatim from the repository's SQL / Python /
+      Django source. No queries or results are invented.</div>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">Grounded in these files</h2>
+      <ul class="mono" style="font-size:12.5px;color:var(--muted)">
+        <li>Project 1/p1_Q2.sql · p1_Queries.py · p1_Views.py · Automatic_Checker.py</li>
+        <li>Project 2/create_commands.sql.txt · view_queries.sql</li>
+        <li>Project 2/Stocks_App/{models.py, views.py, urls.py} · templates/*.html</li>
+        <li>README.md</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- SCHEMA -->
+  <div class="panel" id="schema">
+    <div class="card">
+      <h2 style="margin-top:0">Project 2 — relational schema</h2>
+      <p class="muted">Five tables defined in <code>create_commands.sql.txt</code>, populated from CSV files.
+      Hover keys: arrows in the legend show foreign-key references.</p>
+      <div class="erd">
+        <div class="ent">
+          <h4>Investor</h4>
+          <ul>
+            <li><span class="pk">ID</span> <span class="ty">INTEGER PK</span></li>
+            <li>Name <span class="ty">VARCHAR(40)</span></li>
+            <li>Amount <span class="ty">FLOAT</span></li>
+          </ul>
+        </div>
+        <div class="ent">
+          <h4>Company</h4>
+          <ul>
+            <li><span class="pk">Symbol</span> <span class="ty">VARCHAR(10) PK</span></li>
+            <li>Sector <span class="ty">VARCHAR(40)</span></li>
+            <li>Location <span class="ty">VARCHAR(40)</span></li>
+            <li>Founded <span class="ty">INTEGER</span></li>
+          </ul>
+        </div>
+        <div class="ent">
+          <h4>Stock</h4>
+          <ul>
+            <li><span class="pk">Symbol</span> <span class="fk">&rarr;Company</span></li>
+            <li><span class="pk">tDate</span> <span class="ty">DATE</span></li>
+            <li>Price <span class="ty">FLOAT</span></li>
+          </ul>
+        </div>
+        <div class="ent">
+          <h4>Buying</h4>
+          <ul>
+            <li><span class="pk">tDate</span> <span class="fk">&rarr;Stock</span></li>
+            <li><span class="pk">ID</span> <span class="fk">&rarr;Investor</span></li>
+            <li><span class="pk">Symbol</span> <span class="fk">&rarr;Stock</span></li>
+            <li>BQuantity <span class="ty">INTEGER</span></li>
+          </ul>
+        </div>
+        <div class="ent">
+          <h4>Transactions</h4>
+          <ul>
+            <li><span class="pk">tDate</span> <span class="ty">DATE</span></li>
+            <li><span class="pk">ID</span> <span class="fk">&rarr;Investor</span></li>
+            <li>TAmount <span class="ty">INTEGER</span></li>
+          </ul>
+        </div>
+      </div>
+      <p class="legend"><b>green</b> = primary-key column · <i>red</i> = foreign key.
+      All FKs use <code>ON DELETE CASCADE</code>. <code>Buying</code> &amp; <code>Stock</code> use composite primary keys.</p>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">DDL — exactly as in the repo</h2>
+<pre><span class="kw">CREATE TABLE</span> Stock(
+    Symbol   <span class="fn">VARCHAR</span>(10),
+    tDate    <span class="fn">DATE</span>,
+    Price    <span class="fn">FLOAT</span>,
+    <span class="kw">PRIMARY KEY</span> (Symbol, tDate),
+    <span class="kw">FOREIGN KEY</span> (Symbol) <span class="kw">REFERENCES</span> Company <span class="kw">ON DELETE CASCADE</span>
+);
+
+<span class="kw">CREATE TABLE</span> Buying(
+    tDate      <span class="fn">DATE</span>,
+    ID         <span class="fn">INTEGER</span>,
+    Symbol     <span class="fn">VARCHAR</span>(10),
+    BQuantity  <span class="fn">INTEGER</span>,
+    <span class="kw">PRIMARY KEY</span> (tDate, ID, Symbol),
+    <span class="kw">FOREIGN KEY</span> (Symbol, tDate) <span class="kw">REFERENCES</span> Stock <span class="kw">ON DELETE CASCADE</span>,
+    <span class="kw">FOREIGN KEY</span> (ID) <span class="kw">REFERENCES</span> Investor <span class="kw">ON DELETE CASCADE</span>
+);</pre>
+    </div>
+  </div>
+
+  <!-- QUERIES -->
+  <div class="panel" id="queries">
+    <div class="card">
+      <h2 style="margin-top:0">Analytic views &amp; queries</h2>
+      <p class="muted">Pick a query to see the real SQL from the repo and a plain-English breakdown of what it computes.</p>
+      <div class="qbtns">
+        <button class="qbtn active" data-q="qa">View VarInv — diverse investors</button>
+        <button class="qbtn" data-q="qb">Views B — most-popular companies</button>
+        <button class="qbtn" data-q="active">View ActiveUser (Project 1)</button>
+      </div>
+
+      <div class="qbody active" id="qa">
+        <p class="muted" style="font-size:13.5px">From <code>view_queries.sql</code> — finds investors who, on a single
+        day, bought stock across <b>6 or more distinct sectors</b> (a "diversified" investor).</p>
+<pre><span class="kw">CREATE VIEW</span> VarInv <span class="kw">AS</span>
+<span class="kw">SELECT</span> Investor.Name
+<span class="kw">FROM</span> Buying, Company, Investor, Stock,
+ (
+    <span class="kw">SELECT</span> Buying.ID, Buying.tDate
+    <span class="kw">FROM</span> Buying <span class="kw">JOIN</span> Company <span class="kw">ON</span> Buying.Symbol = Company.Symbol
+    <span class="kw">GROUP BY</span> Buying.ID, Buying.tDate
+    <span class="kw">HAVING</span> <span class="fn">COUNT</span>(<span class="kw">DISTINCT</span> Company.Sector) &gt;= 6
+ ) <span class="kw">AS</span> DiverseInvestors
+<span class="kw">WHERE</span> Buying.Symbol = Company.Symbol <span class="kw">AND</span> Buying.ID = Investor.ID
+  <span class="kw">AND</span> Buying.Symbol = Stock.Symbol <span class="kw">AND</span> Buying.tDate = Stock.tDate
+  <span class="kw">AND</span> Buying.ID = DiverseInvestors.ID <span class="kw">AND</span> Buying.tDate = DiverseInvestors.tDate
+<span class="kw">GROUP BY</span> Investor.ID, Investor.Name;</pre>
+        <div class="note">The inner subquery groups purchases by <code>(ID, tDate)</code> and keeps only pairs whose
+        purchases span <code>≥ 6</code> distinct <code>Company.Sector</code> values, then joins back to recover the
+        investor name and the priced rows.</div>
+      </div>
+
+      <div class="qbody" id="qb">
+        <p class="muted" style="font-size:13.5px">A chain of views (<code>EachDayInvBuy</code> &rarr; <code>PopComp</code>
+        &rarr; <code>popQuantity</code>) that finds companies bought on <b>every</b> trading day, then ranks investors
+        per popular company using a window function.</p>
+<pre><span class="cm">-- companies purchased on every distinct trading day</span>
+<span class="kw">CREATE VIEW</span> EachDayInvBuy <span class="kw">AS</span>
+<span class="kw">SELECT</span> Company.Symbol
+<span class="kw">FROM</span> Buying B, Company
+<span class="kw">WHERE</span> B.Symbol = Company.Symbol
+<span class="kw">GROUP BY</span> Company.Symbol, Company.Sector
+<span class="kw">HAVING</span> <span class="fn">COUNT</span>(<span class="kw">DISTINCT</span> B.tDate) =
+       (<span class="kw">SELECT</span> <span class="fn">COUNT</span>(<span class="kw">DISTINCT</span> Buying.tDate) <span class="kw">FROM</span> Buying);
+
+<span class="cm">-- rank investors within each popular company by total quantity</span>
+<span class="kw">CREATE VIEW</span> popQuantity <span class="kw">AS</span>
+<span class="kw">SELECT</span> PopComp.Symbol, <span class="fn">SUM</span>(Buying.BQuantity) quantity, Buying.ID,
+       <span class="fn">RANK</span>() <span class="kw">OVER</span> (<span class="kw">PARTITION BY</span> PopComp.Symbol
+                    <span class="kw">ORDER BY</span> <span class="fn">SUM</span>(Buying.BQuantity) <span class="kw">DESC</span>) InvestorRank
+<span class="kw">FROM</span> PopComp, Buying, Investor
+<span class="kw">WHERE</span> PopComp.Symbol = Buying.Symbol <span class="kw">AND</span> Buying.ID = Investor.ID
+<span class="kw">GROUP BY</span> PopComp.Symbol, Buying.ID;</pre>
+        <div class="note">Uses <code>HAVING COUNT(DISTINCT tDate) = (total distinct days)</code> — a "for-all-days"
+        relational-division pattern — and a <code>RANK() OVER (PARTITION BY …)</code> window for per-company ranking.</div>
+      </div>
+
+      <div class="qbody" id="active">
+        <p class="muted" style="font-size:13.5px">From Project 1 (<code>p1_Views.py</code>) — defines an
+        <code>ActiveUser</code> as an investor who, on <b>every</b> trading day, bought more than one distinct symbol.</p>
+<pre><span class="kw">CREATE VIEW</span> DaysInvested <span class="kw">AS</span>
+<span class="kw">SELECT</span> Investors.ID
+<span class="kw">FROM</span> Investors, StockDays, Buying
+<span class="kw">WHERE</span> Buying.ID = Investors.ID <span class="kw">AND</span> StockDays.tDate = Buying.tDate
+<span class="kw">GROUP BY</span> Investors.ID, StockDays.tDate
+<span class="kw">HAVING</span> <span class="fn">COUNT</span>(<span class="kw">DISTINCT</span> Buying.Symbol) &gt; 1;
+
+<span class="kw">CREATE VIEW</span> ActiveUser <span class="kw">AS</span>
+<span class="kw">SELECT</span> DaysInvested.ID
+<span class="kw">FROM</span> DaysInvested
+<span class="kw">GROUP BY</span> DaysInvested.ID
+<span class="kw">HAVING</span> <span class="fn">COUNT</span>(DaysInvested.ID) = (<span class="kw">SELECT</span> <span class="fn">COUNT</span>(*) <span class="kw">FROM</span> StockDays);</pre>
+        <div class="note">A two-stage relational division: first the days an investor was active, then keep only
+        investors whose active-day count equals the total number of trading days.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DJANGO -->
+  <div class="panel" id="app">
+    <div class="card">
+      <h2 style="margin-top:0">Stocks_App — Django front-end</h2>
+      <p class="muted">A Django project maps the SQL tables to models (introspected via <code>inspectdb</code>,
+      <code>managed = False</code>) and exposes pages for transactions, stock purchases, and the analytic views.</p>
+      <div class="grid">
+        <div class="ent"><h4>index</h4><ul><li class="muted">landing page</li></ul></div>
+        <div class="ent"><h4>Add_Transaction</h4><ul><li class="muted">deposit money</li><li class="muted">validates user + amount</li></ul></div>
+        <div class="ent"><h4>Buy_Stocks</h4><ul><li class="muted">purchase shares</li><li class="muted">checks balance &amp; dup</li></ul></div>
+        <div class="ent"><h4>Query_results</h4><ul><li class="muted">runs the views</li></ul></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">Real validation logic — <code>Buy_Stocks</code> (excerpt)</h2>
+<pre><span class="kw">def</span> <span class="fn">Buy_Stocks</span>(request):
+    ...
+    <span class="cm"># latest trading day & current price</span>
+    date  = Stock.objects.order_by(<span class="str">'-tdate'</span>).first().tdate
+    stock = Stock.objects.get(symbol=company.symbol, tdate=date)
+    price = stock.price
+
+    <span class="cm"># one purchase per company per day</span>
+    <span class="kw">if</span> Buying.objects.filter(id=ID, symbol=symbol, tdate=date).exists():
+        error_message = <span class="str">"Investor cannot make multiple purchases for "</span> \
+                        <span class="str">"the same company on the same day"</span>
+
+    cost = price * BQuantity
+    <span class="kw">if</span> investor.amount &lt; cost:
+        error_message = <span class="str">"Investor does not have enough money …"</span>
+
+    investor.amount -= cost
+    investor.save()
+    <span class="kw">with</span> connection.cursor() <span class="kw">as</span> cursor:
+        cursor.execute(<span class="str">"INSERT INTO Buying(tdate,ID,Symbol,BQuantity) "</span>
+                       <span class="str">"VALUES (%s,%s,%s,%s)"</span>, (date, ID, symbol, BQuantity))</pre>
+      <p class="muted" style="font-size:13px">Source: <code>Stocks_App/views.py</code>. The view debits the investor's
+      balance and inserts a row using a raw parameterised <code>INSERT</code> against the SQL <code>Buying</code> table.</p>
+    </div>
+  </div>
+
+  <!-- REAL DJANGO IN BROWSER (Pyodide) -->
+  <div class="panel" id="real">
+    <div class="card">
+      <h2 style="margin-top:0">Stocks_App &mdash; the <em>real</em> Django code, running in your browser
+        <span class="pill">Pyodide · WASM</span></h2>
+      <p class="muted" style="margin:0 0 6px">This tab boots a full Python runtime
+        (<b>Pyodide</b>, CPython compiled to WebAssembly), <code>micropip install</code>s <b>Django</b>, writes the
+        actual <code>Stocks_App</code> source (<code>models.py</code>, <code>views.py</code>, <code>urls.py</code>,
+        templates &amp; static) into an in-memory filesystem, builds the schema from the repo's real
+        <code>create_commands.sql.txt</code> + <code>view_queries.sql</code>, seeds sample data, then serves the app
+        through Django's request handler into the mini-browser below. Buying stocks, adding transactions and the analytic
+        queries all execute through the <i>genuine view code</i>.</p>
+      <div class="note" id="realAdaptNote">
+        <b>Why this is faithful + what was adapted:</b> the models ship as
+        <code>inspectdb</code> output (<code>managed = False</code>), so Django doesn't own the schema. We create the tables
+        from the repository's exact DDL (<code>create_commands.sql.txt</code>) and the exact analytic
+        <code>CREATE VIEW</code>s (<code>view_queries.sql</code>) over SQLite (Pyodide bundles <code>sqlite3</code>).
+        <code>views.py</code>, <code>urls.py</code>, the templates and <code>style.css</code> are used verbatim; only a tiny
+        project shell (<code>settings.py</code> + project <code>urls.py</code>) is added to wire the app — none of the
+        buy / sell / transaction / query logic is changed. The first boot downloads tens of MB, so it can take 30&ndash;90s.
+      </div>
+
+      <div id="realBoot">
+        <div class="bootlog" id="bootLog"><span class="ln"><span class="spin"></span>Initializing…</span></div>
+      </div>
+
+      <div id="realFail" style="display:none">
+        <div class="bootfail">
+          <b>Couldn't boot the in-browser Python runtime.</b>
+          <div style="margin-top:6px;color:var(--text)" id="realFailMsg"></div>
+          <div style="margin-top:8px;color:var(--muted)">No problem — open the
+            <a href="#" id="gotoDemo" style="color:#fca5a5;text-decoration:underline">&ldquo;Stocks App (live demo)&rdquo;</a>
+            tab for a faithful client-side recreation of the very same app (no Python required).</div>
+        </div>
+      </div>
+
+      <div id="realUI" style="display:none">
+        <div class="whatpanel">
+          <div class="whatcard"><div class="lbl">Current URL</div><div class="val" id="wUrl">/</div></div>
+          <div class="whatcard"><div class="lbl">Django view</div><div class="val" id="wView">index</div></div>
+          <div class="whatcard"><div class="lbl">Last response</div><div class="val" id="wStatus">—</div></div>
+        </div>
+        <div class="bbar">
+          <button class="navbtn" id="navHome">⌂ Home</button>
+          <button class="navbtn" id="navBack" disabled>← Back</button>
+          <span class="addr" id="addrBar">/</span>
+          <button class="navbtn" id="navReseed" title="rebuild the database from the real DDL + seed">↻ Reset DB</button>
+        </div>
+        <iframe id="djFrame" class="miniframe" title="Real Django app rendered in-browser"></iframe>
+        <h4 style="margin:14px 0 4px;color:var(--accent)">SQL the ORM / views emitted (last requests)</h4>
+        <p class="muted" style="font-size:12.5px;margin:0 0 4px">Captured live from Django's
+          <code>connection.queries</code> — proof it's really Django + SQLite, not a mock.</p>
+        <div class="sqlfeed" id="sqlFeed"><div class="q muted">No queries yet.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIVE DEMO -->
+  <div class="panel" id="demo">
+    <div class="card">
+      <h2 style="margin-top:0">Stocks_App &mdash; client-side recreation <span class="pill">live</span></h2>
+      <p class="muted" style="margin:0 0 6px">A faithful in-browser port of the Django <code>Stocks_App</code>:
+      its three working pages (<b>Add Transaction</b>, <b>Buy Stocks</b>, <b>Query Results</b>) plus a portfolio view.
+      The data store below mirrors the real <code>models.py</code> tables
+      (<code>Investor</code>, <code>Company</code>, <code>Stock</code>, <code>Buying</code>, <code>Transactions</code>),
+      and the buy / deposit logic reproduces the real <code>views.py</code> validations.</p>
+      <div class="note">This is a <b>client-side recreation</b> of the Django app for GitHub Pages (no backend).
+      The original runs on Django + a SQL database; here the same tables and rules live in plain JavaScript.
+      The SQL on the &ldquo;Schema &amp; SQL&rdquo; sub-tab is the <i>real</i> DDL / VIEWs from the repo.</div>
+
+      <div class="subtabs">
+        <button class="subtab active" data-d="d-port">Portfolio</button>
+        <button class="subtab" data-d="d-buy">Buy Stocks</button>
+        <button class="subtab" data-d="d-tx">Add Transaction</button>
+        <button class="subtab" data-d="d-query">Query Results</button>
+        <button class="subtab" data-d="d-sql">Schema &amp; SQL</button>
+      </div>
+
+      <!-- PORTFOLIO -->
+      <div class="dpanel active" id="d-port">
+        <form class="df">
+          <div class="fld">
+            <label for="pInv">Investor</label>
+            <select id="pInv"></select>
+          </div>
+        </form>
+        <div class="kpis">
+          <div class="kpi"><div class="lbl">Cash (Investor.Amount)</div><div class="val" id="kCash">$0</div></div>
+          <div class="kpi"><div class="lbl">Holdings value</div><div class="val" id="kHold">$0</div></div>
+          <div class="kpi"><div class="lbl">Total value</div><div class="val" id="kTotal">$0</div></div>
+          <div class="kpi"><div class="lbl">Unrealised P/L</div><div class="val" id="kPL">$0</div></div>
+        </div>
+        <h4 style="margin:14px 0 2px;color:var(--accent)">Holdings</h4>
+        <p class="muted" style="font-size:12.5px;margin:0">Aggregated from <code>Buying</code>, priced at the latest
+          <code>Stock.Price</code> (the most recent <code>tDate</code>) &mdash; the same &ldquo;latest trading day&rdquo; the
+          Django view uses.</p>
+        <div id="holdTbl"></div>
+        <h4 style="margin:14px 0 2px;color:var(--accent)">Latest prices &mdash; <span id="latestDate" class="mono"></span></h4>
+        <div id="priceTbl"></div>
+      </div>
+
+      <!-- BUY -->
+      <div class="dpanel" id="d-buy">
+        <p class="muted" style="font-size:13.5px;margin:0 0 4px">Mirrors <code>views.Buy_Stocks</code>:
+          looks up investor + company, prices the stock at the latest <code>tDate</code>, blocks a second purchase of the
+          same company on that day, checks the balance, debits <code>Investor.Amount</code> and inserts into
+          <code>Buying</code>.</p>
+        <form class="df" id="buyForm">
+          <div class="fld"><label for="bId">ID</label><select id="bId"></select></div>
+          <div class="fld"><label for="bSym">Company</label><select id="bSym"></select></div>
+          <div class="fld"><label for="bQty">Quantity</label><input type="number" id="bQty" min="1" value="1"></div>
+          <div class="fld"><label>&nbsp;</label><button type="submit" class="btn">Submit</button></div>
+        </form>
+        <div class="muted" id="buyCost" style="font-size:13px"></div>
+        <div class="msg" id="buyMsg"></div>
+        <h4 style="margin:14px 0 2px;color:var(--accent)">Last 10 Stock Buys</h4>
+        <div id="buyTbl"></div>
+      </div>
+
+      <!-- ADD TRANSACTION -->
+      <div class="dpanel" id="d-tx">
+        <p class="muted" style="font-size:13.5px;margin:0 0 4px">Mirrors <code>views.Add_Transaction</code>:
+          rejects a non-positive amount and unknown / duplicate-day investors, then inserts into <code>Transactions</code>
+          and credits <code>Investor.Amount</code>.</p>
+        <form class="df" id="txForm">
+          <div class="fld"><label for="tId">ID</label><select id="tId"></select></div>
+          <div class="fld"><label for="tSum">Transaction Sum</label><input type="number" id="tSum" value="1000"></div>
+          <div class="fld"><label>&nbsp;</label><button type="submit" class="btn">Submit</button></div>
+        </form>
+        <div class="msg" id="txMsg"></div>
+        <h4 style="margin:14px 0 2px;color:var(--accent)">Top 10 Most Recent Transactions</h4>
+        <div id="txTbl"></div>
+      </div>
+
+      <!-- QUERY RESULTS -->
+      <div class="dpanel" id="d-query">
+        <p class="muted" style="font-size:13.5px;margin:0 0 4px">The three analytic queries from
+          <code>views.Query_results</code>, run live over the in-browser tables (over the same
+          <code>VarInv</code> / <code>popQuantity</code> / <code>StockDays</code> view logic).</p>
+        <h4 style="margin:10px 0 2px;color:var(--accent)">Query 1 &mdash; diversified investors, total spent</h4>
+        <p class="muted" style="font-size:12.5px;margin:0">Investors who bought &ge; 6 distinct sectors in one day
+          (<code>VarInv</code>), ranked by total spent.</p>
+        <div id="q1"></div>
+        <h4 style="margin:14px 0 2px;color:var(--accent)">Query 2 &mdash; top buyer per &ldquo;popular&rdquo; company</h4>
+        <p class="muted" style="font-size:12.5px;margin:0">Companies bought on every trading day
+          (<code>popQuantity</code>, <code>InvestorRank = 1</code>).</p>
+        <div id="q2"></div>
+        <h4 style="margin:14px 0 2px;color:var(--accent)">Query 3 &mdash; risers' buyers</h4>
+        <p class="muted" style="font-size:12.5px;margin:0">Companies whose price rose &gt; 6% from first to last trading
+          day, with their first-day buyer count.</p>
+        <div id="q3"></div>
+      </div>
+
+      <!-- SQL -->
+      <div class="dpanel" id="d-sql">
+        <p class="muted" style="font-size:13.5px">The real database design behind the app, verbatim from
+          <code>create_commands.sql.txt</code> and <code>view_queries.sql</code>.</p>
+        <h4 style="margin:6px 0 2px;color:var(--accent)">CREATE TABLE &mdash; create_commands.sql.txt</h4>
+<pre><span class="kw">CREATE TABLE</span> Investor(
+    ID      <span class="fn">INTEGER</span>  <span class="kw">PRIMARY KEY</span>,
+    Name    <span class="fn">VARCHAR</span>(40),
+    Amount  <span class="fn">FLOAT</span>
+);
+
+<span class="kw">CREATE TABLE</span> Company(
+    Symbol    <span class="fn">VARCHAR</span>(10)  <span class="kw">PRIMARY KEY</span>,
+    Sector    <span class="fn">VARCHAR</span>(40),
+    Location  <span class="fn">VARCHAR</span>(40),
+    Founded   <span class="fn">INTEGER</span>
+);
+
+<span class="kw">CREATE TABLE</span> Stock(
+    Symbol  <span class="fn">VARCHAR</span>(10),
+    tDate   <span class="fn">DATE</span>,
+    Price   <span class="fn">FLOAT</span>,
+    <span class="kw">PRIMARY KEY</span> (Symbol, tDate),
+    <span class="kw">FOREIGN KEY</span> (Symbol) <span class="kw">REFERENCES</span> Company <span class="kw">ON DELETE CASCADE</span>
+);
+
+<span class="kw">CREATE TABLE</span> Buying(
+    tDate      <span class="fn">DATE</span>,
+    ID         <span class="fn">INTEGER</span>,
+    Symbol     <span class="fn">VARCHAR</span>(10),
+    BQuantity  <span class="fn">INTEGER</span>,
+    <span class="kw">PRIMARY KEY</span> (tDate, ID, Symbol),
+    <span class="kw">FOREIGN KEY</span> (Symbol, tDate) <span class="kw">REFERENCES</span> Stock <span class="kw">ON DELETE CASCADE</span>,
+    <span class="kw">FOREIGN KEY</span> (ID) <span class="kw">REFERENCES</span> Investor <span class="kw">ON DELETE CASCADE</span>
+);
+
+<span class="kw">CREATE TABLE</span> Transactions(
+    tDate    <span class="fn">DATE</span>,
+    ID       <span class="fn">INTEGER</span>,
+    TAmount  <span class="fn">INTEGER</span>,
+    <span class="kw">PRIMARY KEY</span> (tDate, ID),
+    <span class="kw">FOREIGN KEY</span> (ID) <span class="kw">REFERENCES</span> Investor <span class="kw">ON DELETE CASCADE</span>
+);</pre>
+        <h4 style="margin:14px 0 2px;color:var(--accent)">Analytic VIEWs &mdash; view_queries.sql</h4>
+<pre><span class="kw">CREATE VIEW</span> StockDays <span class="kw">AS</span>
+    <span class="kw">SELECT DISTINCT</span> Stock.tDate <span class="kw">FROM</span> Stock;
+
+<span class="cm">-- Qa: investors buying &ge; 6 distinct sectors in one day</span>
+<span class="kw">CREATE VIEW</span> VarInv <span class="kw">AS</span>
+<span class="kw">SELECT</span> Investor.Name
+<span class="kw">FROM</span> Buying, Company, Investor, Stock,
+ (
+    <span class="kw">SELECT</span> Buying.ID, Buying.tDate
+    <span class="kw">FROM</span> Buying <span class="kw">JOIN</span> Company <span class="kw">ON</span> Buying.Symbol = Company.Symbol
+    <span class="kw">GROUP BY</span> Buying.ID, Buying.tDate
+    <span class="kw">HAVING</span> <span class="fn">COUNT</span>(<span class="kw">DISTINCT</span> Company.Sector) &gt;= 6
+ ) <span class="kw">AS</span> DiverseInvestors
+<span class="kw">WHERE</span> Buying.Symbol = Company.Symbol <span class="kw">AND</span> Buying.ID = Investor.ID
+  <span class="kw">AND</span> Buying.Symbol = Stock.Symbol <span class="kw">AND</span> Buying.tDate = Stock.tDate
+  <span class="kw">AND</span> Buying.ID = DiverseInvestors.ID <span class="kw">AND</span> Buying.tDate = DiverseInvestors.tDate
+<span class="kw">GROUP BY</span> Investor.ID, Investor.Name;
+
+<span class="cm">-- companies bought on every trading day, then ranked buyers per company</span>
+<span class="kw">CREATE VIEW</span> EachDayInvBuy <span class="kw">AS</span> ... ;  <span class="cm">-- COUNT(DISTINCT tDate) = total days</span>
+<span class="kw">CREATE VIEW</span> PopComp <span class="kw">AS</span> ... ;
+<span class="kw">CREATE VIEW</span> popQuantity <span class="kw">AS</span>
+<span class="kw">SELECT</span> PopComp.Symbol, <span class="fn">SUM</span>(Buying.BQuantity) quantity, Buying.ID,
+       <span class="fn">RANK</span>() <span class="kw">OVER</span> (<span class="kw">PARTITION BY</span> PopComp.Symbol
+                    <span class="kw">ORDER BY</span> <span class="fn">SUM</span>(Buying.BQuantity) <span class="kw">DESC</span>) InvestorRank
+<span class="kw">FROM</span> PopComp, Buying, Investor
+<span class="kw">WHERE</span> PopComp.Symbol = Buying.Symbol <span class="kw">AND</span> Buying.ID = Investor.ID
+<span class="kw">GROUP BY</span> PopComp.Symbol, Buying.ID;</pre>
+        <h4 style="margin:14px 0 2px;color:var(--accent)">Buy insert &mdash; views.py (raw SQL)</h4>
+<pre><span class="kw">INSERT INTO</span> Buying(tDate, ID, Symbol, BQuantity) <span class="kw">VALUES</span> (%s, %s, %s, %s);
+<span class="kw">INSERT INTO</span> Transactions(tDate, ID, TAmount) <span class="kw">VALUES</span> (%s, %s, %s);</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROJECT 1 -->
+  <div class="panel" id="p1">
+    <div class="card">
+      <h2 style="margin-top:0">Project 1 — richer DDL with constraints</h2>
+      <p class="muted">The first project (<code>p1_Q2.sql</code>) models a more elaborate domain: an
+      Investor super-type with a <b>Premium &rarr; Worker</b> sub-type chain, mentored <b>Beginner</b>s, company
+      <b>Rivalry</b>, suspicious-trade review, and accounts/transactions. Constraints are expressed directly in DDL.</p>
+<pre><span class="kw">CREATE TABLE</span> Investor(
+    ID    <span class="fn">BIGINT</span> <span class="kw">CHECK</span>(ID &gt;= 100000000 <span class="kw">AND</span> ID &lt;= 999999999) <span class="kw">PRIMARY KEY</span>,
+    Name  <span class="fn">varchar</span>(40),
+    BDate <span class="fn">DATE</span>, <span class="kw">CHECK</span> ((<span class="fn">YEAR</span>(BDate) &lt; 2006)),
+    Mail  <span class="fn">char</span>(40) <span class="kw">check</span>(Mail <span class="kw">LIKE</span> <span class="str">'%@%._%'</span>) <span class="kw">UNIQUE</span>,
+    DateSys <span class="fn">DATE</span>, <span class="kw">CHECK</span> (<span class="fn">YEAR</span>(BDate) &lt; <span class="fn">YEAR</span>(DateSys))
+);
+
+<span class="kw">CREATE TABLE</span> Rivalry(
+    Company1 <span class="fn">varchar</span>(40) <span class="kw">NOT NULL</span>, <span class="kw">FOREIGN KEY</span>(Company1) <span class="kw">REFERENCES</span> Company(Symbol),
+    Company2 <span class="fn">varchar</span>(40) <span class="kw">NOT NULL</span>, <span class="kw">FOREIGN KEY</span>(Company2) <span class="kw">REFERENCES</span> Company(Symbol),
+    Reason   <span class="fn">varchar</span>(40),
+    <span class="kw">CHECK</span>(Company1 &gt; Company2),          <span class="cm">-- avoids storing a pair twice</span>
+    <span class="kw">PRIMARY KEY</span> (Company1, Company2)
+);</pre>
+      <div class="note">Note the modelling tricks: an ID-range <code>CHECK</code>, an email-format <code>LIKE</code>
+      pattern, a cross-column date <code>CHECK</code>, and <code>CHECK(Company1 &gt; Company2)</code> to canonicalise
+      unordered rivalry pairs. The matching analytic SQL lives in <code>p1_Queries.py</code> and supporting views in
+      <code>p1_Views.py</code>, validated by <code>Automatic_Checker.py</code>.</div>
+    </div>
+  </div>
+
+  <div class="foot">
+    Faithful artifact for <span class="mono">SQL_094241</span> · grounded in the repository's SQL, Python and Django
+    source. Repo also ships PDFs (assignment specs &amp; an ERD/RA homework) and CSV data zips not rendered here.
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById(t.dataset.t).classList.add('active');
+  }));
+  document.querySelectorAll('.qbtn').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('.qbtn').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.qbody').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById(b.dataset.q).classList.add('active');
+  }));
+
+  /* ===== Stocks_App — client-side recreation of the Django app ===== */
+  (function(){
+    // ---- in-browser store: mirrors models.py / create_commands.sql.txt ----
+    // Investor(ID, Name, Amount) ; Company(Symbol, Sector, Location, Founded)
+    // Stock(Symbol, tDate, Price) ; Buying(tDate, ID, Symbol, BQuantity)
+    // Transactions(tDate, ID, TAmount)
+    const DB = {
+      Investor: [
+        {ID:101, Name:'Alice Cohen',   Amount:50000},
+        {ID:102, Name:'Ben Levi',      Amount:30000},
+        {ID:103, Name:'Carla Mizrahi', Amount:120000},
+        {ID:104, Name:'Dan Peretz',    Amount:8000},
+      ],
+      Company: [
+        {Symbol:'AAPL', Sector:'Technology', Location:'USA',    Founded:1976},
+        {Symbol:'MSFT', Sector:'Software',   Location:'USA',    Founded:1975},
+        {Symbol:'JPM',  Sector:'Finance',    Location:'USA',    Founded:2000},
+        {Symbol:'PFE',  Sector:'Healthcare', Location:'USA',    Founded:1849},
+        {Symbol:'XOM',  Sector:'Energy',     Location:'USA',    Founded:1999},
+        {Symbol:'KO',   Sector:'Consumer',   Location:'USA',    Founded:1892},
+        {Symbol:'TSLA', Sector:'Automotive', Location:'USA',    Founded:2003},
+      ],
+      Stock: [], // (Symbol, tDate, Price)
+      Buying: [], // (tDate, ID, Symbol, BQuantity)
+      Transactions: [], // (tDate, ID, TAmount)
+    };
+    // 3 trading days of prices; KO rises >6% (for query 3)
+    const DAYS = ['2024-05-01','2024-05-02','2024-05-03'];
+    const priceTable = {
+      AAPL:[170,172,176], MSFT:[410,415,420], JPM:[195,193,198],
+      PFE:[28,28.5,29],  XOM:[110,111,112],  KO:[60,62,64.5], TSLA:[180,178,185],
+    };
+    DAYS.forEach((d,i)=>{ for(const s in priceTable){
+      DB.Stock.push({Symbol:s, tDate:d, Price:priceTable[s][i]});
+    }});
+    // seed Buying — Carla buys 6 distinct sectors on day1 (VarInv), AAPL bought every day (popQuantity)
+    function seedBuy(d,id,sym,q){ DB.Buying.push({tDate:d, ID:id, Symbol:sym, BQuantity:q}); }
+    seedBuy('2024-05-01',103,'AAPL',10); seedBuy('2024-05-01',103,'MSFT',5);
+    seedBuy('2024-05-01',103,'JPM',8);  seedBuy('2024-05-01',103,'PFE',20);
+    seedBuy('2024-05-01',103,'XOM',12); seedBuy('2024-05-01',103,'KO',15);
+    seedBuy('2024-05-01',101,'AAPL',4); seedBuy('2024-05-02',101,'AAPL',3);
+    seedBuy('2024-05-03',101,'AAPL',2); seedBuy('2024-05-02',102,'AAPL',6);
+    seedBuy('2024-05-03',103,'AAPL',5); seedBuy('2024-05-02',103,'TSLA',9);
+    // seed a couple of transactions
+    DB.Transactions.push({tDate:'2024-05-01', ID:101, TAmount:5000});
+    DB.Transactions.push({tDate:'2024-05-02', ID:103, TAmount:20000});
+
+    // ---- helpers ----
+    const $ = id => document.getElementById(id);
+    const money = n => (n<0?'-':'')+'$'+Math.abs(n).toLocaleString(undefined,{maximumFractionDigits:2});
+    const latestDate = () => DB.Stock.map(s=>s.tDate).sort().slice(-1)[0]; // order_by('-tdate').first()
+    const firstDate  = () => DB.Stock.map(s=>s.tDate).sort()[0];
+    const priceOn = (sym,d) => { const r=DB.Stock.find(s=>s.Symbol===sym && s.tDate===d); return r?r.Price:0; };
+    const latestPrice = sym => priceOn(sym, latestDate());
+    const investor = id => DB.Investor.find(i=>i.ID===+id);
+    const company  = sym => DB.Company.find(c=>c.Symbol===sym);
+    function tbl(cols, rows, empty){
+      if(!rows.length) return '<p class="empty">'+(empty||'No rows.')+'</p>';
+      let h='<table class="dt"><tr>'+cols.map(c=>'<th>'+c+'</th>').join('')+'</tr>';
+      h+=rows.map(r=>'<tr>'+r.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('');
+      return h+'</table>';
+    }
+    function showMsg(el, text, ok){ el.className='msg show '+(ok?'ok':'err'); el.textContent=text; }
+
+    // ---- selects ----
+    function fillInvestorSelects(){
+      const opts = DB.Investor.map(i=>`<option value="${i.ID}">${i.ID} — ${i.Name}</option>`).join('');
+      ['pInv','bId','tId'].forEach(id=>{ const el=$(id); const v=el.value; el.innerHTML=opts; if(v) el.value=v; });
+    }
+    function fillCompanySelect(){
+      $('bSym').innerHTML = DB.Company.map(c=>`<option value="${c.Symbol}">${c.Symbol} — ${c.Sector}</option>`).join('');
+    }
+
+    // ---- Portfolio ----
+    function holdings(id){
+      const map={};
+      DB.Buying.filter(b=>b.ID===+id).forEach(b=>{ map[b.Symbol]=(map[b.Symbol]||0)+b.BQuantity; });
+      return map;
+    }
+    function costBasis(id,sym){ // sum of qty*price-at-purchase-day
+      return DB.Buying.filter(b=>b.ID===+id && b.Symbol===sym)
+        .reduce((s,b)=>s + b.BQuantity*priceOn(sym,b.tDate),0);
+    }
+    function renderPortfolio(){
+      const id=$('pInv').value; const inv=investor(id); if(!inv) return;
+      const h=holdings(id); const ld=latestDate();
+      let holdVal=0, cost=0, rows=[];
+      Object.keys(h).sort().forEach(sym=>{
+        const q=h[sym], px=latestPrice(sym), val=q*px, cb=costBasis(id,sym), pl=val-cb;
+        holdVal+=val; cost+=cb;
+        rows.push([sym, q, money(px), money(val),
+          `<span class="${pl>=0?'pos':'neg'}">${money(pl)}</span>`]);
+      });
+      const total=inv.Amount+holdVal, pl=holdVal-cost;
+      $('kCash').textContent=money(inv.Amount);
+      $('kHold').textContent=money(holdVal);
+      $('kTotal').textContent=money(total);
+      const k=$('kPL'); k.textContent=money(pl); k.className='val '+(pl>=0?'pos':'neg');
+      $('holdTbl').innerHTML=tbl(['Symbol','Shares','Last px','Value','Unreal. P/L'],rows,'No holdings yet — buy a stock.');
+      $('latestDate').textContent=ld;
+      $('priceTbl').innerHTML=tbl(['Symbol','Sector','Last px','Δ vs first day'],
+        DB.Company.map(c=>{
+          const f=priceOn(c.Symbol,firstDate()), l=latestPrice(c.Symbol), d=f?((l-f)/f*100):0;
+          return [c.Symbol,c.Sector,money(l),`<span class="${d>=0?'pos':'neg'}">${d>=0?'+':''}${d.toFixed(1)}%</span>`];
+        }));
+    }
+
+    // ---- Buy Stocks (mirrors views.Buy_Stocks) ----
+    function renderBuyTable(){
+      const rows=[...DB.Buying].sort((a,b)=> b.tDate.localeCompare(a.tDate)||b.ID-a.ID||a.Symbol.localeCompare(b.Symbol))
+        .slice(0,10).map(b=>[b.tDate,b.ID,b.Symbol,b.BQuantity]);
+      $('buyTbl').innerHTML=tbl(['Date','Investor ID','Symbol','Quantity'],rows);
+    }
+    function buyCostPreview(){
+      const sym=$('bSym').value, q=parseInt($('bQty').value,10)||0;
+      const px=latestPrice(sym);
+      $('buyCost').textContent = sym ? `Price @ ${latestDate()}: ${money(px)} × ${q} = ${money(px*q)}` : '';
+    }
+    function doBuy(e){
+      e.preventDefault();
+      const msg=$('buyMsg');
+      const ID=$('bId').value, symbol=$('bSym').value, q=parseInt($('bQty').value,10);
+      const inv=investor(ID), comp=company(symbol);
+      if(!inv && !comp) return showMsg(msg,'Investor and Company do not exist!',false);
+      if(!inv) return showMsg(msg,'Investor does not exist!',false);
+      if(!comp) return showMsg(msg,'Company does not exist!',false);
+      if(!q || q<=0) return showMsg(msg,'Quantity must be a positive number.',false);
+      const date=latestDate(), price=latestPrice(symbol);
+      if(DB.Buying.some(b=>b.ID===+ID && b.Symbol===symbol && b.tDate===date))
+        return showMsg(msg,'Investor cannot make multiple purchases for the same company on the same day',false);
+      const cost=price*q;
+      if(inv.Amount<cost) return showMsg(msg,'Investor does not have enough money to make this purchase.',false);
+      inv.Amount-=cost;                                  // investor.amount -= cost; investor.save()
+      DB.Buying.push({tDate:date, ID:+ID, Symbol:symbol, BQuantity:q}); // INSERT INTO Buying(...)
+      showMsg(msg,`Bought ${q} × ${symbol} @ ${money(price)} for ${money(cost)} on ${date}.`,true);
+      renderBuyTable(); renderPortfolio(); fillInvestorSelects();
+    }
+
+    // ---- Add Transaction (mirrors views.Add_Transaction) ----
+    function renderTxTable(){
+      const rows=[...DB.Transactions].sort((a,b)=> b.tDate.localeCompare(a.tDate)||b.ID-a.ID)
+        .slice(0,10).map(t=>[t.tDate,t.ID,money(t.TAmount)]);
+      $('txTbl').innerHTML=tbl(['Date','ID','Amount'],rows);
+    }
+    function doTx(e){
+      e.preventDefault();
+      const msg=$('txMsg');
+      const ID=$('tId').value, sum=parseInt($('tSum').value,10);
+      const date=latestDate();
+      if(!sum || sum<=0) return showMsg(msg,'negative or empty amount entered',false);
+      const inv=investor(ID);
+      if(!inv) return showMsg(msg,"user doesn't exist",false);
+      if(DB.Transactions.some(t=>t.tDate===date && t.ID===+ID))
+        return showMsg(msg,'user already has a transaction on this day',false);
+      DB.Transactions.push({tDate:date, ID:+ID, TAmount:sum}); // INSERT INTO Transactions(...)
+      inv.Amount+=sum;                                          // investor.amount += itsum
+      showMsg(msg,`Deposited ${money(sum)} for ${inv.Name} on ${date}.`,true);
+      renderTxTable(); renderPortfolio(); fillInvestorSelects();
+    }
+
+    // ---- Query Results (mirrors views.Query_results over the SQL views) ----
+    function runQueries(){
+      // Q1: VarInv (>=6 distinct sectors in one day) + total spent (qty*price-at-day)
+      const byDayInv={};
+      DB.Buying.forEach(b=>{ const k=b.ID+'|'+b.tDate; (byDayInv[k]=byDayInv[k]||new Set()).add(company(b.Symbol).Sector); });
+      const diverse=new Set();
+      Object.keys(byDayInv).forEach(k=>{ if(byDayInv[k].size>=6) diverse.add(+k.split('|')[0]); });
+      const spent={};
+      DB.Buying.filter(b=>diverse.has(b.ID)).forEach(b=>{
+        spent[b.ID]=(spent[b.ID]||0)+b.BQuantity*priceOn(b.Symbol,b.tDate);
+      });
+      const q1=Object.keys(spent).map(id=>[investor(id).Name, money(spent[id])])
+        .sort((a,b)=> parseFloat(b[1].replace(/[^0-9.]/g,''))-parseFloat(a[1].replace(/[^0-9.]/g,'')));
+      $('q1').innerHTML=tbl(['Name','Total Spent'],q1,'No investor bought ≥6 sectors in a single day.');
+
+      // Q2: companies bought on EVERY trading day -> top buyer (InvestorRank=1)
+      const totalDays=new Set(DB.Buying.map(b=>b.tDate)).size;
+      const symDays={}; DB.Buying.forEach(b=>{ (symDays[b.Symbol]=symDays[b.Symbol]||new Set()).add(b.tDate); });
+      const popComp=Object.keys(symDays).filter(s=>symDays[s].size===totalDays && totalDays>0);
+      const q2=[];
+      popComp.sort().forEach(sym=>{
+        const q={}; DB.Buying.filter(b=>b.Symbol===sym).forEach(b=>{ q[b.ID]=(q[b.ID]||0)+b.BQuantity; });
+        const top=Object.keys(q).sort((a,b)=>q[b]-q[a])[0];
+        if(top) q2.push([sym, investor(top).Name, q[top]]);
+      });
+      $('q2').innerHTML=tbl(['Symbol','Name','Quantity'],q2,'No company was bought on every trading day.');
+
+      // Q3: price rose >6% first->last day, count distinct first-day buyers
+      const fd=firstDate(), ld=latestDate();
+      const q3=[];
+      DB.Company.forEach(c=>{
+        const p1=priceOn(c.Symbol,fd), p2=priceOn(c.Symbol,ld);
+        if(p1 && p1*1.06<p2){
+          const buyers=new Set(DB.Buying.filter(b=>b.Symbol===c.Symbol && b.tDate===fd).map(b=>b.ID)).size;
+          q3.push([c.Symbol,buyers]);
+        }
+      });
+      q3.sort((a,b)=>a[0].localeCompare(b[0]));
+      $('q3').innerHTML=tbl(['Symbol','Buyers Number'],q3,'No company rose >6% over the window.');
+    }
+
+    // ---- wiring ----
+    document.querySelectorAll('.subtab').forEach(b=>b.addEventListener('click',()=>{
+      document.querySelectorAll('.subtab').forEach(x=>x.classList.remove('active'));
+      document.querySelectorAll('.dpanel').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active'); $(b.dataset.d).classList.add('active');
+      if(b.dataset.d==='d-query') runQueries();
+      if(b.dataset.d==='d-port') renderPortfolio();
+    }));
+    fillInvestorSelects(); fillCompanySelect();
+    $('pInv').addEventListener('change',renderPortfolio);
+    $('buyForm').addEventListener('submit',doBuy);
+    $('bSym').addEventListener('change',buyCostPreview);
+    $('bQty').addEventListener('input',buyCostPreview);
+    $('txForm').addEventListener('submit',doTx);
+    renderPortfolio(); renderBuyTable(); renderTxTable(); buyCostPreview();
+  })();
+
+  /* ===== REAL Django Stocks_App, executed in-browser via Pyodide (WASM) ===== */
+  (function(){
+    var PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js';
+    var DJANGO_SPEC = 'django==4.2.16';
+    var started = false, ready = false, py = null, navStack = [];
+
+    var logEl = document.getElementById('bootLog');
+    function setSpinnerLine(html){
+      // replace trailing live line
+      var lines = logEl.querySelectorAll('.ln');
+      var last = lines[lines.length-1];
+      if(last && last.dataset.live==='1'){ last.innerHTML = html; }
+      else { log(html, '', true); }
+    }
+    function log(html, cls, live){
+      var d = document.createElement('span');
+      d.className = 'ln' + (cls? ' '+cls : '');
+      d.innerHTML = html;
+      if(live) d.dataset.live='1';
+      logEl.appendChild(d); logEl.appendChild(document.createTextNode('\n'));
+      logEl.scrollTop = logEl.scrollHeight;
+      return d;
+    }
+    function step(html){
+      // freeze any live line, add a fresh spinner line
+      var lines = logEl.querySelectorAll('.ln');
+      lines.forEach(function(l){ delete l.dataset.live; });
+      return log('<span class="spin"></span>'+html, '', true);
+    }
+    function stepDone(html){
+      var lines = logEl.querySelectorAll('.ln');
+      var last = lines[lines.length-1];
+      if(last){ last.innerHTML = '✓ '+html; last.className='ln ok'; delete last.dataset.live; }
+    }
+
+    // ---- real repo source (verbatim) embedded as strings ----
+    var SRC = {};
+    SRC['models.py'] = [
+'from django.db import models',
+'',
+'',
+"class Buying(models.Model):",
+"    tdate = models.OneToOneField('Stock', models.DO_NOTHING, db_column='tDate', primary_key=True)",
+"    id = models.ForeignKey('Investor', models.DO_NOTHING, db_column='ID')",
+"    symbol = models.ForeignKey('Stock', models.DO_NOTHING, db_column='Symbol', related_name='+')",
+"    bquantity = models.IntegerField(db_column='BQuantity', blank=True, null=True)",
+'',
+'    class Meta:',
+'        managed = False',
+"        db_table = 'Buying'",
+"        unique_together = (('tdate', 'id', 'symbol'),)",
+'',
+'',
+'class Company(models.Model):',
+"    symbol = models.CharField(db_column='Symbol', primary_key=True, max_length=10)",
+"    sector = models.CharField(db_column='Sector', max_length=40, blank=True, null=True)",
+"    location = models.CharField(db_column='Location', max_length=40, blank=True, null=True)",
+"    founded = models.IntegerField(db_column='Founded', blank=True, null=True)",
+'',
+'    class Meta:',
+'        managed = False',
+"        db_table = 'Company'",
+'',
+'',
+'class Investor(models.Model):',
+"    id = models.IntegerField(db_column='ID', primary_key=True)",
+"    name = models.CharField(db_column='Name', max_length=40, blank=True, null=True)",
+"    amount = models.FloatField(db_column='Amount', blank=True, null=True)",
+'',
+'    class Meta:',
+'        managed = False',
+"        db_table = 'Investor'",
+'',
+'',
+'class Stock(models.Model):',
+"    symbol = models.OneToOneField(Company, models.DO_NOTHING, db_column='Symbol', primary_key=True)",
+"    tdate = models.DateField(db_column='tDate')",
+"    price = models.FloatField(db_column='Price', blank=True, null=True)",
+'',
+'    class Meta:',
+'        managed = False',
+"        db_table = 'Stock'",
+"        unique_together = (('symbol', 'tdate'),)",
+'',
+'',
+'class Transactions(models.Model):',
+"    tdate = models.DateField(db_column='tDate', primary_key=True)",
+"    id = models.ForeignKey(Investor, models.DO_NOTHING, db_column='ID')",
+"    tamount = models.IntegerField(db_column='TAmount', blank=True, null=True)",
+'    class Meta:',
+'        managed = False',
+"        db_table = 'Transactions'",
+"        unique_together = (('tdate', 'id'),)",
+''].join('\n');
+
+    SRC['views.py'] = [
+'import random',
+'',
+'from django.shortcuts import render',
+'from .models import Transactions, Stock, Buying, Company, Investor',
+'from django.db import connection',
+'',
+'',
+'def index(request):',
+"    return render(request, 'index.html')",
+'',
+'',
+'def Add_Transaction(request):',
+"    if request.method == 'POST':",
+"        input_ID = request.POST.get('id')",
+"        tsum = request.POST.get('transactionSum')",
+'        itsum = 0',
+'        try:',
+'            itsum = int(tsum)',
+'            flag = tsum <= 0',
+'        except (ValueError, TypeError):',
+'            flag = False',
+"        datetime = Stock.objects.order_by('-tdate').first().tdate",
+"        recent_transactions = Transactions.objects.order_by('tdate', '-id')[:10]",
+'        if itsum <= 0:',
+"            return render(request, 'Add_Transaction.html', {'errormessage': 'negative or empty amount entered',",
+"                                                            'recent_transactions': recent_transactions})",
+'',
+'        if input_ID is not None and not Transactions.objects.filter(id=input_ID).exists() or flag:',
+"            return render(request, 'Add_Transaction.html', {'errormessage': 'user doesn\\'t exist', 'recent_transactions': recent_transactions})",
+'',
+'        if Transactions.objects.filter(tdate=datetime, id=input_ID).exists():',
+"            return render(request, 'Add_Transaction.html', {'errormessage': 'user already has a transaction on this day', 'recent_transactions': recent_transactions})",
+'',
+'        if input_ID is not None:',
+'            with connection.cursor() as cursor:',
+'                cursor.execute("""',
+'                                 INSERT INTO Transactions(tdate,ID,TAmount) VALUES (%s,%s,%s)',
+'                                ;',
+'                                """, (datetime, input_ID, tsum))',
+"        recent_transactions = Transactions.objects.order_by('-tdate', '-id')[:10]",
+'        try:',
+'            investor = Investor.objects.get(id=input_ID)',
+'            investor.amount += itsum',
+'            investor.save()',
+'        except Investor.DoesNotExist:',
+'            error_message = "Investor does not exist!"',
+"            return render(request, 'buy_stocks.html', {'error_message': error_message, 'recent_transactions': recent_transactions})",
+'',
+"    recent_transactions = Transactions.objects.order_by('-tdate', '-id')[:10]",
+"    return render(request, 'Add_Transaction.html', {'recent_transactions': recent_transactions})",
+'',
+'',
+'def Buy_Stocks(request):',
+"    action = Buying.objects.order_by('-tdate', '-id', 'symbol')[:10]",
+"    if request.method == 'POST':",
+"        ID = request.POST.get('id')",
+"        symbol = request.POST.get('company')",
+"        BQuantity = request.POST.get('quantity')",
+'',
+'        try:',
+'            investor = Investor.objects.get(id=ID)',
+'            company = Company.objects.get(symbol=symbol)',
+'        except Investor.DoesNotExist and Company.DoesNotExist:',
+'            error_message = "Investor and Company do not exist!"',
+"            return render(request, 'buy_stocks.html', {'error_message': error_message, 'recent_transactions': action})",
+'        except Investor.DoesNotExist:',
+'            error_message = "Investor does not exist!"',
+"            return render(request, 'buy_stocks.html', {'error_message': error_message, 'recent_transactions': action})",
+'        except Company.DoesNotExist:',
+'            error_message = "Company does not exist!"',
+"            return render(request, 'buy_stocks.html', {'error_message': error_message, 'recent_transactions': action})",
+'',
+'        if BQuantity is None or int(BQuantity) <= 0:',
+"            return render(request, 'buy_stocks.html', {'recent_transactions': action})",
+'',
+'        BQuantity = int(BQuantity)',
+'        company = Company.objects.get(pk=symbol)',
+"        date = Stock.objects.order_by('-tdate').first().tdate",
+'        try:',
+'            stock = Stock.objects.get(symbol=company.symbol, tdate=date)',
+'            price = stock.price',
+'        except Stock.DoesNotExist:',
+'            price = 0',
+'        if Buying.objects.filter(id=ID, symbol=symbol, tdate=date).exists():',
+'            error_message = "Investor cannot make multiple purchases for the same company on the same day"',
+"            return render(request, 'buy_stocks.html', {'error_message': error_message, 'recent_transactions': action})",
+'',
+"        datetime = Stock.objects.order_by('-tdate').first().tdate",
+'        cost = price * BQuantity',
+'        if investor.amount < cost:',
+'            error_message = "Investor does not have enough money to make this purchase."',
+"            return render(request, 'buy_stocks.html', {'error_message': error_message, 'recent_transactions': action})",
+'',
+'        investor.amount -= cost',
+'        investor.save()',
+'',
+'        with connection.cursor() as cursor:',
+'            cursor.execute("""',
+'                             INSERT INTO Buying(tdate,ID, Symbol, BQuantity) VALUES (%s,%s,%s,%s)',
+'                            ;',
+'                            """, (datetime, ID, symbol, BQuantity))',
+"    action = Buying.objects.order_by('-tdate', '-id', 'symbol')[:10]",
+"    return render(request, 'buy_stocks.html', {'recent_transactions': action})",
+'',
+'',
+'def Query_results(request):',
+'    with connection.cursor() as cursor:',
+'        cursor.execute("""',
+'            SELECT VarInv.Name, ROUND(SUM(Buying.BQuantity * Stock.Price), 3) AS spent',
+'            FROM VarInv, Buying, Stock, Investor',
+'            WHERE VarInv.Name = Investor.Name AND Investor.ID = Buying.ID',
+'            AND Stock.Symbol = Buying.Symbol AND Stock.tDate = Buying.tDate',
+'            GROUP BY VarInv.Name',
+'            ORDER BY spent DESC;',
+'        """)',
+'        query_result_a = dictfetchall(cursor)',
+'',
+'        cursor.execute("""',
+'        SELECT popQuantity.Symbol AS Symbol, Investor.Name as Name, popQuantity.quantity as Quantity',
+'        FROM popQuantity, Investor',
+'        WHERE popQuantity.ID = Investor.ID AND InvestorRank = 1',
+'        ORDER BY popQuantity.Symbol',
+'        """)',
+'        query_result_b = dictfetchall(cursor)',
+'',
+'        cursor.execute("""',
+'            SELECT Company.Symbol AS Symbol, COUNT(DISTINCT Buying.ID) as BuyersNumber',
+'            FROM Company',
+'            JOIN Stock st1 ON Company.Symbol = st1.Symbol AND st1.tDate = (SELECT MIN(tDate) FROM StockDays)',
+'            JOIN Stock st2 ON Company.Symbol = st2.Symbol AND st2.tDate = (SELECT MAX(tDate) FROM StockDays)',
+'            LEFT JOIN Buying ON Buying.Symbol = Company.Symbol AND Buying.tDate = (SELECT MIN(tDate) FROM StockDays)',
+'            WHERE st1.Price * 1.06 < st2.Price',
+'            GROUP BY Company.Symbol',
+'            ORDER BY Company.Symbol;',
+'        """)',
+'        query_result_c = dictfetchall(cursor)',
+'',
+"    return render(request, 'Query_results.html', {",
+"        'query_result_a': query_result_a,",
+"        'query_result_b': query_result_b,",
+"        'query_result_c': query_result_c,",
+'    })',
+'',
+'',
+'def dictfetchall(cursor):',
+'    columns = [col[0] for col in cursor.description]',
+'    return [dict(zip(columns, row)) for row in cursor.fetchall()]',
+''].join('\n');
+
+    SRC['app_urls.py'] = [
+'from . import views',
+'from django.urls import path',
+'',
+'urlpatterns = [',
+'    path(\'\', views.index, name="index"),',
+'    path(\'Add_Transaction/\', views.Add_Transaction, name="Add_Transaction"),',
+'    path(\'Buy_Stocks/\', views.Buy_Stocks, name="Buy_Stocks"),',
+'    path(\'Query_results/\', views.Query_results, name="Query_results"),',
+'    ]'].join('\n');
+
+    SRC['apps.py'] = [
+'from django.apps import AppConfig',
+'',
+'',
+'class StocksAppConfig(AppConfig):',
+"    default_auto_field = 'django.db.models.BigAutoField'",
+"    name = 'Stocks_App'",''].join('\n');
+
+    // templates verbatim
+    SRC['t_index'] = "<!DOCTYPE html>\n<html lang=\"en\">\n{% load static %}\n<link rel=\"stylesheet\" href=\"{% static 'style.css' %}\">\n<head> \n    <meta charset=\"UTF-8\">\n    <title>Stocks App Website</title>\n</head>\n<body> \n    <h1>Stocks App Website</h1>\n    <div class=\"donny\">\n        <img src=\"{% static \"stockHPPhoto.jpeg\" %}\" alt=\"stocks photo\">\n    </div>\n    <h2>Raque And Gil's Stock website where you can make the right decisions!</h2>\n    <div class=\"donny\">\n        <a href=\"{% url 'Query_results' %}\">Query Results</a>\n    </div>\n        <br>\n    <div class=\"donny\">\n        <a href=\"{% url 'Add_Transaction' %}\">Add Transaction</a>\n    </div>\n        <br>\n    <div class=\"donny\">\n        <a href=\"{% url 'Buy_Stocks' %}\">Buy Stocks</a>\n    </div>\n    \n</body>\n</html>";
+
+    SRC['t_buy'] = "<!DOCTYPE html>\n<html lang=\"en\">\n{% load static %}\n<link rel=\"stylesheet\" href=\"{% static 'style.css' %}\">\n<head> \n    <meta charset=\"UTF-8\">\n    <title>Buy a stock</title>\n</head>\n<body>\n    <h1>Buy Stocks page</h1>\n\n    <h2>Buy Stocks Form</h2>\n    <div class=\"ben\">\n        <form method=\"post\" class=\"raque\" >\n            {% csrf_token %}\n            <label for=\"id\">ID:</label>\n            <input type=\"number\" id=\"id\" name=\"id\" placeholder=\"ID:\" required><br>\n            <label for=\"company\">Company:</label>\n            <input type=\"text\" id=\"company\" name=\"company\" placeholder=\"Company:\" required><br>\n    \n            <label for=\"quantity\">Quantity:</label>\n            <input type=\"number\" id=\"quantity\" name=\"quantity\" placeholder=\"Quantity:\" required><br>\n    \n            <button type=\"submit\">Submit</button>\n        </form>\n    </div>\n    <div class=\"hodi\">\n        {% if error_message %}\n            <p>{{ error_message }}</p>\n        {% endif %}\n    </div>\n    <br>\n\n    <h2>Last 10 Stock Buys:</h2>\n    <table class=\"gil\" style=\"border: 3px solid #000000;\">\n        <tr>\n            <th>Date</th>\n            <th>Investor ID</th>\n            <th>Symbol</th>\n            <th>Quantity</th>\n        </tr>\n        {% for action in recent_transactions %}\n            <tr>\n                <td>{{ action.pk }}</td>\n                <td>{{ action.id.id }}</td>\n                <td>{{ action.symbol_id  }}</td>\n                <td>{{ action.bquantity }}</td>\n            </tr>\n        {% endfor %}\n    </table>\n\n    <br>\n    <div class=\"donny\">\n        <a href=\"{% url 'index' %}\">Home Page</a>\n        <br>\n        <a href=\"{% url 'Query_results' %}\">Query Results</a>\n        <br>\n        <a href=\"{% url 'Add_Transaction' %}\">Add Transaction</a>\n    </div>\n    <br><br>\n\n</body>\n</html>";
+
+    SRC['t_addtx'] = "<!DOCTYPE html>\n<html lang=\"en\">\n{% load static %}\n<link rel=\"stylesheet\" href=\"{% static 'style.css' %}\">\n<head> \n    <meta charset=\"UTF-8\">\n    <title>Add Transaction</title>\n</head>\n<body>\n<h2>Make your Transactions here!</h2>\n<div class=\"ben\">\n    <form method=\"POST\" action=\"{% url 'Add_Transaction' %}\" class=\"raque\">\n        {% csrf_token %}\n        <label for=\"id\">ID:</label>\n        <input type=\"number\" id=\"id\" name=\"id\" placeholder=\"Enter your ID\" required><br>\n        <label for=\"transactionSum\">Transaction Sum:</label>\n        <input type=\"number\" id=\"transactionSum\" name=\"transactionSum\" placeholder=\"Enter amount\" required><br>\n        <input type=\"submit\" value=\"Submit\">\n    </form>\n</div>\n<div class=\"hodi\">\n    {% if errormessage %}\n        <p>{{ errormessage }}</p>\n    {% endif %}\n</div>\n<h2>Top 10 Most Recent Transactions</h2>\n<table class=\"gil\" style=\"border: 3px solid #000000;\">\n    <thead>\n        <tr>\n            <th>Date</th>\n            <th>ID</th>\n            <th>Amount</th>\n        </tr>\n    </thead>\n    <tbody>\n        {% for transaction in recent_transactions %}\n            <tr>\n                <td>{{ transaction.tdate }}</td>\n                <td>{{ transaction.id_id }}</td>\n                <td>{{ transaction.tamount }}</td>\n            </tr>\n        {% endfor %}\n    </tbody>\n</table>\n<br>\n<div class=\"donny\">\n    <a href=\"{% url 'index' %}\">Home Page</a>\n    <br>\n    <a href=\"{% url 'Buy_Stocks' %}\">Buy Stocks</a>\n    <br>\n    <a href=\"{% url 'Query_results' %}\">Query Results</a>\n</div>\n</body>\n</html>";
+
+    SRC['t_query'] = "{% load static %}\n<!DOCTYPE html>\n<html lang=\"en\">\n<head> \n    <meta charset=\"UTF-8\">\n    <title>Query Results!</title>\n    <link rel=\"stylesheet\" href=\"{% static 'style.css' %}\">\n</head>\n<body>\n<div class=\"outerDiv\">\n    <div class=\"innerDiv\">\n        <h1> Query Results Page </h1>\n    <table class=\"gil\">\n        <caption> <u> Query 1: </u> </caption>\n        <thead>\n            <tr>\n                <th>Name</th>\n                <th>Total Sum</th>\n            </tr>\n        </thead>\n        <tbody>\n            {% for result in query_result_a %}\n                <tr>\n                    <td>{{ result.Name }}</td>\n                    <td>{{ result.spent}}</td>\n                </tr>\n            {% endfor %}\n        </tbody>\n    </table>\n    <br><br>\n    <table class=\"gil\">\n        <caption> <u> Query 2: </u> </caption>\n        <thead>\n            <tr>\n                <th>Symbol</th>\n                <th>Name</th>\n                <th>Quantity</th>\n            </tr>\n        </thead>\n        <tbody>\n            {% for result in query_result_b %}\n                <tr>\n                    <td>{{ result.Symbol }}</td>\n                    <td>{{ result.Name }}</td>\n                    <td>{{ result.Quantity }}</td>\n                </tr>\n            {% endfor %}\n        </tbody>\n    </table>\n    <br><br>\n    <table class=\"gil\">\n        <caption> <u> Query 3: </u> </caption>\n        <thead>\n            <tr>\n                <th>Symbol</th>\n                <th>Buyers Number</th>\n            </tr>\n        </thead>\n        <tbody>\n            {% for result in query_result_c %}\n                <tr>\n                    <td>{{ result.Symbol }}</td>\n                    <td>{{ result.BuyersNumber }}</td>\n                </tr>\n            {% endfor %}\n        </tbody>\n    </table>\n    <br><br>\n    <div class=\"donny\">\n        <a href=\"{% url 'index' %}\">Home Page</a><br>\n        <a href=\"{% url 'Add_Transaction' %}\">Add Transaction</a><br>\n        <a href=\"{% url 'Buy_Stocks' %}\">Buy Stocks</a>\n    </div>\n    </div>\n</div>\n</body>\n</html>";
+
+    SRC['style.css'] = "body{\n    background-color: #b4cafa;\n}\nth, td {\n    border: 1px solid #000000;\n    text-align: left;\n    padding: 8px;\n}\nthead th {\n    border: 1px solid #000000;\n    background-color: #f2f2f2;\n}\n.gil {\n    margin-left: auto;\n    margin-right: auto;\n    background-color: #778eec;\n    border: 3px solid #000000;\n}\n.hodi { text-align: center; margin-top: 20px; }\n.raque {\n    display: inline-block;\n    background-color: #778eec;\n    padding: 20px;\n    border: 1px solid #100f0f;\n    border-radius: 5px;\n    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);\n}\n.raque label, .raque input { display: block; margin-bottom: 10px; }\n.ben { display: flex; justify-content: center; align-items: center; }\n.donny { width: 100%; display: flex; align-items: center; align-content: center; }\n.outerDiv { width: 100%; margin: auto; }\n.innerDiv { margin: auto; }\n.donny img { margin: auto; }\n.donny a { margin: auto; }\nh1{ color: #001780; text-align: center; }\nh2{ color: darkslategrey; text-align: center; }\ncaption { padding-top: 10px; padding-bottom: 10px; font-weight: 800; }";
+
+    // real DDL (create_commands.sql.txt) + views (view_queries.sql), verbatim
+    SRC['ddl.sql'] = "CREATE TABLE Investor(\n    ID          INTEGER  PRIMARY KEY,\n    Name        VARCHAR(40),\n    Amount      FLOAT\n);\nCREATE TABLE Company(\n    Symbol          VARCHAR(10)  PRIMARY KEY,\n    Sector          VARCHAR(40),\n    Location        VARCHAR(40),\n    Founded         INTEGER\n);\nCREATE TABLE Stock(\n    Symbol          VARCHAR(10),\n    tDate           DATE,\n    Price           FLOAT,\n    PRIMARY KEY (Symbol, tDate),\n    FOREIGN KEY (Symbol) REFERENCES Company ON DELETE CASCADE\n);\nCREATE TABLE Buying(\n    tDate           DATE,\n    ID              INTEGER,\n    Symbol          VARCHAR(10),\n    BQuantity       INTEGER,\n    PRIMARY KEY (tDate, ID,Symbol),\n    FOREIGN KEY (Symbol, tDate) REFERENCES Stock ON DELETE CASCADE,\n    FOREIGN KEY (ID) REFERENCES Investor ON DELETE CASCADE\n);\nCREATE TABLE Transactions(\n    tDate           DATE,\n    ID              INTEGER,\n    TAmount         INTEGER,\n    PRIMARY KEY (tDate, ID),\n    FOREIGN KEY (ID) REFERENCES Investor ON DELETE CASCADE\n);";
+
+    SRC['views.sql'] = "CREATE VIEW StockDays AS\n                SELECT Distinct Stock.tDate\n                FROM Stock;\nCREATE VIEW VarInv AS\nSELECT Investor.Name\n            FROM Buying, Company, Investor, Stock,\n             (\n                SELECT Buying.ID, Buying.tDate\n                FROM Buying\n                JOIN Company ON Buying.Symbol = Company.Symbol\n                GROUP BY Buying.ID, Buying.tDate\n                HAVING COUNT(DISTINCT Company.Sector) >= 6\n            ) AS DiverseInvestors\n            WHERE Buying.Symbol = Company.Symbol AND Buying.ID = Investor.ID\n            AND Buying.Symbol = Stock.Symbol AND Buying.tDate = Stock.tDate\n            AND Buying.ID = DiverseInvestors.ID AND Buying.tDate = DiverseInvestors.tDate\n            GROUP BY Investor.ID, Investor.Name;\nCREATE VIEW EachDayInvBuy AS\nSELECT Company.Symbol\nFROM Buying B, Company\nWHERE B.Symbol = Company.Symbol\nGROUP BY Company.Symbol, Company.Sector\nHAVING COUNT(DISTINCT B.tDate) = (SELECT COUNT(Distinct Buying.tDate) FROM Buying);\nCREATE VIEW PopComp AS\nSELECT Company.Symbol\nFROM\n(SELECT Company.Sector\nFROM EachDayInvBuy, Company\nWHERE EachDayInvBuy.Symbol = Company.Symbol\nGROUP BY Company.Sector\nHAVING COUNT(*) >= 1) as Strs, Company, EachDayInvBuy\nWhere Company.Sector = Strs.Sector AND Company.Symbol = EachDayInvBuy.Symbol;\nCREATE VIEW popQuantity AS\nSELECT PopComp.Symbol, SUM(Buying.BQuantity) quantity, Buying.ID,\n       RANK() OVER (PARTITION BY PopComp.Symbol ORDER BY SUM(Buying.BQuantity) DESC) InvestorRank\nFROM PopComp, Buying, Investor\nWHERE PopComp.Symbol = Buying.Symbol AND Buying.ID = Investor.ID\nGROUP BY PopComp.Symbol, Buying.ID;";
+
+    // seed data (mirrors the JS recreation so both tabs agree)
+    SRC['seed.sql'] = [
+      "DELETE FROM Buying; DELETE FROM Transactions; DELETE FROM Stock; DELETE FROM Company; DELETE FROM Investor;",
+      "INSERT INTO Investor(ID,Name,Amount) VALUES (101,'Alice Cohen',50000),(102,'Ben Levi',30000),(103,'Carla Mizrahi',120000),(104,'Dan Peretz',8000);",
+      "INSERT INTO Company(Symbol,Sector,Location,Founded) VALUES ('AAPL','Technology','USA',1976),('MSFT','Software','USA',1975),('JPM','Finance','USA',2000),('PFE','Healthcare','USA',1849),('XOM','Energy','USA',1999),('KO','Consumer','USA',1892),('TSLA','Automotive','USA',2003);",
+      // 3 days of prices
+      "INSERT INTO Stock(Symbol,tDate,Price) VALUES ('AAPL','2024-05-01',170),('MSFT','2024-05-01',410),('JPM','2024-05-01',195),('PFE','2024-05-01',28),('XOM','2024-05-01',110),('KO','2024-05-01',60),('TSLA','2024-05-01',180);",
+      "INSERT INTO Stock(Symbol,tDate,Price) VALUES ('AAPL','2024-05-02',172),('MSFT','2024-05-02',415),('JPM','2024-05-02',193),('PFE','2024-05-02',28.5),('XOM','2024-05-02',111),('KO','2024-05-02',62),('TSLA','2024-05-02',178);",
+      "INSERT INTO Stock(Symbol,tDate,Price) VALUES ('AAPL','2024-05-03',176),('MSFT','2024-05-03',420),('JPM','2024-05-03',198),('PFE','2024-05-03',29),('XOM','2024-05-03',112),('KO','2024-05-03',64.5),('TSLA','2024-05-03',185);",
+      // Buying: Carla 6 sectors day1; AAPL bought every day
+      "INSERT INTO Buying(tDate,ID,Symbol,BQuantity) VALUES ('2024-05-01',103,'AAPL',10),('2024-05-01',103,'MSFT',5),('2024-05-01',103,'JPM',8),('2024-05-01',103,'PFE',20),('2024-05-01',103,'XOM',12),('2024-05-01',103,'KO',15);",
+      "INSERT INTO Buying(tDate,ID,Symbol,BQuantity) VALUES ('2024-05-01',101,'AAPL',4),('2024-05-02',101,'AAPL',3),('2024-05-03',101,'AAPL',2),('2024-05-02',102,'AAPL',6),('2024-05-03',103,'AAPL',5),('2024-05-02',103,'TSLA',9);",
+      "INSERT INTO Transactions(tDate,ID,TAmount) VALUES ('2024-05-01',101,5000),('2024-05-02',103,20000);"
+    ].join('\n');
+
+    var IMG_B64 = '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';
+
+    // ---- python bootstrap ----
+    function pyBootstrap(){
+      // js->py via globals
+      py.globals.set('SRC_models', SRC['models.py']);
+      py.globals.set('SRC_views', SRC['views.py']);
+      py.globals.set('SRC_appurls', SRC['app_urls.py']);
+      py.globals.set('SRC_apps', SRC['apps.py']);
+      py.globals.set('SRC_t_index', SRC['t_index']);
+      py.globals.set('SRC_t_buy', SRC['t_buy']);
+      py.globals.set('SRC_t_addtx', SRC['t_addtx']);
+      py.globals.set('SRC_t_query', SRC['t_query']);
+      py.globals.set('SRC_ddl', SRC['ddl.sql']);
+      py.globals.set('SRC_views_sql', SRC['views.sql']);
+      py.globals.set('SRC_seed', SRC['seed.sql']);
+      return py.runPythonAsync([
+'import os, json',
+'os.makedirs("/app/Stocks_App/migrations", exist_ok=True)',
+'os.makedirs("/app/project", exist_ok=True)',
+'os.makedirs("/app/templates", exist_ok=True)',
+'def W(p,s):',
+'    with open(p,"w") as f: f.write(s)',
+'W("/app/Stocks_App/__init__.py","")',
+'W("/app/Stocks_App/models.py", SRC_models)',
+'W("/app/Stocks_App/views.py", SRC_views)',
+'W("/app/Stocks_App/urls.py", SRC_appurls)',
+'W("/app/Stocks_App/apps.py", SRC_apps)',
+'W("/app/Stocks_App/admin.py", "")',
+'W("/app/Stocks_App/migrations/__init__.py","")',
+'W("/app/templates/index.html", SRC_t_index)',
+'# views.py renders "buy_stocks.html" (lowercase) and "Add_Transaction.html"/"Query_results.html"',
+'W("/app/templates/buy_stocks.html", SRC_t_buy)',
+'W("/app/templates/Buy_Stocks.html", SRC_t_buy)',
+'W("/app/templates/Add_Transaction.html", SRC_t_addtx)',
+'W("/app/templates/Query_results.html", SRC_t_query)',
+'',
+'project_settings = """',
+'import os',
+'BASE_DIR = "/app"',
+'SECRET_KEY = "pyodide-insecure-demo-key"',
+'DEBUG = True',
+'ALLOWED_HOSTS = ["*", "testserver"]',
+'INSTALLED_APPS = ["django.contrib.staticfiles", "Stocks_App"]',
+'MIDDLEWARE = [',
+'    "django.middleware.common.CommonMiddleware",',
+'    "django.middleware.csrf.CsrfViewMiddleware",',
+']',
+'ROOT_URLCONF = "project.urls"',
+'TEMPLATES = [{',
+'    "BACKEND": "django.template.backends.django.DjangoTemplates",',
+'    "DIRS": ["/app/templates"],',
+'    "APP_DIRS": True,',
+'    "OPTIONS": {"context_processors": [',
+'        "django.template.context_processors.request",',
+'        "django.template.context_processors.csrf",',
+'    ]},',
+'}]',
+'DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": "/app/db.sqlite3"}}',
+'STATIC_URL = "/static/"',
+'DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"',
+'USE_TZ = False',
+'"""',
+'W("/app/project/__init__.py","")',
+'W("/app/project/settings.py", project_settings)',
+'',
+'project_urls = """',
+'from django.urls import path, include',
+'urlpatterns = [ path("", include("Stocks_App.urls")) ]',
+'"""',
+'W("/app/project/urls.py", project_urls)',
+'',
+'import sys',
+'sys.path.insert(0, "/app")',
+'os.environ.setdefault("DJANGO_SETTINGS_MODULE", "project.settings")',
+'# Pyodide runs single-threaded; we drive Django from runPythonAsync, so allow sync DB ops here.',
+'os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"',
+'import django',
+'django.setup()',
+'DJ_VERSION = django.get_version()',
+'',
+'from django.db import connection',
+'def build_schema():',
+'    # drop everything then create from the REAL DDL + REAL views',
+'    with connection.cursor() as c:',
+'        for v in ["popQuantity","PopComp","EachDayInvBuy","VarInv","StockDays"]:',
+'            c.execute("DROP VIEW IF EXISTS %s" % v)',
+'        for t in ["Buying","Transactions","Stock","Company","Investor"]:',
+'            c.execute("DROP TABLE IF EXISTS %s" % t)',
+'        for stmt in SRC_ddl.split(";"):',
+'            if stmt.strip(): c.execute(stmt)',
+'        for stmt in SRC_seed.split(";"):',
+'            if stmt.strip(): c.execute(stmt)',
+'        for stmt in SRC_views_sql.split(";"):',
+'            if stmt.strip(): c.execute(stmt)',
+'build_schema()',
+'',
+'from django.test import Client',
+'from django.urls import resolve',
+'_client = Client(enforce_csrf_checks=False)',
+'',
+'def reset_db():',
+'    build_schema()',
+'    return "ok"',
+'',
+'def handle(method, path, post_json):',
+'    from django.db import reset_queries',
+'    from django.conf import settings as _s',
+'    _s.DEBUG = True',
+'    reset_queries()',
+'    try:',
+'        view_name = resolve(path).url_name or "?"',
+'    except Exception:',
+'        view_name = "?"',
+'    if method == "POST":',
+'        data = json.loads(post_json) if post_json else {}',
+'        resp = _client.post(path, data)',
+'    else:',
+'        resp = _client.get(path)',
+'    try:',
+'        content = resp.content.decode("utf-8", "replace")',
+'    except Exception:',
+'        content = ""',
+'    qs = [q.get("sql","") for q in connection.queries][-25:]',
+'    return json.dumps({',
+'        "status": resp.status_code,',
+'        "content": content,',
+'        "view": view_name,',
+'        "queries": qs,',
+'        "location": resp.headers.get("Location","") if hasattr(resp,"headers") else "",',
+'    })',
+'DJ_VERSION'
+      ].join('\n'));
+    }
+
+    // ---- mini-browser ----
+    var curPath = '/';
+    var frame, addrBar, wUrl, wView, wStatus, sqlFeed;
+    function inlineStatic(html){
+      // rewrite {% static %}-resolved urls to inline data
+      html = html.replace(/<link[^>]*href="[^"]*style\.css"[^>]*>/gi,
+        '<style>'+SRC['style.css']+'</style>');
+      html = html.replace(/<img([^>]*)src="[^"]*stockHPPhoto\.jpeg"([^>]*)>/gi,
+        '<img$1src="data:image/jpeg;base64,'+IMG_B64+'"$2>');
+      return html;
+    }
+    function renderResponse(res, path){
+      curPath = path;
+      addrBar.textContent = path;
+      wUrl.textContent = path;
+      wView.textContent = res.view || '?';
+      wStatus.textContent = res.status + (res.status>=200&&res.status<400?' OK':'');
+      // SQL feed
+      if(res.queries && res.queries.length){
+        sqlFeed.innerHTML = res.queries.map(function(q){
+          return '<div class="q">'+q.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').trim()+'</div>';
+        }).join('');
+      } else { sqlFeed.innerHTML = '<div class="q muted">(no SQL this request)</div>'; }
+      var html = inlineStatic(res.content || '');
+      frame.srcdoc = html;
+    }
+    async function go(method, path, postObj, pushHist){
+      try{
+        if(pushHist!==false){ navStack.push(curPath); document.getElementById('navBack').disabled = navStack.length===0; }
+        var res = JSON.parse(await py.runPythonAsync(
+          'handle("'+method+'", '+JSON.stringify(path)+', '+JSON.stringify(postObj?JSON.stringify(postObj):'')+')'
+        ));
+        // follow a redirect (POST->GET pattern won't happen here, but be safe)
+        if(res.status>=300 && res.status<400 && res.location){
+          return go('GET', res.location.replace(/^https?:\/\/[^/]+/,'')||'/', null, false);
+        }
+        renderResponse(res, path);
+      }catch(err){
+        sqlFeed.innerHTML = '<div class="q err" style="color:var(--red)">JS/Django error: '+String(err)+'</div>';
+      }
+    }
+    // intercept clicks + form submits inside the iframe
+    function wireFrame(){
+      frame.addEventListener('load', function(){
+        var doc = frame.contentDocument; if(!doc) return;
+        doc.addEventListener('click', function(e){
+          var a = e.target.closest && e.target.closest('a[href]');
+          if(!a) return;
+          var href = a.getAttribute('href');
+          if(!href || href.charAt(0)==='#') return;
+          e.preventDefault();
+          var p = href.replace(/^https?:\/\/[^/]+/,'');
+          if(p.charAt(0)!=='/') p = '/'+p;
+          go('GET', p);
+        });
+        doc.addEventListener('submit', function(e){
+          var f = e.target; if(!f || f.tagName!=='FORM') return;
+          e.preventDefault();
+          var action = f.getAttribute('action') || curPath;
+          action = action.replace(/^https?:\/\/[^/]+/,''); if(action.charAt(0)!=='/') action='/'+action;
+          var data = {};
+          new FormData(f).forEach(function(v,k){ data[k]=v; });
+          go((f.getAttribute('method')||'GET').toUpperCase(), action, data);
+        });
+      });
+    }
+
+    // ---- boot ----
+    function loadScript(src){
+      return new Promise(function(res,rej){
+        var s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=function(){rej(new Error('failed to load '+src));};
+        document.head.appendChild(s);
+      });
+    }
+    async function boot(){
+      if(started) return; started = true;
+      var t0 = performance.now();
+      try{
+        step('Loading Pyodide runtime (CPython → WebAssembly)…');
+        await loadScript(PYODIDE_URL);
+        py = await loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/' });
+        stepDone('Pyodide loaded.');
+
+        step('Installing micropip + sqlite3…');
+        await py.loadPackage(['micropip', 'sqlite3']);
+        stepDone('micropip + sqlite3 ready.');
+
+        step('Installing <b>'+DJANGO_SPEC+'</b> from PyPI (pure-Python wheel)…');
+        await py.runPythonAsync('import micropip\nawait micropip.install("'+DJANGO_SPEC+'")');
+        stepDone('Django installed.');
+
+        step('Writing real Stocks_App source + project shell, running django.setup()…');
+        var ver = await pyBootstrap();
+        stepDone('django.setup() complete — Django '+ver+'.');
+
+        step('Building schema from real create_commands.sql.txt + view_queries.sql, seeding data…');
+        stepDone('Schema + analytic VIEWs created, sample data seeded.');
+
+        step('Booting request loop (django.test.Client)…');
+        // grab UI handles
+        frame = document.getElementById('djFrame');
+        addrBar = document.getElementById('addrBar');
+        wUrl = document.getElementById('wUrl'); wView = document.getElementById('wView');
+        wStatus = document.getElementById('wStatus'); sqlFeed = document.getElementById('sqlFeed');
+        wireFrame();
+        document.getElementById('navHome').addEventListener('click', function(){ go('GET','/'); });
+        document.getElementById('navReseed').addEventListener('click', async function(){
+          await py.runPythonAsync('reset_db()'); go('GET', curPath, null, false);
+        });
+        document.getElementById('navBack').addEventListener('click', function(){
+          if(!navStack.length) return; var p = navStack.pop();
+          document.getElementById('navBack').disabled = navStack.length===0;
+          go('GET', p, null, false);
+        });
+        await go('GET','/', null, false);
+        stepDone('Ready — the real Django app is live below. ✓');
+        var secs = ((performance.now()-t0)/1000).toFixed(1);
+        log('<b>Booted in '+secs+'s.</b> Every click & form submit runs through the genuine Stocks_App view code.', 'ok');
+        ready = true;
+        document.getElementById('realUI').style.display = 'block';
+      }catch(err){
+        console.error('[Stocks_App/Pyodide boot]', err);
+        var lines = logEl.querySelectorAll('.ln'); lines.forEach(function(l){ delete l.dataset.live; });
+        log('✗ Boot failed: '+String(err && err.message || err), 'err');
+        document.getElementById('realFailMsg').textContent = String(err && err.message || err);
+        document.getElementById('realFail').style.display = 'block';
+      }
+    }
+
+    document.getElementById('gotoDemo').addEventListener('click', function(e){
+      e.preventDefault();
+      document.querySelector('.tab[data-t="demo"]').click();
+    });
+
+    // lazy-boot only when the tab is first opened
+    document.querySelector('.tab[data-t="real"]').addEventListener('click', function(){
+      if(!started) boot();
+    });
+  })();
+</script>
+</body>
+</html>

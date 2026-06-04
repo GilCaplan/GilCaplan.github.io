@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ML02 — Advanced Machine Learning (970209)</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0B1220;--surface:#0F172A;--panel:#1E293B;--border:#243044;
+    --text:#E2E8F0;--muted:#94A3B8;--accent:#14B8A6;--blue:#60A5FA;--red:#F87171;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.55}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 20px 56px}
+  h1{font-size:1.6rem;margin:0 0 4px}
+  h2{font-size:1.15rem;margin:0 0 10px}
+  h3{font-size:1rem;margin:18px 0 8px;color:var(--blue)}
+  .sub{color:var(--muted);font-size:.95rem;margin:0 0 18px}
+  code,.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+  .tag{display:inline-block;font-size:.72rem;padding:2px 9px;border-radius:999px;
+    background:rgba(20,184,166,.12);color:var(--accent);border:1px solid rgba(20,184,166,.3);margin-right:6px}
+  .tag.blue{background:rgba(96,165,250,.12);color:var(--blue);border-color:rgba(96,165,250,.3)}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 16px;border-bottom:1px solid var(--border);padding-bottom:10px}
+  .tab{cursor:pointer;padding:7px 14px;border-radius:8px;color:var(--muted);font-size:.9rem;
+    border:1px solid transparent;background:transparent;transition:.15s;font-family:inherit}
+  .tab:hover{color:var(--text);background:var(--panel)}
+  .tab.active{color:var(--accent);background:rgba(20,184,166,.1);border-color:rgba(20,184,166,.3)}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px}
+  .panel.alt{background:var(--panel)}
+  .view{display:none}.view.active{display:block}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+  pre{background:#0a0f1a;border:1px solid var(--border);border-radius:10px;padding:14px;overflow:auto;
+    font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.78rem;color:#cbd5e1;margin:0}
+  .muted{color:var(--muted)}
+  .kw{color:var(--blue)}.fn{color:var(--accent)}.cm{color:#5b6b82;font-style:italic}.st{color:#f0b27a}
+  img{max-width:100%;border-radius:10px;border:1px solid var(--border);display:block;background:#fff}
+  .cap{font-size:.78rem;color:var(--muted);margin:6px 0 0;text-align:center}
+  .stat{display:inline-block;background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    padding:10px 16px;margin:4px 6px 4px 0;text-align:center}
+  .stat b{display:block;font-size:1.35rem;color:var(--accent);font-family:"JetBrains Mono",monospace}
+  .stat span{font-size:.74rem;color:var(--muted)}
+  .pipe{display:flex;gap:0;flex-wrap:wrap;align-items:stretch;margin:6px 0}
+  .stage{flex:1;min-width:120px;background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    padding:10px 12px;margin:4px;position:relative}
+  .stage b{color:var(--blue);font-size:.85rem}.stage p{font-size:.74rem;color:var(--muted);margin:5px 0 0}
+  .filebar{font-size:.74rem;color:var(--muted);margin-top:10px;font-family:"JetBrains Mono",monospace}
+  .badge{font-size:.78rem;color:var(--muted)}
+  ul.tight{font-size:.86rem;color:var(--muted);margin:6px 0;padding-left:18px}
+  .lrbtns{display:flex;gap:8px;margin-bottom:12px}
+  table{border-collapse:collapse;width:100%;font-size:.82rem;font-family:"JetBrains Mono",monospace}
+  th,td{border:1px solid var(--border);padding:6px 9px;text-align:right}
+  th{color:var(--blue);background:var(--panel)}
+  td.lbl{text-align:left;color:var(--muted)}
+  a{color:var(--blue)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div><span class="tag">Technion 970209</span><span class="tag blue">PyTorch · from scratch</span></div>
+  <h1>Advanced Machine Learning</h1>
+  <p class="sub">Coursework repo <code>ML02_970209</code> — deep learning, generalization &amp; generative models.
+  The shipped assignment (HW1) builds neural nets <b>without autograd or <code>torch.nn</code></b>: a hand-derived
+  fully-connected net on MNIST, a custom CNN dog-emotion classifier, and analysis of a pretrained VGG-16.
+  Every figure and number below is copied from the real notebook outputs.</p>
+
+  <div class="tabs">
+    <button class="tab active" data-v="ov">Overview</button>
+    <button class="tab" data-v="fc">Q2 · FC net (MNIST)</button>
+    <button class="tab" data-v="cnn">Q3 · CNN (dogs)</button>
+    <button class="tab" data-v="vgg">Q3.II · VGG-16</button>
+    <button class="tab" data-v="live">▶ Live: Run the model</button>
+    <button class="tab" data-v="code">Code</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="view active" id="ov">
+    <div class="panel">
+      <h2>HW1 — three coded parts</h2>
+      <div class="pipe">
+        <div class="stage"><b>Q1 · Theory</b><p>Hand-derive softmax Jacobian &amp; cross-entropy gradient
+          (∂CE/∂θ = ŷ − y). Implement derivatives of sigmoid, tanh, softmax in raw PyTorch.</p></div>
+        <div class="stage"><b>Q2 · FC net</b><p>2-layer fully-connected net on MNIST. Manual forward +
+          backprop, no <code>backward()</code>. Sweep learning rates.</p></div>
+        <div class="stage"><b>Q3.I · CNN</b><p>Custom CNN "dog-emotion" classifier (4 classes), trained
+          300 epochs with augmentation. 100k params.</p></div>
+        <div class="stage"><b>Q3.II · VGG-16</b><p>Probe a pretrained VGG-16: top-5 predictions on
+          birds vs a dog, visualize first-conv-layer feature maps.</p></div>
+      </div>
+      <p class="muted" style="font-size:.86rem">Hard constraint in Q2: <b>only raw tensor ops</b> — no
+      auto-differentiation, no built-in losses/activations/optimizers/layers. The gradients are derived by hand
+      and coded directly (see the Code tab).</p>
+    </div>
+    <div class="panel">
+      <h2>Headline results <span class="badge">(from notebook outputs)</span></h2>
+      <div class="stat"><b>87.0%</b><span>FC net MNIST test acc · lr 0.01</span></div>
+      <div class="stat"><b>93.7%</b><span>FC net MNIST test acc · lr 0.1</span></div>
+      <div class="stat"><b>67.9%</b><span>CNN dog-emotion test acc</span></div>
+      <div class="stat"><b>100,116</b><span>CNN parameters</span></div>
+      <p class="muted" style="font-size:.85rem;margin-top:10px">Course syllabus (README): supervised DL
+      (FC/CNN/RNN/GNN, Transformers, contrastive), generalization (implicit bias of SGD, PAC-Bayes, robustness,
+      adversarial attacks &amp; defenses), and generative models (GANs, VAEs, diffusion).</p>
+    </div>
+  </div>
+
+  <!-- FC NET -->
+  <div class="view" id="fc">
+    <div class="panel">
+      <h2>Fully-connected net on MNIST — hand-coded backprop</h2>
+      <p class="muted" style="font-size:.88rem">Architecture: <code>784 → 128 (sigmoid) → 10 (softmax)</code>,
+      trained 16 epochs, batch 32, seed 42. The same model is trained at three learning rates.
+      Pick one to plot the <i>actual recorded</i> train/test curves:</p>
+      <div class="lrbtns">
+        <button class="tab active" data-lr="0.01">lr = 0.01</button>
+        <button class="tab" data-lr="0.05">lr = 0.05</button>
+        <button class="tab" data-lr="0.1">lr = 0.1</button>
+      </div>
+      <div class="grid2">
+        <div class="panel alt"><canvas id="lossChart" height="240"></canvas></div>
+        <div class="panel alt"><canvas id="accChart" height="240"></canvas></div>
+      </div>
+      <p class="muted" style="font-size:.85rem;margin-top:12px"><b>Repo's finding:</b> higher learning rates
+      converge faster and reach higher final test accuracy here, but widen the train–test gap (more overfitting).
+      Final test accuracy: <b>87.0%</b> (0.01) → <b>92.2%</b> (0.05) → <b>93.7%</b> (0.1).</p>
+    </div>
+    <div class="panel">
+      <h3>Original notebook figures (matplotlib output)</h3>
+      <div class="grid2">
+        <div><img src="img/fc_curves_0.png" alt="FC curves lr 0.01"><p class="cap">lr = 0.01</p></div>
+        <div><img src="img/fc_curves_2.png" alt="FC curves lr 0.1"><p class="cap">lr = 0.1</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CNN -->
+  <div class="view" id="cnn">
+    <div class="panel">
+      <h2>"Dog-emotion" CNN — 4-class classifier</h2>
+      <p class="muted" style="font-size:.88rem">Themed task: classify a dog's emotion so campus students know
+      whether to pet it. Custom CNN (no pretrained weights), heavy augmentation, 300 epochs, Adam (lr 5e-4,
+      weight-decay 1e-4) with a StepLR scheduler. Best model chosen by validation accuracy.</p>
+      <div>
+        <div class="stat"><b>2800</b><span>train images</span></div>
+        <div class="stat"><b>400</b><span>val</span></div>
+        <div class="stat"><b>800</b><span>test</span></div>
+        <div class="stat"><b>4</b><span>classes</span></div>
+        <div class="stat"><b>67.9%</b><span>test accuracy</span></div>
+      </div>
+      <p class="muted" style="font-size:.84rem;margin-top:8px">Classes: <code>angry · happy · relaxed · sad</code>
+      (balanced). Test loss 0.858.</p>
+    </div>
+    <div class="panel">
+      <h3>Class distribution &amp; augmented training samples <span class="badge">(notebook EDA)</span></h3>
+      <div class="grid2">
+        <div><img src="img/dog_dist.png" alt="class distribution"><p class="cap">Balanced class distribution</p></div>
+        <div><img src="img/dog_samples.png" alt="augmented dog samples"><p class="cap">Training samples after augmentation (de-normalized)</p></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Training curves over 300 epochs</h3>
+      <img src="img/cnn_curves.png" alt="CNN loss and accuracy curves">
+      <p class="cap">Loss &amp; accuracy per epoch (train vs validation)</p>
+      <p class="muted" style="font-size:.85rem;margin-top:10px"><b>Repo's note:</b> the design progressively
+      increases channel count with dropout and Leaky-ReLU / SiLU activations, an adaptive average-pool, then FC
+      heads — reaching 67.9% test accuracy with only ~100k parameters.</p>
+    </div>
+  </div>
+
+  <!-- VGG -->
+  <div class="view" id="vgg">
+    <div class="panel">
+      <h2>Probing a pretrained VGG-16</h2>
+      <p class="muted" style="font-size:.88rem">Load <code>torchvision.models.vgg16(pretrained=True)</code>,
+      run inference on two bird photos and one dog photo (resized 224×224, ImageNet-normalized), and inspect
+      first-conv-layer activations.</p>
+      <h3>Inputs from the repo</h3>
+      <div class="grid2">
+        <div><img src="img/birds.png" alt="two bird inputs"><p class="cap">birds/bird_0.jpg, bird_1.jpg</p></div>
+        <div><img src="img/dog7.png" alt="dog input"><p class="cap">dogs/dog_7.jpg</p></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Top-5 predicted ImageNet class indices <span class="badge">(actual <code>torch.topk</code> output)</span></h3>
+      <table>
+        <tr><th class="lbl" style="text-align:left">image</th><th>rank 1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr>
+        <tr><td class="lbl">bird_0</td><td>94</td><td>95</td><td>92</td><td>84</td><td>128</td></tr>
+        <tr><td class="lbl">bird_1</td><td>90</td><td>88</td><td>11</td><td>92</td><td>95</td></tr>
+        <tr><td class="lbl">dog_7</td><td>235</td><td>227</td><td>225</td><td>174</td><td>273</td></tr>
+      </table>
+      <p class="muted" style="font-size:.85rem;margin-top:10px">Repo's observation: the two birds share overlapping
+      top classes, while the dog yields a completely different top-5 — VGG separates the categories cleanly.</p>
+    </div>
+    <div class="panel">
+      <h3>First conv-layer feature maps on the dog</h3>
+      <img src="img/vgg_filters.png" alt="VGG first layer feature maps">
+      <p class="cap">First three channels of <code>vgg16.features[0](dog)</code></p>
+      <p class="muted" style="font-size:.85rem;margin-top:10px">Repo's reading: each early filter accents different
+      low-level cues — rough/distinct edges, then contours &amp; textures, then finer silhouette detail.</p>
+    </div>
+  </div>
+
+  <!-- LIVE -->
+  <div class="view" id="live">
+    <div class="panel">
+      <h2>Run the real trained dog-emotion CNN — in your browser</h2>
+      <p class="muted" style="font-size:.88rem;margin-top:0">This loads the <b>exact weights</b> from the
+      committed checkpoint <code>HW1_ML02_model.pkl</code> (415&nbsp;KB) — the best-validation CNN from Q3 —
+      and runs its full forward pass in pure JavaScript on a Canvas. No server, no libraries.
+      Pick the bundled dog or upload your own photo; the net classifies the emotion into one of four classes:
+      <code>angry · happy · relaxed · sad</code>.</p>
+      <div class="filebar" id="liveStatus">Loading weights…</div>
+    </div>
+
+    <div class="grid2">
+      <div class="panel">
+        <h3 style="margin-top:0">Input image</h3>
+        <p class="muted" style="font-size:.82rem;margin:0 0 10px">Resized to 128×128 and normalized with the
+        dataset's channel mean/std, exactly as in training.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+          <button class="tab active" id="btnPreset" style="border-color:rgba(20,184,166,.3)">Bundled dog</button>
+          <label class="tab" style="cursor:pointer;border:1px solid var(--border)">
+            Upload photo…<input id="fileIn" type="file" accept="image/*" style="display:none">
+          </label>
+          <button class="tab" id="btnPredict" style="background:rgba(20,184,166,.18);color:var(--accent);border:1px solid rgba(20,184,166,.4)">▶ Predict</button>
+        </div>
+        <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
+          <div>
+            <canvas id="inCanvas" width="128" height="128" style="width:160px;height:160px;image-rendering:auto;border:1px solid var(--border);border-radius:8px;background:#0a0f1a"></canvas>
+            <p class="cap">model input (128×128)</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3 style="margin-top:0">Prediction</h3>
+        <div id="predHead" class="muted" style="font-size:.86rem;margin-bottom:8px">Press <b>Predict</b> to run the net.</div>
+        <canvas id="barCanvas" width="420" height="200" style="width:100%;max-width:420px;border-radius:8px"></canvas>
+        <p class="cap">softmax probabilities over the 4 emotion classes</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 style="margin-top:0">What the first conv layer "sees"</h3>
+      <p class="muted" style="font-size:.82rem;margin:0 0 10px">The 8 feature maps produced by the first
+      convolutional block (Conv 3→8, k4 s2 + BatchNorm + SiLU) on your image — early filters fire on edges,
+      colour blobs and texture. Brighter = stronger activation.</p>
+      <canvas id="fmapCanvas" width="560" height="80" style="width:100%;max-width:560px;border-radius:8px;background:#0a0f1a"></canvas>
+    </div>
+
+    <div class="panel alt">
+      <h3 style="margin-top:0">About this model</h3>
+      <ul class="tight" style="font-size:.85rem">
+        <li><b>Task / dataset:</b> 4-class dog-emotion classification (Dog_Emotion: angry / happy / relaxed / sad),
+          128×128 RGB, ~2800 train / 400 val / 800 test images.</li>
+        <li><b>Architecture:</b> 5 conv blocks (Conv+BatchNorm) growing 3→8→16→32→64→128 channels, SiLU activations,
+          2×2 max-pooling, adaptive average-pool to 1×1, then FC 128→8→4. <b>100,116</b> parameters.</li>
+        <li><b>Metric:</b> 67.9% test accuracy (reported in the notebook); chosen by best validation accuracy over 300 epochs.</li>
+        <li><b>Weights:</b> the <b>exact</b> trained parameters from <code>HW1_ML02_model.pkl</code>. BatchNorm is folded
+          into the preceding conv at export, so the browser runs the identical eval-mode function.</li>
+        <li><b>Parity:</b> the JS forward pass matches the original PyTorch model to <b>&lt; 7e-6</b> max-abs logit
+          difference across test inputs. The bundled German-Shepherd photo predicts <b>sad</b> (~0.99) in both.</li>
+        <li><b>Note:</b> browser image resizing differs slightly from PyTorch/PIL, so probabilities on uploaded photos
+          can shift a little versus a Python run on the same file — the network and weights are identical.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- CODE -->
+  <div class="view" id="code">
+    <div class="panel">
+      <h2>Manual forward + backward pass <span class="badge">— HW1_solution_ML2.ipynb</span></h2>
+      <p class="muted" style="font-size:.85rem;margin-top:0">No <code>autograd</code>: gradients are the
+      hand-derived softmax + cross-entropy result <code>(ŷ − y)/N</code>, propagated through the hidden layer.</p>
+<pre><span class="kw">def</span> <span class="fn">forward</span>(self, X):
+    self.z1 = X @ self.W1 + self.b1
+    self.h  = self.activation(self.z1)        <span class="cm"># sigmoid</span>
+    self.z2 = self.h @ self.W2 + self.b2
+    <span class="kw">return</span> softmax(self.z2)
+
+<span class="kw">def</span> <span class="fn">backward</span>(self, X, y, y_hat):
+    n = y.size(0)
+    dl_dz2 = (y_hat - y) / n                   <span class="cm"># softmax+CE gradient</span>
+    dl_dW2 = self.h.T @ dl_dz2;  dl_db2 = dl_dz2.sum(0)
+    dl_dh  = dl_dz2 @ self.W2.T
+    dl_dz1 = dl_dh * self.d_activation(self.z1)
+    dl_dW1 = X.T @ dl_dz1;       dl_db1 = dl_dz1.sum(0)
+    self.W2 -= self.lr*dl_dW2;   self.b2 -= self.lr*dl_db2   <span class="cm"># manual SGD</span>
+    self.W1 -= self.lr*dl_dW1;   self.b1 -= self.lr*dl_db1</pre>
+    </div>
+    <div class="panel">
+      <h2>Activation derivatives (Q2.I)</h2>
+<pre><span class="kw">def</span> <span class="fn">d_sigmoid</span>(x):
+    <span class="kw">return</span> torch.exp(-x) / (1 + torch.exp(-x))**2
+
+<span class="kw">def</span> <span class="fn">d_softmax</span>(x):
+    s = softmax(x)
+    <span class="kw">if</span> len(x.shape) == 1:
+        <span class="kw">return</span> torch.diag(s) - torch.outer(s, s)          <span class="cm"># Jacobian</span>
+    <span class="kw">return</span> torch.diag_embed(s) - torch.bmm(s.unsqueeze(-1), s.unsqueeze(1))</pre>
+      <p class="muted" style="font-size:.82rem">The dry part proves
+      <code>∂softmax_i/∂x_k = softmax_i(δ_ik − softmax_k)</code> and that the cross-entropy gradient collapses to
+      <code>ŷ − y</code>.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// tabs
+document.querySelectorAll('.tab[data-v]').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab[data-v]').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');document.getElementById(t.dataset.v).classList.add('active');
+  };
+});
+
+// ---- real recorded FC-net training logs (from notebook stdout) ----
+const fcData = {
+  "0.01":{trL:[3.5529,1.4797,1.0913,0.9118,0.8039,0.7300,0.6751,0.6321,0.5972,0.5680,0.5432,0.5216,0.5027,0.4859,0.4708,0.4572],
+          teL:[1.8211,1.1778,0.9392,0.8109,0.7291,0.6715,0.6282,0.5939,0.5659,0.5424,0.5222,0.5047,0.4892,0.4754,0.4631,0.4519],
+          trA:[36.81,62.99,71.23,75.40,77.97,79.88,81.24,82.37,83.24,84.00,84.62,85.22,85.73,86.16,86.58,86.92],
+          teA:[56.35,69.16,74.59,77.59,79.61,81.04,82.37,83.14,83.81,84.43,84.94,85.45,85.91,86.44,86.74,87.01]},
+  "0.05":{trL:[1.4990,0.6127,0.4838,0.4167,0.3731,0.3416,0.3174,0.2980,0.2820,0.2685,0.2569,0.2468,0.2378,0.2298,0.2226,0.2160],
+          teL:[0.7279,0.5406,0.4617,0.4148,0.3827,0.3588,0.3400,0.3246,0.3117,0.3008,0.2914,0.2831,0.2759,0.2694,0.2635,0.2583],
+          trA:[65.82,82.78,86.21,87.99,89.23,90.06,90.71,91.27,91.70,92.12,92.47,92.74,93.00,93.23,93.43,93.65],
+          teA:[79.82,84.64,86.61,87.88,88.73,89.33,89.80,90.21,90.56,90.88,91.21,91.40,91.59,91.79,91.94,92.17]},
+  "0.1":{trL:[0.9937,0.4247,0.3383,0.2921,0.2617,0.2396,0.2226,0.2088,0.1973,0.1875,0.1789,0.1713,0.1644,0.1583,0.1526,0.1474],
+         teL:[0.5417,0.4182,0.3616,0.3267,0.3025,0.2845,0.2705,0.2593,0.2499,0.2420,0.2353,0.2294,0.2243,0.2197,0.2156,0.2119],
+         trA:[75.44,87.89,90.20,91.52,92.41,93.04,93.55,94.00,94.31,94.61,94.91,95.17,95.40,95.59,95.78,95.93],
+         teA:[84.81,87.91,89.26,90.14,90.87,91.34,91.74,92.16,92.39,92.76,93.00,93.21,93.34,93.42,93.53,93.66]}
+};
+const epochs=[...Array(16).keys()].map(i=>i+1);
+const gridC='#243044', txtC='#94A3B8';
+Chart.defaults.color=txtC; Chart.defaults.font.family="'JetBrains Mono',monospace"; Chart.defaults.font.size=10;
+
+let lossChart,accChart;
+function mkLine(id,title,trKey,teKey,fmt){
+  return new Chart(document.getElementById(id),{type:'line',
+    data:{labels:epochs,datasets:[
+      {label:'train',data:fcData["0.01"][trKey],borderColor:'#60A5FA',backgroundColor:'#60A5FA',tension:.3,pointRadius:2},
+      {label:'test',data:fcData["0.01"][teKey],borderColor:'#14B8A6',backgroundColor:'#14B8A6',tension:.3,pointRadius:2}]},
+    options:{responsive:true,plugins:{title:{display:true,text:title,color:'#E2E8F0',font:{size:12}},legend:{labels:{boxWidth:12}}},
+      scales:{x:{grid:{color:gridC},title:{display:true,text:'epoch'}},y:{grid:{color:gridC}}}}});
+}
+lossChart=mkLine('lossChart','Loss','trL','teL');
+accChart =mkLine('accChart','Accuracy (%)','trA','teA');
+
+document.querySelectorAll('.tab[data-lr]').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.tab[data-lr]').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    const d=fcData[b.dataset.lr];
+    lossChart.data.datasets[0].data=d.trL; lossChart.data.datasets[1].data=d.teL; lossChart.update();
+    accChart.data.datasets[0].data=d.trA;  accChart.data.datasets[1].data=d.teA;  accChart.update();
+  };
+});
+
+/* ============ LIVE: real CNN forward pass in vanilla JS ============ */
+(function(){
+  const COLORS=['#F87171','#34D399','#60A5FA','#FBBF24'];
+  const statusEl=document.getElementById('liveStatus');
+  let W=null;            // decoded weights
+  let lastInput=null;    // Float32Array(3*128*128), normalized CHW
+
+  function b64ToF32(s){
+    const bin=atob(s); const len=bin.length; const bytes=new Uint8Array(len);
+    for(let i=0;i<len;i++) bytes[i]=bin.charCodeAt(i);
+    return new Float32Array(bytes.buffer);
+  }
+  function silu(x){ return x/(1+Math.exp(-x)); }
+
+  // conv: in {data:Float32Array, C,H,W}; layer has w(Float32),b(Float32),out,in,kh,kw
+  function conv(inp, layer, stride, pad){
+    const {C,H,Wd}=inp, x=inp.data;
+    const O=layer.out, K=layer.kh, KW=layer.kw, w=layer.w, b=layer.b;
+    const Ho=((H+2*pad-K)/stride|0)+1, Wo=((Wd+2*pad-KW)/stride|0)+1;
+    const out=new Float32Array(O*Ho*Wo);
+    for(let oc=0; oc<O; oc++){
+      const wBase=oc*C*K*KW, bias=b[oc];
+      for(let oy=0; oy<Ho; oy++){
+        const iy0=oy*stride-pad;
+        for(let ox=0; ox<Wo; ox++){
+          const ix0=ox*stride-pad;
+          let acc=bias;
+          for(let ic=0; ic<C; ic++){
+            const xBase=ic*H*Wd, wcBase=wBase+ic*K*KW;
+            for(let ky=0; ky<K; ky++){
+              const iy=iy0+ky; if(iy<0||iy>=H) continue;
+              const xRow=xBase+iy*Wd, wRow=wcBase+ky*KW;
+              for(let kx=0; kx<KW; kx++){
+                const ix=ix0+kx; if(ix<0||ix>=Wd) continue;
+                acc+=x[xRow+ix]*w[wRow+kx];
+              }
+            }
+          }
+          out[oc*Ho*Wo+oy*Wo+ox]=acc;
+        }
+      }
+    }
+    return {data:out, C:O, H:Ho, Wd:Wo};
+  }
+  function siluMap(t){ const d=t.data; for(let i=0;i<d.length;i++) d[i]=silu(d[i]); return t; }
+  function maxpool2(t){
+    const {C,H,Wd,data}=t, Ho=H>>1, Wo=Wd>>1;
+    const out=new Float32Array(C*Ho*Wo);
+    for(let c=0;c<C;c++){ const cb=c*H*Wd, ob=c*Ho*Wo;
+      for(let oy=0;oy<Ho;oy++) for(let ox=0;ox<Wo;ox++){
+        const iy=oy<<1, ix=ox<<1;
+        let m=data[cb+iy*Wd+ix];
+        m=Math.max(m,data[cb+iy*Wd+ix+1]);
+        m=Math.max(m,data[cb+(iy+1)*Wd+ix]);
+        m=Math.max(m,data[cb+(iy+1)*Wd+ix+1]);
+        out[ob+oy*Wo+ox]=m;
+      }
+    }
+    return {data:out,C,H:Ho,Wd:Wo};
+  }
+  function gap(t){ const {C,H,Wd,data}=t, n=H*Wd, out=new Float32Array(C);
+    for(let c=0;c<C;c++){ let s=0,cb=c*n; for(let i=0;i<n;i++) s+=data[cb+i]; out[c]=s/n; } return out; }
+  function dense(v, layer){ const O=layer.out,I=layer.in,w=layer.w,b=layer.b,out=new Float32Array(O);
+    for(let o=0;o<O;o++){ let s=b[o], wb=o*I; for(let i=0;i<I;i++) s+=w[wb+i]*v[i]; out[o]=s; } return out; }
+  function softmax(v){ let m=-1e9; for(const x of v) m=Math.max(m,x);
+    let s=0; const e=v.map(x=>{const z=Math.exp(x-m); s+=z; return z;}); return e.map(z=>z/s); }
+
+  // full forward; returns {probs, fmap1:{data,C,H,Wd}}
+  function forward(chw){
+    let t={data:chw, C:3, H:W.input, Wd:W.input};
+    t=conv(t, W.convs[0], 2, 1);          // 128->64, C8
+    const fmap1={data:t.data.slice(),C:t.C,H:t.H,Wd:t.Wd}; // pre-pool feature maps for viz
+    t=maxpool2(siluMap(t));               // 64->32
+    t=maxpool2(siluMap(conv(t, W.convs[1],1,1)));  // 32->16
+    t=maxpool2(siluMap(conv(t, W.convs[2],1,1)));  // 16->8
+    t=maxpool2(siluMap(conv(t, W.convs[3],1,1)));  // 8->4
+    t=siluMap(conv(t, W.convs[4],1,1));            // 4x4, C128
+    let v=gap(t);
+    v=dense(v, W.fc1); for(let i=0;i<v.length;i++) v[i]=silu(v[i]);
+    const logits=dense(v, W.fc2);
+    return {probs:softmax(logits), logits, fmap1};
+  }
+
+  // read 128x128 canvas, normalize to CHW Float32
+  function canvasToCHW(ctx){
+    const px=ctx.getImageData(0,0,128,128).data;
+    const n=128*128, out=new Float32Array(3*n);
+    const mu=W.mus, sg=W.sigmas;
+    for(let i=0;i<n;i++){
+      out[i]       =((px[i*4]  /255)-mu[0])/sg[0];
+      out[n+i]     =((px[i*4+1]/255)-mu[1])/sg[1];
+      out[2*n+i]   =((px[i*4+2]/255)-mu[2])/sg[2];
+    }
+    return out;
+  }
+
+  const inCanvas=document.getElementById('inCanvas');
+  const inCtx=inCanvas.getContext('2d');
+  function drawImageToInput(img){
+    inCtx.fillStyle='#0a0f1a'; inCtx.fillRect(0,0,128,128);
+    inCtx.drawImage(img,0,0,128,128);
+    lastInput=canvasToCHW(inCtx);
+  }
+
+  function drawBars(probs){
+    const c=document.getElementById('barCanvas'), x=c.getContext('2d');
+    const Wc=c.width, Hc=c.height; x.clearRect(0,0,Wc,Hc);
+    const names=W.classes, n=names.length, pad=10, bw=(Wc-pad*2)/n*0.62, gap=(Wc-pad*2)/n;
+    const maxH=Hc-46;
+    for(let i=0;i<n;i++){
+      const bx=pad+i*gap+(gap-bw)/2, h=Math.max(2,probs[i]*maxH), by=Hc-26-h;
+      x.fillStyle=COLORS[i]; x.fillRect(bx,by,bw,h);
+      x.fillStyle='#E2E8F0'; x.font='11px JetBrains Mono, monospace'; x.textAlign='center';
+      x.fillText((probs[i]*100).toFixed(1)+'%', bx+bw/2, by-5);
+      x.fillStyle='#94A3B8'; x.fillText(names[i], bx+bw/2, Hc-9);
+    }
+    x.strokeStyle='#243044'; x.beginPath(); x.moveTo(pad,Hc-26); x.lineTo(Wc-pad,Hc-26); x.stroke();
+  }
+
+  function drawFmaps(fmap1){
+    const c=document.getElementById('fmapCanvas'), x=c.getContext('2d');
+    const {data,C,H,Wd}=fmap1; x.clearRect(0,0,c.width,c.height);
+    x.imageSmoothingEnabled=false;
+    const cell=64, pad=6, ty=8, sz=c.height-ty-6;
+    for(let ch=0; ch<C; ch++){
+      // normalize this channel
+      let mn=1e9,mx=-1e9, cb=ch*H*Wd;
+      for(let i=0;i<H*Wd;i++){ const v=data[cb+i]; if(v<mn)mn=v; if(v>mx)mx=v; }
+      const rng=(mx-mn)||1;
+      const tmp=document.createElement('canvas'); tmp.width=Wd; tmp.height=H;
+      const tctx=tmp.getContext('2d'); const img=tctx.createImageData(Wd,H);
+      for(let i=0;i<H*Wd;i++){ const v=((data[cb+i]-mn)/rng)*255|0;
+        img.data[i*4]=v; img.data[i*4+1]=v; img.data[i*4+2]=v; img.data[i*4+3]=255; }
+      tctx.putImageData(img,0,0);
+      const dx=pad+ch*(sz+pad);
+      x.drawImage(tmp, dx, ty, sz, sz);
+      x.strokeStyle='#243044'; x.strokeRect(dx,ty,sz,sz);
+    }
+  }
+
+  function predict(){
+    if(!W){ statusEl.textContent='Weights not loaded yet.'; return; }
+    if(!lastInput){ statusEl.textContent='Load an image first.'; return; }
+    const t0=performance.now();
+    const {probs,fmap1}=forward(lastInput);
+    const dt=(performance.now()-t0).toFixed(0);
+    let best=0; for(let i=1;i<probs.length;i++) if(probs[i]>probs[best]) best=i;
+    document.getElementById('predHead').innerHTML=
+      'Prediction: <b style="color:'+COLORS[best]+'">'+W.classes[best]+'</b> '+
+      '('+(probs[best]*100).toFixed(1)+'% confidence) · forward pass '+dt+' ms';
+    drawBars(probs); drawFmaps(fmap1);
+  }
+
+  function loadPreset(){
+    const img=new Image();
+    img.onload=()=>{ drawImageToInput(img); statusEl.textContent='Ready · bundled dog loaded. Press Predict.'; predict(); };
+    img.onerror=()=>{ statusEl.textContent='Could not load bundled image.'; };
+    img.src='img/dog7.png';
+  }
+
+  document.getElementById('btnPredict').onclick=predict;
+  document.getElementById('btnPreset').onclick=loadPreset;
+  document.getElementById('fileIn').onchange=e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const img=new Image();
+    img.onload=()=>{ drawImageToInput(img); document.getElementById('btnPreset').classList.remove('active');
+      statusEl.textContent='Custom image loaded. Press Predict.'; predict(); URL.revokeObjectURL(img.src); };
+    img.src=URL.createObjectURL(f);
+  };
+
+  fetch('cnn_weights.json').then(r=>r.json()).then(j=>{
+    j.convs.forEach(l=>{ l.w=b64ToF32(l.w); l.b=b64ToF32(l.b); });
+    j.fc1.w=b64ToF32(j.fc1.w); j.fc1.b=b64ToF32(j.fc1.b);
+    j.fc2.w=b64ToF32(j.fc2.w); j.fc2.b=b64ToF32(j.fc2.b);
+    W=j;
+    statusEl.textContent='Weights loaded ('+j.convs.length+' conv blocks + 2 FC, 100,116 params). Loading dog…';
+    loadPreset();
+  }).catch(err=>{ statusEl.textContent='Failed to load weights: '+err; });
+})();
+</script>
+</body>
+</html>
