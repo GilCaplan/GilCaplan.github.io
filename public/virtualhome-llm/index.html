@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VirtualHome PDDL Task Solver — LLM + Classic Planning</title>
+<style>
+  :root{
+    --bg:#0B1220; --surface:#0F172A; --panel:#1E293B; --border:#243044;
+    --text:#E2E8F0; --muted:#94A3B8; --accent:#14B8A6; --blue:#60A5FA; --red:#F87171;
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.55;font-size:15px}
+  .wrap{max-width:1040px;margin:0 auto;padding:24px 20px 56px}
+  h1{font-size:26px;margin:0 0 4px;letter-spacing:-.3px}
+  h2{font-size:19px;margin:0 0 12px;letter-spacing:-.2px}
+  h3{font-size:15px;margin:16px 0 8px}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 18px}
+  .pill{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:20px;
+    background:var(--panel);border:1px solid var(--border);color:var(--muted);margin:0 4px 4px 0}
+  .pill.accent{color:var(--accent);border-color:var(--accent)}
+  .pill.blue{color:var(--blue);border-color:var(--blue)}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 22px;border-bottom:1px solid var(--border)}
+  .tab{background:transparent;border:none;color:var(--muted);padding:9px 14px;cursor:pointer;font-size:14px;
+    font-weight:500;border-bottom:2px solid transparent;border-radius:6px 6px 0 0}
+  .tab:hover{color:var(--text);background:var(--panel)}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .panel{display:none;animation:fade .25s ease}
+  .panel.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:14px 0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:720px){.grid2{grid-template-columns:1fr}}
+  code,.mono{font-family:var(--mono);font-size:12.5px}
+  pre{background:#0a0f1a;border:1px solid var(--border);border-radius:9px;padding:12px;overflow:auto;
+    font-family:var(--mono);font-size:12px;color:var(--text);line-height:1.5}
+  ul{margin:8px 0;padding-left:20px}li{margin:5px 0}
+  a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
+  .note{font-size:12px;color:var(--muted);border-left:2px solid var(--border);padding-left:12px;margin:10px 0}
+  /* pipeline vertical */
+  .flow{display:flex;flex-direction:column;gap:0}
+  .frow{display:flex;gap:14px;align-items:stretch}
+  .stage{flex:0 0 210px;background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    padding:12px 14px;cursor:pointer;transition:.15s}
+  .stage:hover{border-color:var(--accent)}
+  .stage.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+  .stage .n{font-family:var(--mono);font-size:11px;color:var(--accent)}
+  .stage .t{font-weight:600;font-size:13.5px;margin-top:2px}
+  .conn{flex:0 0 210px;display:flex;justify-content:center;color:var(--border);font-size:16px;height:14px}
+  .sdesc{flex:1;display:flex;align-items:center;font-size:13px;color:var(--muted)}
+  .sdesc.show b{color:var(--text)}
+  .kvs{font-family:var(--mono);font-size:12.5px}
+  .kvs div{padding:4px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;gap:14px}
+  .kvs div:last-child{border:none}
+  .kvs span:first-child{color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--border)}
+  th{color:var(--muted);font-weight:600;font-family:var(--mono);font-size:11.5px;text-transform:uppercase;letter-spacing:.4px}
+  td.mono{font-family:var(--mono);font-size:12px}
+  .ok{color:var(--accent)}
+  .seg{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px}
+  .seg button{background:var(--panel);border:1px solid var(--border);color:var(--muted);padding:6px 11px;
+    border-radius:7px;cursor:pointer;font-size:12.5px;font-family:var(--mono)}
+  .seg button.active{color:var(--bg);background:var(--accent);border-color:var(--accent);font-weight:600}
+  .tag{font-family:var(--mono);font-size:11px;color:var(--blue)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>VirtualHome PDDL Task Solver</h1>
+  <p class="sub">Household agent tasks solved by combining an LLM with classic PDDL planning, then executed in the VirtualHome simulator.</p>
+  <div>
+    <span class="pill accent">PDDL planning</span>
+    <span class="pill accent">Gemini 1.5 Flash</span>
+    <span class="pill blue">VirtualHome simulator</span>
+    <span class="pill blue">unified_planning / pyperplan</span>
+    <span class="pill">auto MP4 + verification</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-p="overview">Overview</button>
+    <button class="tab" data-p="pipeline">Pipeline</button>
+    <button class="tab" data-p="domain">PDDL Domain</button>
+    <button class="tab" data-p="example">Worked Example</button>
+    <button class="tab" data-p="results">Results</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="panel active" id="overview">
+    <div class="card">
+      <h2>The idea</h2>
+      <p>An autonomous household agent in the <b>VirtualHome</b> simulator has to carry out natural-language
+      tasks like <i>"Wash teeth"</i> or <i>"Put groceries in the fridge"</i>. Instead of hard-coding
+      task-specific scripts, this system routes everything through <b>structured PDDL planning</b>:
+      the live scene graph becomes a PDDL problem, a planner produces an action plan, and that plan is
+      translated into executable VirtualHome commands, run with frame recording, and verified.</p>
+      <p>The repo contains <b>two solver paths</b> over the same PDDL domain:</p>
+      <ul>
+        <li><b>LLM planner</b> (<span class="mono">llm_planner.py</span>) &mdash; Gemini 1.5 Flash
+        infers the goal from the task description and emits a plan, with a validation + retry loop.</li>
+        <li><b>Classic planner</b> (<span class="mono">test_planner.py</span>) &mdash; the
+        <span class="mono">unified_planning</span> library solves the domain+problem with the
+        <span class="mono">pyperplan</span> engine; the modular pipeline calls this path
+        (<span class="mono">run_unified_planner_string</span>). A vendored <b>Fast Downward</b>
+        is also included.</li>
+      </ul>
+      <p class="note">So the loop is genuinely <b>LLM ↔ classic PDDL</b>: the LLM handles
+      language understanding and goal/scene grounding; the symbolic planner handles sound, typed
+      action sequencing. Either path produces a plan the converter turns into a VirtualHome script.</p>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h3>What's real in the repo</h3>
+        <ul>
+          <li>A complete typed PDDL <b>domain</b> (<span class="mono">virtualhome_pddl_domain.pddl</span>)</li>
+          <li>Modular pipeline + 7 system modules (<span class="mono">pddl_system/</span>)</li>
+          <li>The actual Gemini planner prompt &amp; plan validator</li>
+          <li>A validation report on 10 diverse tasks</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Requirements</h3>
+        <div class="kvs">
+          <div><span>Python</span><span>3.13+</span></div>
+          <div><span>Simulator</span><span>macos_exec.2.2.4.app</span></div>
+          <div><span>LLM</span><span>Gemini API key</span></div>
+          <div><span>Video</span><span>FFmpeg</span></div>
+          <div><span>Planner</span><span>unified_planning + pyperplan</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIPELINE -->
+  <div class="panel" id="pipeline">
+    <div class="card">
+      <h2>The 6/7-step pipeline</h2>
+      <p class="sub" style="margin-bottom:14px">From <span class="mono">pddl_virtualhome_system_modular.py</span>. Click a stage.</p>
+      <div class="flow" id="flow"></div>
+    </div>
+  </div>
+
+  <!-- DOMAIN -->
+  <div class="panel" id="domain">
+    <div class="card">
+      <h2>The PDDL domain</h2>
+      <p>The agent's whole action space is defined as a typed STRIPS domain. Object types form a
+      hierarchy and reachability is modelled explicitly (on a surface, inside a container, inside a
+      room, or always-reachable).</p>
+      <div class="grid2">
+        <div>
+          <h3>Types</h3>
+          <pre>objectt, agent, room
+ ├─ sittable-objectt
+ ├─ switchable-objectt
+ ├─ grabbable-objectt
+ └─ static-objectt
+     ├─ surface-objectt
+     └─ container-objectt</pre>
+        </div>
+        <div>
+          <h3>Key predicates</h3>
+          <pre>(at ?agent ?room)
+(sitting ?agent) (standing ?agent)
+(holding ?agent ?obj)
+(close ?agent ?obj)
+(has-free-hand ?agent)
+(on ?appl) (off ?appl)
+(is-open ?cont) (is-closed ?cont)
+(reachable-on-surface ?obj ?surf)
+(in-container ?obj ?cont)</pre>
+        </div>
+      </div>
+      <h3>Actions (15 in the domain)</h3>
+      <div class="seg" id="actSeg"></div>
+      <pre id="actBody"></pre>
+      <p class="note">Source: <span class="mono">core/pddl_system/virtualhome_pddl_domain.pddl</span>.
+      Movement uses a <span class="mono">ready-to-move / reset-move</span> handshake so the agent
+      walks to one object, acts, then resets before walking to the next.</p>
+    </div>
+  </div>
+
+  <!-- EXAMPLE -->
+  <div class="panel" id="example">
+    <div class="card">
+      <h2>Worked example — "Write an email"</h2>
+      <p class="sub">The end-to-end flow as documented in the README, stage by stage.</p>
+      <pre>Task: "Write an email"
+   ↓  natural-language task
+PDDL Problem: (domain virtualhome) (problem write-an-email)
+              with objects, initial state, goal
+   ↓  scene graph → typed PDDL problem
+Planner solves:
+   (:plan (walk agent kitchen bedroom)
+          (find-object agent computer bedroom) ... )
+   ↓  PDDL actions → VirtualHome commands
+VH Script:
+   [WALK]  &lt;bedroom&gt; (74)
+   [FIND]  &lt;computer&gt; (434)
+   [SIT]   &lt;chair&gt; (373) ...
+   ↓  execute with recording
+Execution: VirtualHome runs the script
+   ↓  compare before/after states
+Verification: computer turned ON, agent sitting ✓
+   ↓
+Video: task_0_Write_an_email.mp4</pre>
+    </div>
+    <div class="card">
+      <h3>How the LLM is prompted (from llm_planner.py)</h3>
+      <p>The Gemini path builds a prompt with the task, the available rooms, and each scene object's
+      capabilities, then constrains it to exact action names and includes goal-inference examples:</p>
+      <pre>"Write an email"      → Goal: agent sitting at computer, computer ON
+"Put groceries in fridge" → Goal: fridge opened, items inside, fridge closed
+"Watch TV"            → Goal: agent sitting, TV ON
+"Go to sleep"         → Goal: agent in bedroom, on bed</pre>
+      <p>The generated plan is then <b>validated</b> (<span class="mono">_validate_pddl_plan</span>):
+      every action must be one of 10 known action names with the right arity, and type checks reject
+      e.g. <span class="mono">switch-on</span> on a non-switchable object &mdash; on failure the prompt
+      is tightened and retried (up to 3 attempts).</p>
+    </div>
+    <p class="note">No real <span class="mono">Output/</span> mp4 or generated plan files are committed
+    to the repo (that folder is git-ignored), so the example above reflects the README's documented
+    run rather than a checked-in artifact.</p>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="panel" id="results">
+    <div class="card">
+      <h2>Validation results</h2>
+      <p>From <span class="mono">core/SUCCESS_REPORT.md</span> &mdash; 10 diverse tasks, each run
+      end-to-end through the pipeline. Success went from a 30% baseline to 100% after fixes to the
+      simulator timeout, recorder buffer, object typing, and the FFmpeg frame glob.</p>
+      <div class="kvs">
+        <div><span>Success rate</span><span class="ok">100% (10/10)</span></div>
+        <div><span>Initial baseline</span><span>30%</span></div>
+        <div><span>Avg execution time</span><span>35–45 s / task</span></div>
+        <div><span>Frame range</span><span>12 – 2236 frames</span></div>
+        <div><span>Video size</span><span>0.3 – 3.0 MB</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>The 10 test tasks (all passed)</h3>
+      <table>
+        <thead><tr><th>ID</th><th>Task</th><th>Frames</th><th>Video</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">67</td><td>Wash teeth</td><td class="mono">44</td><td class="mono">1.5 MB</td></tr>
+          <tr><td class="mono">1</td><td>Put groceries in Fridge</td><td class="mono">33</td><td class="mono">0.6 MB</td></tr>
+          <tr><td class="mono">5</td><td>Wash dishes with dishwasher</td><td class="mono">37</td><td class="mono">1.4 MB</td></tr>
+          <tr><td class="mono">36</td><td>Watch TV</td><td class="mono">119</td><td class="mono">3.0 MB</td></tr>
+          <tr><td class="mono">7</td><td>Go to sleep</td><td class="mono">43</td><td class="mono">1.4 MB</td></tr>
+          <tr><td class="mono">9</td><td>Change TV channel</td><td class="mono">115</td><td class="mono">3.0 MB</td></tr>
+          <tr><td class="mono">12</td><td>Browse internet</td><td class="mono">76</td><td class="mono">2.0 MB</td></tr>
+          <tr><td class="mono">27</td><td>Turn on light</td><td class="mono">55</td><td class="mono">1.8 MB</td></tr>
+          <tr><td class="mono">39</td><td>Turn on light (multi-room)</td><td class="mono">22</td><td class="mono">0.7 MB</td></tr>
+          <tr><td class="mono">69</td><td>Turn on light (dual)</td><td class="mono">12</td><td class="mono">0.3 MB</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Known limitations (as stated in the repo)</h3>
+      <ul>
+        <li>Optimized for one scene (<span class="mono">TrimmedTestScene1_graph</span>).</li>
+        <li>Some living-room navigation hits VirtualHome collision constraints.</li>
+        <li>LLM-dependent path requires a Gemini API key.</li>
+      </ul>
+      <p style="margin-top:12px"><a href="https://github.com/GilCaplan/virtualhome_llm_project" target="_blank">→ GilCaplan/virtualhome_llm_project on GitHub</a></p>
+    </div>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');document.getElementById(t.dataset.p).classList.add('active');
+  };
+});
+
+// pipeline
+const stages=[
+  ["STEP 1","Load scene + task","Load the VirtualHome scene and pull the task (id, title, description) from the dataset."],
+  ["STEP 2","Scene → PDDL problem","Convert the live scene graph into a typed PDDL problem — objects, initial state, and an inferred goal."],
+  ["STEP 3","Solve the plan","Run the planner over domain+problem. Modular path uses unified_planning/pyperplan; the LLM path uses Gemini 1.5 Flash with validate-and-retry."],
+  ["STEP 4","PDDL → VH script","Translate plan actions into VirtualHome commands, resolving object names to scene IDs with fuzzy matching."],
+  ["STEP 4.5","Spawn missing objects","If the script references objects absent from the scene graph, spawn them and remap IDs."],
+  ["STEP 5","Execute + verify","Run the script with frame recording, then compare before/after environment states to verify the goal."],
+  ["STEP 6","Generate video","Stitch recorded frames into an MP4 with FFmpeg (glob pattern handles 12–2236 frames)."]
+];
+const flow=document.getElementById('flow');
+stages.forEach((s,i)=>{
+  const row=document.createElement('div');row.className='frow';
+  row.innerHTML=`<div class="stage${i===0?' sel':''}" data-s="${i}"><div class="n">${s[0]}</div><div class="t">${s[1]}</div></div>
+    <div class="sdesc" data-d="${i}">${i===0?'<b>'+s[2]+'</b>':''}</div>`;
+  flow.appendChild(row);
+  if(i<stages.length-1){const c=document.createElement('div');c.className='frow';
+    c.innerHTML='<div class="conn">↓</div><div class="sdesc"></div>';flow.appendChild(c);}
+});
+function selS(i){
+  document.querySelectorAll('.stage').forEach(s=>s.classList.remove('sel'));
+  document.querySelectorAll('.sdesc[data-d]').forEach(d=>{d.innerHTML='';d.classList.remove('show')});
+  document.querySelector('.stage[data-s="'+i+'"]').classList.add('sel');
+  const d=document.querySelector('.sdesc[data-d="'+i+'"]');d.innerHTML='<b>'+stages[i][2]+'</b>';d.classList.add('show');
+}
+document.querySelectorAll('.stage').forEach(s=>s.onclick=()=>selS(+s.dataset.s));
+
+// domain actions (verbatim snippets from the domain file)
+const acts={
+"walk-to-static-object":`(:action walk-to-static-object
+ :parameters (?agent - agent ?obj - static-objectt)
+ :precondition (and (standing ?agent) (always-reachable ?obj)
+                    (not-ready-to-move-to-next-obj ?agent))
+ :effect (and (close ?agent ?obj) (ready-to-move-to-next-obj ?agent)
+              (not (not-ready-to-move-to-next-obj ?agent))))`,
+"sit":`(:action sit
+ :parameters (?agent - agent ?seat - sittable-objectt)
+ :precondition (and (standing ?agent) (close ?agent ?seat))
+ :effect (and (sitting ?agent) (not (standing ?agent))))`,
+"grab-from-surface":`(:action grab-from-surface
+ :parameters (?agent - agent ?obj - grabbable-objectt ?surf - surface-objectt)
+ :precondition (and (reachable-on-surface ?obj ?surf) (close ?agent ?obj)
+                    (has-free-hand ?agent) (on-surface ?obj ?surf))
+ :effect (and (holding ?agent ?obj) (not (has-free-hand ?agent))
+              (not (on-surface ?obj ?surf))))`,
+"open-container":`(:action open-container
+ :parameters (?agent - agent ?cont - container-objectt)
+ :precondition (and (is-closed ?cont) (always-reachable ?cont)
+                    (close ?agent ?cont) (has-free-hand ?agent))
+ :effect (and (is-open ?cont) (not (is-closed ?cont))))`,
+"switchon":`(:action switchon
+ :parameters (?agent - agent ?app - switchable-objectt)
+ :precondition (and (close ?agent ?app) (off ?app))
+ :effect (and (on ?app) (not (off ?app))))`
+};
+const actSeg=document.getElementById('actSeg');
+Object.keys(acts).forEach((k,i)=>{
+  const b=document.createElement('button');b.textContent=k;
+  b.onclick=()=>{[...actSeg.children].forEach(x=>x.classList.remove('active'));b.classList.add('active');
+    document.getElementById('actBody').textContent=acts[k];};
+  if(i===0)b.classList.add('active');actSeg.appendChild(b);
+});
+document.getElementById('actBody').textContent=acts["walk-to-static-object"];
+</script>
+</body>
+</html>

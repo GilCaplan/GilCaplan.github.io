@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SE_course_Technion — Java OOP</title>
+<style>
+  :root{
+    --bg:#0B1220; --surface:#0F172A; --panel:#1E293B; --border:#243044;
+    --text:#E2E8F0; --muted:#94A3B8; --accent:#14B8A6; --blue:#60A5FA; --red:#F87171; --yellow:#FBBF24;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.55;font-size:15px}
+  .wrap{max-width:1080px;margin:0 auto;padding:22px 20px 60px}
+  h1{font-size:24px;margin:0 0 4px}h2{font-size:18px;margin:22px 0 10px}h3{font-size:15px;margin:14px 0 8px;color:var(--blue)}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 16px}
+  code,pre,.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+  .pill{font-size:11px;color:var(--accent);border:1px solid #1d4d47;border-radius:6px;padding:1px 7px;margin-left:6px}
+  .tag{display:inline-block;background:var(--panel);border:1px solid var(--border);color:var(--muted);
+    border-radius:999px;padding:2px 10px;font-size:12px;margin:2px 4px 2px 0}
+  .tag.a{color:var(--accent);border-color:#1d4d47}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 14px;border-bottom:1px solid var(--border)}
+  .tab{background:none;border:none;color:var(--muted);padding:9px 14px;cursor:pointer;font-size:14px;
+    font-weight:600;border-bottom:2px solid transparent;border-radius:8px 8px 0 0}
+  .tab:hover{color:var(--text);background:var(--surface)}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .panel{display:none}.panel.active{display:block}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin:12px 0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  pre{background:#0a0f1a;border:1px solid var(--border);border-radius:10px;padding:14px;overflow:auto;
+    font-size:12.5px;line-height:1.5;margin:8px 0}
+  .kw{color:var(--blue)}.fn{color:var(--accent)}.str{color:#fca5a5}.cm{color:#5b6b82}
+  .muted{color:var(--muted)}
+  .note{background:#13202e;border-left:3px solid var(--blue);padding:8px 12px;border-radius:6px;font-size:13px;color:var(--muted);margin:10px 0}
+  a{color:var(--blue)}
+  .foot{color:var(--muted);font-size:12.5px;margin-top:26px;border-top:1px solid var(--border);padding-top:14px}
+  .hwcard{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+  .hwcard h4{margin:0 0 6px;color:var(--blue);font-size:14px;font-family:"JetBrains Mono",monospace}
+  .hwcard p{margin:0;font-size:13px;color:var(--muted)}
+  img.diag{width:100%;border:1px solid var(--border);border-radius:10px;background:#0a0f1a;margin:8px 0}
+  .ctrls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+  select,input.t{background:#0a0f1a;border:1px solid var(--border);color:var(--text);border-radius:8px;
+    padding:7px 10px;font-family:"JetBrains Mono",monospace;font-size:13px}
+  label.lbl{font-size:12px;color:var(--muted);margin-right:2px}
+  button.act{background:var(--accent);color:#04201c;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer;font-size:13px}
+  button.act:hover{filter:brightness(1.1)}
+  button.act.ghost{background:transparent;color:var(--accent);border:1px solid #1d4d47}
+  button.act.ghost:hover{background:#0e2622}
+  button.act:disabled{opacity:.4;cursor:not-allowed}
+  .out{font-family:"JetBrains Mono",monospace;font-size:13.5px;background:#0a0f1a;border:1px solid var(--border);
+    border-radius:8px;padding:12px 14px;margin-top:8px;color:var(--accent);min-height:20px;white-space:pre-wrap}
+  canvas{background:#0a0f1a;border:1px solid var(--border);border-radius:10px;display:block;max-width:100%}
+  .boards{display:flex;gap:18px;flex-wrap:wrap}
+  .boardbox{flex:1;min-width:280px}
+  .boardbox h3{margin-top:0}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:8px 0}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .sw{width:12px;height:12px;border-radius:3px;display:inline-block;border:1px solid #334155}
+  .log{font-family:"JetBrains Mono",monospace;font-size:12.5px;background:#0a0f1a;border:1px solid var(--border);
+    border-radius:8px;padding:10px 12px;margin-top:8px;height:120px;overflow:auto;color:var(--text)}
+  .log .m{color:var(--muted)}.log .h{color:var(--accent)}.log .x{color:var(--red)}.log .s{color:var(--yellow)}
+  table.songs{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+  table.songs th,table.songs td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--border)}
+  table.songs th{color:var(--muted);font-weight:600;font-size:12px}
+  table.songs td{font-family:"JetBrains Mono",monospace}
+  .puzzlegrid{display:grid;gap:4px;margin:10px 0}
+  .ptile{background:var(--panel);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;
+    justify-content:center;font-family:"JetBrains Mono",monospace;font-weight:700;font-size:18px;cursor:pointer;
+    user-select:none;transition:transform .12s ease, background .12s ease}
+  .ptile:hover{background:#26344a}
+  .ptile.blank{background:transparent;border-color:transparent;cursor:default}
+  .ptile.moving{background:#13433c;color:var(--accent)}
+  .small{font-size:12px;color:var(--muted)}
+  .row{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>SE_course_Technion <span class="pill">Technion · Software Engineering 094219</span></h1>
+  <p class="sub">Java OOP coursework — five assignments exercising inheritance, abstract classes &amp;
+  interfaces, generics, collections, iterators, exceptions and recursion. Each tab below ports the real Java
+  logic to the browser so you can actually <b>play / run</b> it.</p>
+  <div>
+    <span class="tag a">Java OOP</span><span class="tag a">inheritance &amp; interfaces</span>
+    <span class="tag a">generics</span><span class="tag a">iterators</span>
+    <span class="tag a">recursion</span><span class="tag a">search / heuristics</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-t="ov">Overview</button>
+    <button class="tab" data-t="hw0">HW0 — Battleship</button>
+    <button class="tab" data-t="hw1">HW1 — Tile Puzzle</button>
+    <button class="tab" data-t="hw2">HW2 — Polynomials</button>
+    <button class="tab" data-t="hw3">HW3 — Playlist</button>
+    <button class="tab" data-t="hw4">HW4 — Binary Tree</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="panel active" id="ov">
+    <div class="card">
+      <p>Solutions for the Technion Software Engineering course (Java OOP), covering
+      <i>procedural vs OO paradigms, composition &amp; inheritance, abstract classes &amp;
+      interfaces, the <code>Object</code> superclass, SOLID design, UML, generics, collections, exceptions,
+      testing, recursion, design patterns and multithreading.</i> Every assignment below has a faithful
+      in-browser port of the original Java so you can play or simulate it.</p>
+      <div class="grid">
+        <div class="hwcard"><h4>HW00</h4><p>A full <b>Battleship</b> game vs a bot — placement rules, hit/miss/sunk detection, win/lose loop (<code>Main.java</code>).</p></div>
+        <div class="hwcard"><h4>HW01</h4><p>A sliding <b>tile-puzzle solver</b>: Board/State/Action/Node + a Greedy Best-First <code>Search</code> with a Manhattan heuristic.</p></div>
+        <div class="hwcard"><h4>HW02</h4><p>A <code>Function</code> class hierarchy (calculus): <b>Polynomial</b> <code>valueAt</code> / <code>derivative</code> + bisection &amp; Newton root finders.</p></div>
+        <div class="hwcard"><h4>HW03</h4><p>A <b>Playlist</b> of <code>Song</code>s — generic filtered &amp; ordered iterators, <code>ScanningOrder</code>, custom exceptions.</p></div>
+        <div class="hwcard"><h4>HW04</h4><p>Recursion on <b>binary trees</b>: <code>PathFromRoot</code>, <code>LevelLargestSum</code>, plus a thread-safe reader/writer <code>Database</code>.</p></div>
+      </div>
+      <div class="note">Open the <b>HW0 — Battleship</b> tab to play against the bot, or <b>HW1 — Tile Puzzle</b>
+      to watch the Greedy Best-First search auto-solve a scramble. Every interactive mirrors the exact rules from
+      the Java source — no invented behaviour.</div>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">HW02 — class diagram (shipped in the repo)</h2>
+      <p class="muted">From <code>HW02/diagram.png</code>: an interface <code>checkType</code>
+      implemented by <code>Date</code> (extended by <code>DateTime</code>), and an abstract <code>Function</code>
+      with nine concrete subclasses.</p>
+      <img class="diag" src="diagram.png" alt="HW02 UML class diagram from the repository">
+    </div>
+  </div>
+
+  <!-- HW0 BATTLESHIP -->
+  <div class="panel" id="hw0">
+    <div class="card">
+      <h2 style="margin-top:0">HW00 — Battleship vs a bot</h2>
+      <p class="muted">Faithful port of <code>HW00/Main.java</code>. Board encoding from the source:
+      <code class="mono">SHIP=1</code> on the battlefield; the guessing board uses
+      <code class="mono">NOT_HIT=0, MISS=1, HIT=2, SUNK=3</code>. Ships may not overlap <i>or touch</i> (the
+      <code>checkAdjacent</code> rule forbids the 8 surrounding cells). On every shot the game runs the exact
+      <code>shipSunk</code> scan; the bot fires at uniformly random un-hit tiles like <code>botTurn</code>.
+      You win when all the bot's ships are sunk.</p>
+      <div class="ctrls">
+        <label class="lbl">Board</label>
+        <select id="bsSize">
+          <option value="8">8 × 8</option>
+          <option value="10" selected>10 × 10</option>
+          <option value="6">6 × 6</option>
+        </select>
+        <label class="lbl">Fleet</label>
+        <select id="bsFleet">
+          <option value="5,4,3,3,2" selected>5 4 3 3 2 (classic)</option>
+          <option value="4,3,2,2,1,1">4 3 2 2 1 1</option>
+          <option value="3,2,2">3 2 2 (quick)</option>
+        </select>
+        <button class="act" id="bsNew">New game</button>
+        <button class="act ghost" id="bsAuto">Auto-place my fleet</button>
+        <button class="act ghost" id="bsRotate" title="Toggle horizontal / vertical for the next ship to place">Orientation: Horizontal</button>
+      </div>
+      <p class="small" id="bsHint">Place your ships: click a cell on <b>your board</b> to drop the next ship (or use auto-place).</p>
+      <div class="boards">
+        <div class="boardbox">
+          <h3>Your board</h3>
+          <canvas id="bsMine" width="320" height="320"></canvas>
+        </div>
+        <div class="boardbox">
+          <h3>Enemy waters (click to attack)</h3>
+          <canvas id="bsEnemy" width="320" height="320"></canvas>
+        </div>
+      </div>
+      <div class="legend">
+        <span><span class="sw" style="background:#334155"></span>water</span>
+        <span><span class="sw" style="background:#14B8A6"></span>ship</span>
+        <span><span class="sw" style="background:#60A5FA"></span>miss</span>
+        <span><span class="sw" style="background:#F87171"></span>hit</span>
+        <span><span class="sw" style="background:#7f1d1d"></span>sunk</span>
+      </div>
+      <div class="log" id="bsLog"></div>
+    </div>
+  </div>
+
+  <!-- HW1 TILE PUZZLE -->
+  <div class="panel" id="hw1">
+    <div class="card">
+      <h2 style="margin-top:0">HW01 — Sliding tile puzzle + Greedy Best-First solver</h2>
+      <p class="muted">A search-agent design: <code>Board</code> &rarr; <code>State</code>, transitions are
+      <code>Action</code>s, a <code>Node</code> wraps a state with a parent/action and a heuristic. <code>Search</code>
+      expands nodes from a <code>PriorityQueue</code> ordered by <code>Node.heuristicValue()</code> — the
+      <b>Manhattan distance</b> to the goal — with a visited-set for duplicate detection (exactly as in
+      <code>Search.java</code>). An <code>Action</code> direction names the way a tile <i>slides into</i> the blank.</p>
+<pre><span class="kw">public int</span> <span class="fn">heuristicValue</span>() {                <span class="cm">// Manhattan / L1 distance</span>
+  <span class="kw">for</span> each tile t (value != 0):
+    goalRow = (t-1) / cols;  goalCol = (t-1) % cols;
+    sum += |r - goalRow| + |c - goalCol|;
+  <span class="kw">return</span> sum;
+}
+<span class="cm">// Search: PriorityQueue ordered by heuristicValue, HashSet for duplicate detection (greedy best-first)</span></pre>
+      <div class="ctrls">
+        <label class="lbl">Size</label>
+        <select id="pzSize">
+          <option value="3" selected>3 × 3</option>
+          <option value="2">2 × 2</option>
+          <option value="4">4 × 4</option>
+        </select>
+        <button class="act" id="pzShuffle">Shuffle</button>
+        <button class="act ghost" id="pzSolve">Solve (Greedy Best-First)</button>
+        <button class="act ghost" id="pzStop" disabled>Stop</button>
+      </div>
+      <p class="small">Click any tile next to the blank to slide it. The solver runs the real
+      <code>Search</code> and animates the action list it returns.</p>
+      <div class="row">
+        <div class="puzzlegrid" id="pzGrid"></div>
+        <div style="flex:1;min-width:240px">
+          <div class="out" id="pzOut">Heuristic: 0 — solved.</div>
+          <div class="log" id="pzLog" style="height:160px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HW2 POLYNOMIALS -->
+  <div class="panel" id="hw2">
+    <div class="card">
+      <h2 style="margin-top:0">HW02 — Polynomial (Function hierarchy)</h2>
+      <p class="muted">Abstract <code>Function</code> declares <code>valueAt</code>, <code>toString</code>,
+      <code>derivative</code> and provides root-finding for free. <code>Polynomial</code> stores coefficients
+      <code>an[]</code> and implements all three. The buttons run faithful ports of
+      <code>Polynomial.valueAt</code> / <code>derivative</code> / <code>toString</code> and
+      <code>Function.bisectionMethod</code> / <code>newtonRaphsonMethod</code> (ε = 10⁻⁵).</p>
+      <div class="ctrls">
+        <label class="lbl">coeffs a₀,a₁,a₂…</label>
+        <input class="t" id="coeffs" value="-2,0,1" style="width:160px">
+        <label class="lbl">x</label>
+        <input class="t" id="xval" value="3" style="width:70px" title="x or starting guess">
+        <button class="act" data-op="val">f(x)</button>
+        <button class="act ghost" data-op="der">derivative</button>
+        <button class="act ghost" data-op="bis">root (bisection 0..5)</button>
+        <button class="act ghost" data-op="nr">root (Newton)</button>
+      </div>
+      <div class="out" id="fout">f(x) = (-2 + x^2)</div>
+      <p class="small"><code>toString</code> follows <code>Polynomial.toString()</code> exactly: drops zero terms,
+      omits the coefficient <code>1</code> on <code>x</code>, tidies <code>+ -</code> &rarr; <code>-</code>, wraps in parentheses.</p>
+      <canvas id="polyCanvas" width="640" height="320"></canvas>
+      <p class="small">Plot of <code>f</code> (teal) and <code>f'</code> (blue, dashed) over x ∈ [−5, 5], evaluated with the real <code>valueAt</code>.</p>
+    </div>
+  </div>
+
+  <!-- HW3 PLAYLIST -->
+  <div class="panel" id="hw3">
+    <div class="card">
+      <h2 style="margin-top:0">HW03 — Playlist with filtered &amp; ordered iterators</h2>
+      <p class="muted"><code>Playlist</code> implements <code>Iterable&lt;Song&gt;</code>, <code>FilteredSongIterable</code>
+      and <code>OrderedSongIterable</code>. Iteration order is controlled by a <code>ScanningOrder</code> and three
+      optional filters. Mirrors the real comparators from <code>Playlist.setScanningOrder</code>:
+      <code>NAME</code> sorts by name then artist; <code>DURATION</code> sorts by duration, then name, then artist;
+      <code>ADDING</code> keeps insertion order. Filters drop songs by artist, genre, or
+      <code>duration &gt; max</code> (as in <code>prepareFilteredList</code>). Duplicate name+artist throws
+      <code>SongAlreadyExistsException</code>.</p>
+      <div class="ctrls">
+        <input class="t" id="sName" placeholder="name" style="width:120px">
+        <input class="t" id="sArtist" placeholder="artist" style="width:120px">
+        <select id="sGenre">
+          <option>POP</option><option>ROCK</option><option>HIP_HOP</option>
+          <option>COUNTRY</option><option>JAZZ</option><option>DISCO</option>
+        </select>
+        <input class="t" id="sDur" placeholder="sec" value="180" style="width:70px">
+        <button class="act" id="sAdd">Add song</button>
+      </div>
+      <div class="out" id="sErr" style="min-height:0;color:var(--red);display:none"></div>
+      <div class="ctrls" style="margin-top:14px">
+        <label class="lbl">Order</label>
+        <select id="sOrder"><option value="ADDING">ADDING</option><option value="NAME">NAME</option><option value="DURATION">DURATION</option></select>
+        <label class="lbl">Artist =</label>
+        <input class="t" id="fArtist" placeholder="(any)" style="width:100px">
+        <label class="lbl">Genre =</label>
+        <select id="fGenre"><option value="">(any)</option><option>POP</option><option>ROCK</option><option>HIP_HOP</option><option>COUNTRY</option><option>JAZZ</option><option>DISCO</option></select>
+        <label class="lbl">Dur ≤</label>
+        <input class="t" id="fDur" placeholder="(any)" style="width:70px">
+      </div>
+      <table class="songs" id="sTable"><thead><tr><th>#</th><th>name</th><th>artist</th><th>genre</th><th>duration</th></tr></thead><tbody></tbody></table>
+      <p class="small" id="sCount"></p>
+    </div>
+  </div>
+
+  <!-- HW4 BINARY TREE -->
+  <div class="panel" id="hw4">
+    <div class="card">
+      <h2 style="margin-top:0">HW04 — Recursion on binary trees</h2>
+      <p class="muted">Generic <code>BinNode&lt;E&gt;</code> with left/right children. Two recursive algorithms:
+      <code>PathFromRoot.doesPathExist(root, str)</code> walks the tree matching each character of <code>str</code>
+      against node data, descending to whichever child matches the next char; and
+      <code>LevelLargestSum.getLevelWithLargestSum(root)</code> does a level-by-level BFS and returns the index of
+      the level with the largest data-sum. The buttons below run the <b>exact</b> ported algorithms and animate them.</p>
+      <div class="row">
+        <div style="flex:1;min-width:300px">
+          <canvas id="treeCanvas" width="460" height="300"></canvas>
+        </div>
+        <div style="flex:1;min-width:240px">
+          <h3 style="margin-top:0">PathFromRoot (Character tree)</h3>
+          <div class="ctrls">
+            <input class="t" id="pathStr" value="hey" style="width:120px">
+            <button class="act" id="pathRun">doesPathExist</button>
+          </div>
+          <p class="small">Tree from the repo's <code>Main</code>: root <code>h</code> → left <code>e</code>, right <code>a</code>;
+          <code>e</code> → <code>B,y</code>; <code>y</code> → <code>M,!</code>; <code>B</code> → <code>k</code>.</p>
+          <h3>LevelLargestSum (Integer tree)</h3>
+          <div class="ctrls">
+            <button class="act ghost" id="levelRun">getLevelWithLargestSum</button>
+            <button class="act ghost" id="treeToggle">Show: Character tree</button>
+          </div>
+          <div class="out" id="treeOut">Pick an algorithm to run.</div>
+        </div>
+      </div>
+      <div class="note">Note: the ported <code>getLevelWithLargestSum</code> reproduces a quirk in the original Java —
+      when collecting the next level it tests <code>node.getRight()</code> twice (adding both right and left under
+      that guard), so its level sums match the submitted source verbatim.</div>
+    </div>
+  </div>
+
+  <div class="foot">Faithful interactive artifact for <span class="mono">SE_course_Technion</span> · all logic ported
+  verbatim from the Java sources (HW00–HW04). UML image copied from the repo.</div>
+</div>
+
+<script>
+"use strict";
+/* ============================ TABS ============================ */
+document.querySelectorAll('.tab').forEach(function(t){
+  t.addEventListener('click',function(){
+    document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active');});
+    document.querySelectorAll('.panel').forEach(function(x){x.classList.remove('active');});
+    t.classList.add('active');
+    document.getElementById(t.dataset.t).classList.add('active');
+    if(t.dataset.t==='hw2') drawPoly();
+    if(t.dataset.t==='hw4') drawTree();
+  });
+});
+
+/* ============================ HW0 — BATTLESHIP ============================
+   Faithful port of HW00/Main.java. board[row][col]. On the battlefield SHIP=1.
+   Guess boards: NOT_HIT=0, MISS=1, HIT=2, SUNK=3.  Ships cannot overlap or touch
+   (checkAdjacent forbids all 8 neighbours). shipSunk scans the whole ship.        */
+var BS = (function(){
+  var MISS=1, HIT=2, SUNK=3, NOT_HIT=0, SHIP=1;
+  var st = null;
+  function exceedsBounds(r,c,n,m){ return (c<0||c>=m)||(r<0||r>=n); }
+  function shipInBounds(r,c,len,ver,n,m){ return ver ? (r+len-1<0||r+len>n) : (c+len-1<0||c+len>m); }
+  function checkOverlap(r,c,len,ver,board){
+    for(var i=0;i<len;i++){ var rr=r+i*(ver?1:0), cc=c+i*(ver?0:1); if(board[rr][cc]!==0) return true; }
+    return false;
+  }
+  function checkAdjacent(r,c,board,n,m){
+    for(var i=-1;i<=1;i++) for(var j=-1;j<=1;j++){
+      var rr=r+i, cc=c+j;
+      if(rr>=0&&rr<n&&cc>=0&&cc<m && board[rr][cc]!==0) return true;
+    }
+    return false;
+  }
+  function checkAdjacentShips(r,c,len,ver,board,n,m){
+    for(var i=0;i<len;i++){ if(checkAdjacent(r+i*(ver?1:0), c+i*(ver?0:1), board,n,m)) return true; }
+    return false;
+  }
+  // returns true if placement valid (mirror checkBotShipPlacement)
+  function validPlacement(board,len,r,c,ver,n,m){
+    if(exceedsBounds(r,c,n,m)) return false;
+    if(shipInBounds(r,c,len,ver,n,m)) return false;
+    if(checkOverlap(r,c,len,ver,board)) return false;
+    return !checkAdjacentShips(r,c,len,ver,board,n,m);
+  }
+  // place ship, record [x0,x1) / [y0,y1) ranges exactly like placeShip
+  function placeShip(r,c,len,idx,board,ver,sx,sy){
+    if(ver){
+      for(var i=0;i<len;i++) board[r+i][c]=SHIP;
+      sx[0][idx]=sx[1][idx]=c; sy[0][idx]=r; sy[1][idx]=r+len;
+    } else {
+      for(var i=0;i<len;i++) board[r][c+i]=SHIP;
+      sx[0][idx]=c; sx[1][idx]=c+len; sy[0][idx]=sy[1][idx]=r;
+    }
+  }
+  // exact port of shipSunk: find ship covering (row,col), test all its cells == HIT, mark SUNK
+  function shipSunk(board,sx,sy,row,col){
+    var ship=0, check, found=false;
+    for(var i=0;i<sx[0].length;i++){
+      check = (sx[0][i]===sx[1][i] && sx[0][i]===col);
+      if(check || (col>=sx[0][i] && col<sx[1][i])){
+        check = (sy[0][i]===sy[1][i] && sy[0][i]===row);
+        if(check || (row>=sy[0][i] && row<sy[1][i])){ ship=i; found=true; break; }
+      }
+    }
+    if(!found) return false;
+    var flagSunk=true, hor = (sy[0][ship]===sy[1][ship]);
+    if(hor){
+      for(var j=sx[0][ship];j<sx[1][ship];j++){ flagSunk = board[sy[0][ship]][j]===HIT; if(!flagSunk) break; }
+    } else {
+      for(var j=sy[0][ship];j<sy[1][ship];j++){ flagSunk = board[j][sx[0][ship]]===HIT; if(!flagSunk) break; }
+    }
+    if(flagSunk){
+      if(hor){ for(var j=sx[0][ship];j<sx[1][ship];j++) board[sy[0][ship]][j]=SUNK; }
+      else   { for(var j=sy[0][ship];j<sy[1][ship];j++) board[j][sx[0][ship]]=SUNK; }
+    }
+    return flagSunk;
+  }
+  function placeBotShips(board,ships,sx,sy,n,m){
+    for(var i=0;i<ships.length;i++){
+      var ok=false, r,c,o,guard=0;
+      while(!ok && guard++<100000){
+        r=(Math.random()*n)|0; c=(Math.random()*m)|0; o=(Math.random()*2)|0;
+        ok=validPlacement(board,ships[i],r,c,o===1,n,m);
+      }
+      placeShip(r,c,ships[i],i,board,o===1,sx,sy);
+    }
+  }
+  function newState(n,m,ships){
+    function mk(){ var b=[]; for(var r=0;r<n;r++){ b.push(new Array(m).fill(0)); } return b; }
+    return {
+      n:n, m:m, ships:ships.slice(),
+      playerBoard:mk(), botBoard:mk(), guessPlayer:mk(), guessBot:mk(),
+      botSX:[new Array(ships.length).fill(0),new Array(ships.length).fill(0)],
+      botSY:[new Array(ships.length).fill(0),new Array(ships.length).fill(0)],
+      plSX:[new Array(ships.length).fill(0),new Array(ships.length).fill(0)],
+      plSY:[new Array(ships.length).fill(0),new Array(ships.length).fill(0)],
+      userLife:ships.length, botLife:ships.length,
+      placeIdx:0, ver:false, phase:'place', over:false
+    };
+  }
+  var cMine=document.getElementById('bsMine'), cEnemy=document.getElementById('bsEnemy');
+  var logEl=document.getElementById('bsLog'), hintEl=document.getElementById('bsHint');
+  function log(msg,cls){ var d=document.createElement('div'); if(cls) d.className=cls; d.textContent=msg; logEl.appendChild(d); logEl.scrollTop=logEl.scrollHeight; }
+  function cellPx(canvas){ return canvas.width/st.m; }
+  function draw(){
+    drawBoard(cMine, st.playerBoard, false);
+    drawBoard(cEnemy, st.guessPlayer, true);
+  }
+  function drawBoard(canvas, board, isGuess){
+    var ctx=canvas.getContext('2d'); var n=st.n, m=st.m;
+    var w=canvas.width, h=canvas.height, cw=w/m, ch=h/n;
+    ctx.clearRect(0,0,w,h);
+    for(var r=0;r<n;r++) for(var c=0;c<m;c++){
+      var v=board[r][c], fill='#334155';
+      if(isGuess){
+        if(v===MISS) fill='#60A5FA'; else if(v===HIT) fill='#F87171'; else if(v===SUNK) fill='#7f1d1d';
+      } else {
+        if(v===SHIP) fill='#14B8A6'; else if(v===HIT) fill='#F87171'; else if(v===SUNK) fill='#7f1d1d'; else if(v===MISS) fill='#60A5FA';
+      }
+      ctx.fillStyle=fill;
+      ctx.fillRect(c*cw+1, r*ch+1, cw-2, ch-2);
+    }
+    ctx.strokeStyle='#1e293b'; ctx.lineWidth=1;
+    for(var i=0;i<=m;i++){ ctx.beginPath(); ctx.moveTo(i*cw,0); ctx.lineTo(i*cw,h); ctx.stroke(); }
+    for(var j=0;j<=n;j++){ ctx.beginPath(); ctx.moveTo(0,j*ch); ctx.lineTo(w,j*ch); ctx.stroke(); }
+    // preview next ship under cursor handled separately
+  }
+  function evtCell(canvas,e){
+    var rect=canvas.getBoundingClientRect();
+    var x=(e.clientX-rect.left)*(canvas.width/rect.width);
+    var y=(e.clientY-rect.top)*(canvas.height/rect.height);
+    var c=Math.floor(x/(canvas.width/st.m)), r=Math.floor(y/(canvas.height/st.n));
+    return {r:r,c:c};
+  }
+  function tryPlace(r,c){
+    if(st.phase!=='place') return;
+    var len=st.ships[st.placeIdx], ver=st.ver;
+    if(!validPlacement(st.playerBoard,len,r,c,ver,st.n,st.m)){
+      hintEl.textContent='Invalid spot for ship of size '+len+' ('+(ver?'vertical':'horizontal')+') — must stay in bounds and not touch another ship.';
+      return;
+    }
+    placeShip(r,c,len,st.placeIdx,st.playerBoard,ver,st.plSX,st.plSY);
+    log('Placed your ship of size '+len+(ver?' (vertical)':' (horizontal)')+'.','m');
+    st.placeIdx++;
+    if(st.placeIdx>=st.ships.length){ startBattle(); }
+    else hintEl.textContent='Now place ship of size '+st.ships[st.placeIdx]+'. Click your board (orientation: '+(st.ver?'vertical':'horizontal')+').';
+    draw();
+  }
+  function autoPlace(){
+    if(st.phase!=='place') return;
+    // clear any partial placement and randomly place remaining the same way the bot does
+    for(var r=0;r<st.n;r++) for(var c=0;c<st.m;c++) st.playerBoard[r][c]=0;
+    st.plSX=[new Array(st.ships.length).fill(0),new Array(st.ships.length).fill(0)];
+    st.plSY=[new Array(st.ships.length).fill(0),new Array(st.ships.length).fill(0)];
+    placeBotShips(st.playerBoard,st.ships,st.plSX,st.plSY,st.n,st.m);
+    st.placeIdx=st.ships.length;
+    log('Auto-placed your fleet.','m');
+    startBattle(); draw();
+  }
+  function startBattle(){
+    placeBotShips(st.botBoard,st.ships,st.botSX,st.botSY,st.n,st.m);
+    st.phase='battle';
+    hintEl.textContent='All ships placed. Click ENEMY WATERS to attack. Sink all '+st.ships.length+' enemy ships to win!';
+    log('Game on — '+st.ships.length+' ships each.','h');
+  }
+  // user attacks enemy at (r,c): mirror userTurn
+  function userAttack(r,c){
+    if(st.phase!=='battle'||st.over) return;
+    if(exceedsBounds(r,c,st.n,st.m)){ return; }
+    if(st.guessPlayer[r][c]!==0){ hintEl.textContent='Tile already attacked, try again!'; return; }
+    if(st.botBoard[r][c]===NOT_HIT){
+      st.guessPlayer[r][c]=MISS; log('You attacked ('+r+', '+c+') — miss.','m');
+    } else if(st.botBoard[r][c]===SHIP){
+      st.guessPlayer[r][c]=st.botBoard[r][c]=HIT;
+      if(shipSunk(st.botBoard,st.botSX,st.botSY,r,c)){
+        st.botLife--;
+        // reflect SUNK onto guess board for the whole ship
+        syncSunk(st.guessPlayer, st.botBoard);
+        log('You sank an enemy ship! '+st.botLife+' to go.','s');
+        if(st.botLife===0){ endGame(true); draw(); return; }
+      } else { log('You attacked ('+r+', '+c+') — HIT!','h'); }
+    }
+    draw();
+    setTimeout(botAttack,420);
+  }
+  // bot attacks random un-hit tile: mirror botTurn
+  function botAttack(){
+    if(st.over) return;
+    var r=-1,c=-1,guard=0;
+    while((r<0||st.guessBot[r][c]!==0)&&guard++<100000){ r=(Math.random()*st.n)|0; c=(Math.random()*st.m)|0; }
+    if(st.playerBoard[r][c]===NOT_HIT){
+      st.guessBot[r][c]=MISS; st.playerBoard[r][c]=MISS; log('Computer attacked ('+r+', '+c+') — miss.','m');
+    } else if(st.playerBoard[r][c]===SHIP){
+      st.guessBot[r][c]=st.playerBoard[r][c]=HIT;
+      if(shipSunk(st.playerBoard,st.plSX,st.plSY,r,c)){
+        st.userLife--; log('Computer sank your ship! You have '+st.userLife+' left.','x');
+        if(st.userLife===0){ endGame(false); draw(); return; }
+      } else { log('Computer attacked ('+r+', '+c+') — HIT!','x'); }
+    }
+    draw();
+  }
+  function syncSunk(guess, battle){
+    for(var r=0;r<st.n;r++) for(var c=0;c<st.m;c++) if(battle[r][c]===SUNK) guess[r][c]=SUNK;
+  }
+  function endGame(won){
+    st.over=true; st.phase='over';
+    if(won){ hintEl.textContent='You won the game! 🎉'; log('You won the game!','s'); }
+    else   { hintEl.textContent='You lost ): The computer sank your fleet.'; log('You lost ):','x'); }
+    // reveal remaining enemy ships
+    for(var r=0;r<st.n;r++) for(var c=0;c<st.m;c++) if(st.botBoard[r][c]===SHIP && st.guessPlayer[r][c]===0) st.guessPlayer[r][c]=0;
+  }
+  function newGame(){
+    var n=parseInt(document.getElementById('bsSize').value,10);
+    var ships=document.getElementById('bsFleet').value.split(',').map(function(s){return parseInt(s,10);});
+    // ensure fleet fits board roughly; trim ships longer than board
+    ships=ships.filter(function(l){return l<=n;});
+    st=newState(n,n,ships);
+    logEl.innerHTML='';
+    log('New '+n+'×'+n+' game. Fleet: '+ships.join(' ')+'.','m');
+    hintEl.textContent='Place ship of size '+ships[0]+'. Click YOUR board (orientation: horizontal). Or use Auto-place.';
+    document.getElementById('bsRotate').textContent='Orientation: Horizontal';
+    draw();
+  }
+  // wire up
+  document.getElementById('bsNew').onclick=newGame;
+  document.getElementById('bsAuto').onclick=autoPlace;
+  document.getElementById('bsRotate').onclick=function(){
+    if(!st) return; st.ver=!st.ver;
+    this.textContent='Orientation: '+(st.ver?'Vertical':'Horizontal');
+    if(st.phase==='place') hintEl.textContent='Place ship of size '+st.ships[st.placeIdx]+'. Click YOUR board (orientation: '+(st.ver?'vertical':'horizontal')+').';
+  };
+  cMine.addEventListener('click',function(e){ if(!st) return; var p=evtCell(cMine,e); tryPlace(p.r,p.c); });
+  cEnemy.addEventListener('click',function(e){ if(!st) return; var p=evtCell(cEnemy,e); userAttack(p.r,p.c); });
+  return { init:newGame };
+})();
+BS.init();
+
+/* ============================ HW1 — TILE PUZZLE ============================
+   Faithful port of HW01. Board is rows of values, 0 = blank. Action directions
+   name the way a tile slides into the blank. Heuristic = Manhattan distance.
+   Solver = Greedy Best-First (PriorityQueue by heuristicValue, HashSet visited). */
+var PZ = (function(){
+  var size=3, tiles=[], cols=3, rows=3, solving=false, stopFlag=false;
+  var gridEl=document.getElementById('pzGrid'), outEl=document.getElementById('pzOut'), logEl=document.getElementById('pzLog');
+  function log(m){ var d=document.createElement('div'); d.textContent=m; logEl.appendChild(d); logEl.scrollTop=logEl.scrollHeight; }
+  function key(arr){ return arr.join(','); }
+  function goalArr(){ var a=[]; for(var i=1;i<rows*cols;i++) a.push(i); a.push(0); return a; }
+  function isGoal(arr){ for(var i=0;i<rows*cols-1;i++) if(arr[i]!==i+1) return false; return true; }
+  function manhattan(arr){
+    var sum=0;
+    for(var i=0;i<arr.length;i++){
+      var v=arr[i]; if(v===0) continue;
+      var r=Math.floor(i/cols), c=i%cols;
+      var gr=Math.floor((v-1)/cols), gc=(v-1)%cols;
+      sum += Math.abs(r-gr)+Math.abs(c-gc);
+    }
+    return sum;
+  }
+  function blankIdx(arr){ return arr.indexOf(0); }
+  // neighbours: returns {arr, move:{tile,dir}}; dir = how the tile slides into the blank
+  function neighbours(arr){
+    var res=[], bi=blankIdx(arr), br=Math.floor(bi/cols), bc=bi%cols;
+    // tile above blank -> slides DOWN
+    if(br>0) res.push(swap(arr,bi,bi-cols,'DOWN'));
+    // tile below blank -> slides UP
+    if(br<rows-1) res.push(swap(arr,bi,bi+cols,'UP'));
+    // tile left of blank -> slides RIGHT
+    if(bc>0) res.push(swap(arr,bi,bi-1,'RIGHT'));
+    // tile right of blank -> slides LEFT
+    if(bc<cols-1) res.push(swap(arr,bi,bi+1,'LEFT'));
+    return res;
+  }
+  function swap(arr,bi,ti,dir){
+    var a=arr.slice(); var tile=a[ti]; a[bi]=tile; a[ti]=0;
+    return { arr:a, move:{tile:tile, dir:dir} };
+  }
+  // Greedy Best-First search mirroring Search.java
+  function search(start){
+    var frontier=[{arr:start, parent:null, move:null, h:manhattan(start)}];
+    var enqueued={}; enqueued[key(start)]=true;
+    var expanded=0;
+    while(frontier.length){
+      // pop min-heuristic (PriorityQueue.remove)
+      var mi=0; for(var i=1;i<frontier.length;i++) if(frontier[i].h<frontier[mi].h) mi=i;
+      var node=frontier.splice(mi,1)[0];
+      if(isGoal(node.arr)){ return {node:node, expanded:expanded}; }
+      expanded++;
+      if(expanded>200000){ return {timeout:true, expanded:expanded}; }
+      var ns=neighbours(node.arr);
+      for(var k=0;k<ns.length;k++){
+        var kk=key(ns[k].arr);
+        if(!enqueued[kk]){
+          enqueued[kk]=true;
+          frontier.push({arr:ns[k].arr, parent:node, move:ns[k].move, h:manhattan(ns[k].arr)});
+        }
+      }
+    }
+    return {unsolvable:true, expanded:expanded};
+  }
+  function extract(node){ var acts=[]; while(node){ if(node.move) acts.unshift(node.move); node=node.parent; } return acts; }
+
+  function render(movingTile){
+    gridEl.style.gridTemplateColumns='repeat('+cols+',56px)';
+    gridEl.innerHTML='';
+    for(var i=0;i<tiles.length;i++){
+      var d=document.createElement('div');
+      d.className='ptile'+(tiles[i]===0?' blank':'')+(tiles[i]===movingTile&&movingTile?' moving':'');
+      d.style.width='56px'; d.style.height='56px';
+      d.textContent=tiles[i]===0?'':tiles[i];
+      (function(idx){ d.onclick=function(){ clickTile(idx); }; })(i);
+      gridEl.appendChild(d);
+    }
+    outEl.textContent='Heuristic (Manhattan): '+manhattan(tiles)+(isGoal(tiles)?' — solved.':'');
+  }
+  function clickTile(idx){
+    if(solving) return;
+    var bi=blankIdx(tiles), br=Math.floor(bi/cols), bc=bi%cols, tr=Math.floor(idx/cols), tc=idx%cols;
+    if(Math.abs(br-tr)+Math.abs(bc-tc)!==1) return; // not adjacent
+    var t=tiles[idx]; tiles[bi]=t; tiles[idx]=0; render();
+    if(isGoal(tiles)) log('Solved by hand! Heuristic 0.');
+  }
+  function applyMove(mv){
+    var ti=tiles.indexOf(mv.tile), bi=blankIdx(tiles);
+    tiles[bi]=mv.tile; tiles[ti]=0;
+  }
+  function shuffle(){
+    if(solving) return;
+    tiles=goalArr();
+    // random legal moves to guarantee solvability
+    var moves=size*size*40;
+    for(var i=0;i<moves;i++){ var ns=neighbours(tiles); applyMove(ns[(Math.random()*ns.length)|0].move); }
+    logEl.innerHTML=''; log('Shuffled. Manhattan = '+manhattan(tiles)+'.');
+    render();
+  }
+  function solve(){
+    if(solving||isGoal(tiles)) { if(isGoal(tiles)) log('Already solved.'); return; }
+    solving=true; stopFlag=false;
+    document.getElementById('pzSolve').disabled=true; document.getElementById('pzStop').disabled=false; document.getElementById('pzShuffle').disabled=true;
+    log('Running Greedy Best-First search…');
+    setTimeout(function(){
+      var t0=performance.now();
+      var r=search(tiles.slice());
+      var dt=(performance.now()-t0).toFixed(1);
+      if(r.timeout){ log('Aborted: frontier too large ('+r.expanded+' nodes expanded).'); finish(); return; }
+      if(r.unsolvable){ log('Unsolvable board ('+r.expanded+' nodes).'); finish(); return; }
+      var sol=extract(r.node);
+      log('SOLVED — '+sol.length+' moves, '+r.expanded+' nodes expanded in '+dt+' ms. Animating…');
+      animate(sol,0);
+    },30);
+  }
+  function animate(sol,i){
+    if(stopFlag){ log('Stopped.'); finish(); return; }
+    if(i>=sol.length){ log('Done. Heuristic 0.'); finish(); return; }
+    var mv=sol[i];
+    render(mv.tile);
+    setTimeout(function(){ applyMove(mv); render(); animate(sol,i+1); }, 230);
+  }
+  function finish(){
+    solving=false;
+    document.getElementById('pzSolve').disabled=false; document.getElementById('pzStop').disabled=true; document.getElementById('pzShuffle').disabled=false;
+  }
+  function init(){
+    size=parseInt(document.getElementById('pzSize').value,10); rows=size; cols=size;
+    tiles=goalArr(); logEl.innerHTML=''; render();
+  }
+  document.getElementById('pzShuffle').onclick=shuffle;
+  document.getElementById('pzSolve').onclick=solve;
+  document.getElementById('pzStop').onclick=function(){ stopFlag=true; };
+  document.getElementById('pzSize').onchange=function(){ if(solving) return; init(); };
+  return { init:init };
+})();
+PZ.init();
+
+/* ============================ HW2 — POLYNOMIAL ============================
+   Faithful port of Polynomial.valueAt / derivative / toString and
+   Function.bisectionMethod / newtonRaphsonMethod.                          */
+function parseCoeffs(){ return document.getElementById('coeffs').value.split(',').map(function(s){return parseFloat(s.trim());}).filter(function(v){return !isNaN(v);}); }
+function pValueAt(an,x){ var s=0; for(var i=0;i<an.length;i++) s+=an[i]*Math.pow(x,i); return s; }
+function pDerivative(an){ if(an.length<=1) return [0]; var d=[]; for(var i=0;i<an.length-1;i++) d.push(an[i+1]*(i+1)); return d.length?d:[0]; }
+function fmtNum(a){ return (a%1===0)?(a|0):a; }
+function pToString(an){
+  if(an.length===1){ return '('+fmtNum(an[0])+')'; }
+  var s='';
+  if(an[0]!==0) s+=fmtNum(an[0])+' + ';
+  if(an[1]!==0){ if(an[1]!==1) s+=fmtNum(an[1]); s+='x + '; }
+  for(var i=2;i<an.length;i++){ if(an[i]!==0){ if(an[i]!==1) s+=fmtNum(an[i]); s+='x^'+i+' + '; } }
+  if(s.length===0) return '(0)';
+  var res=s.substring(0,s.length-3).replace(/\+ -1x/g,'- x');
+  return '('+res.replace(/\+ -/g,'- ')+')';
+}
+function bisection(an,a,b,eps){ eps=eps||1e-5; var l=a,r=b,g=0; while((r-l)>eps && g++<200000){ var m=(l+r)/2; if(pValueAt(an,l)*pValueAt(an,m)>0) l=m; else r=m; } return (l+r)/2; }
+function newton(an,a,eps){ eps=eps||1e-5; var x=a,g=0; var d=pDerivative(an); while(Math.abs(pValueAt(an,x))>=eps && g++<200000){ var dv=pValueAt(d,x); if(dv===0) return NaN; x=x-pValueAt(an,x)/dv; } return x; }
+function disp(n){ return Math.abs(n-Math.round(n))<1e-9?Math.round(n):Number(n.toFixed(5)); }
+var fout=document.getElementById('fout');
+document.querySelectorAll('#hw2 [data-op]').forEach(function(btn){ btn.onclick=function(){
+  var an=parseCoeffs(); var x=parseFloat(document.getElementById('xval').value);
+  if(!an.length){ fout.textContent='enter coefficients'; return; }
+  var op=btn.dataset.op;
+  if(op==='val') fout.textContent='f(x) = '+pToString(an)+'\nf('+x+') = '+disp(pValueAt(an,x));
+  else if(op==='der') fout.textContent='f(x) = '+pToString(an)+"\nf'(x) = "+pToString(pDerivative(an));
+  else if(op==='bis'){ var r=bisection(an,0,5); fout.textContent='bisection on [0,5]:\nroot ≈ '+disp(r)+'   (f(root) ≈ '+disp(pValueAt(an,r))+')'; }
+  else if(op==='nr'){ var r2=newton(an,x); fout.textContent='Newton from x₀='+x+':\nroot ≈ '+(isNaN(r2)?'diverged (f\'=0)':disp(r2))+(isNaN(r2)?'':'   (f(root) ≈ '+disp(pValueAt(an,r2))+')'); }
+  drawPoly();
+};});
+function drawPoly(){
+  var canvas=document.getElementById('polyCanvas'); if(!canvas) return;
+  var ctx=canvas.getContext('2d'), W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  var an=parseCoeffs(); if(!an.length) return;
+  var der=pDerivative(an);
+  var xmin=-5,xmax=5;
+  // determine y range
+  var ymin=Infinity,ymax=-Infinity,N=400;
+  for(var i=0;i<=N;i++){ var x=xmin+(xmax-xmin)*i/N; var y=pValueAt(an,x); if(isFinite(y)){ if(y<ymin)ymin=y; if(y>ymax)ymax=y; } }
+  if(!isFinite(ymin)){ ymin=-10; ymax=10; }
+  if(ymax-ymin<1e-6){ ymin-=1; ymax+=1; }
+  var pad=(ymax-ymin)*0.1; ymin-=pad; ymax+=pad;
+  function sx(x){ return (x-xmin)/(xmax-xmin)*W; }
+  function sy(y){ return H-(y-ymin)/(ymax-ymin)*H; }
+  // grid + axes
+  ctx.strokeStyle='#1e293b'; ctx.lineWidth=1;
+  for(var gx=Math.ceil(xmin);gx<=xmax;gx++){ ctx.beginPath(); ctx.moveTo(sx(gx),0); ctx.lineTo(sx(gx),H); ctx.stroke(); }
+  ctx.strokeStyle='#334155'; ctx.lineWidth=1.5;
+  if(0>=ymin&&0<=ymax){ ctx.beginPath(); ctx.moveTo(0,sy(0)); ctx.lineTo(W,sy(0)); ctx.stroke(); }
+  if(0>=xmin&&0<=xmax){ ctx.beginPath(); ctx.moveTo(sx(0),0); ctx.lineTo(sx(0),H); ctx.stroke(); }
+  // f'
+  ctx.strokeStyle='#60A5FA'; ctx.lineWidth=1.5; ctx.setLineDash([5,4]); ctx.beginPath();
+  for(var i2=0;i2<=N;i2++){ var x2=xmin+(xmax-xmin)*i2/N; var y2=pValueAt(der,x2); var px=sx(x2),py=sy(y2); if(i2===0)ctx.moveTo(px,py); else ctx.lineTo(px,py); }
+  ctx.stroke(); ctx.setLineDash([]);
+  // f
+  ctx.strokeStyle='#14B8A6'; ctx.lineWidth=2.2; ctx.beginPath();
+  for(var i3=0;i3<=N;i3++){ var x3=xmin+(xmax-xmin)*i3/N; var y3=pValueAt(an,x3); var px3=sx(x3),py3=sy(y3); if(i3===0)ctx.moveTo(px3,py3); else ctx.lineTo(px3,py3); }
+  ctx.stroke();
+}
+drawPoly();
+
+/* ============================ HW3 — PLAYLIST ============================
+   Faithful port of Playlist + Song. addSong throws on duplicate (name+artist).
+   setScanningOrder comparators + prepareFilteredList filters mirror the Java.  */
+var PL = (function(){
+  var songs=[]; // {name,artist,genre,duration}
+  var errEl=document.getElementById('sErr'), tbody=document.querySelector('#sTable tbody'), countEl=document.getElementById('sCount');
+  function exists(n,a){ for(var i=0;i<songs.length;i++) if(songs[i].name===n && songs[i].artist===a) return true; return false; }
+  function strDur(d){ var mm=Math.floor(d/60), ss=d%60; return mm+':'+(ss<10?'0'+ss:ss); }
+  function add(){
+    var name=document.getElementById('sName').value.trim(), artist=document.getElementById('sArtist').value.trim();
+    var genre=document.getElementById('sGenre').value, dur=parseInt(document.getElementById('sDur').value,10)||0;
+    errEl.style.display='none';
+    if(!name||!artist){ errEl.textContent='name and artist required'; errEl.style.display='block'; return; }
+    if(exists(name,artist)){ errEl.textContent='SongAlreadyExistsException: ('+name+', '+artist+') is already in the playlist'; errEl.style.display='block'; return; }
+    songs.push({name:name,artist:artist,genre:genre,duration:dur});
+    document.getElementById('sName').value=''; document.getElementById('sArtist').value='';
+    refresh();
+  }
+  function refresh(){
+    // setScanningOrder: clone full list, sort by chosen comparator
+    var order=document.getElementById('sOrder').value;
+    var list=songs.slice();
+    if(order==='NAME') list.sort(function(a,b){ return a.name<b.name?-1:a.name>b.name?1:(a.artist<b.artist?-1:a.artist>b.artist?1:0); });
+    else if(order==='DURATION') list.sort(function(a,b){ if(a.duration!==b.duration) return a.duration-b.duration; if(a.name!==b.name) return a.name<b.name?-1:1; return a.artist<b.artist?-1:a.artist>b.artist?1:0; });
+    // prepareFilteredList filters
+    var fa=document.getElementById('fArtist').value.trim(), fg=document.getElementById('fGenre').value, fd=document.getElementById('fDur').value.trim();
+    if(fa) list=list.filter(function(s){ return s.artist===fa; });
+    if(fg) list=list.filter(function(s){ return s.genre===fg; });
+    if(fd!==''){ var md=parseInt(fd,10); list=list.filter(function(s){ return s.duration<=md; }); }
+    tbody.innerHTML='';
+    list.forEach(function(s,i){
+      var tr=document.createElement('tr');
+      tr.innerHTML='<td>'+(i+1)+'</td><td>'+esc(s.name)+'</td><td>'+esc(s.artist)+'</td><td>'+s.genre+'</td><td>'+strDur(s.duration)+'</td>';
+      tbody.appendChild(tr);
+    });
+    countEl.textContent='Iterating '+list.length+' of '+songs.length+' songs · order='+order+(fa?' · artist='+fa:'')+(fg?' · genre='+fg:'')+(fd!==''?' · dur≤'+fd:'');
+  }
+  function esc(s){ return s.replace(/[&<>]/g,function(c){ return c==='&'?'&amp;':c==='<'?'&lt;':'&gt;'; }); }
+  document.getElementById('sAdd').onclick=add;
+  ['sOrder','fArtist','fGenre','fDur'].forEach(function(id){ document.getElementById(id).addEventListener('input',refresh); document.getElementById(id).addEventListener('change',refresh); });
+  // seed sample songs
+  [['Yesterday','The Beatles','POP',125],['Bohemian Rhapsody','Queen','ROCK',355],['Lose Yourself','Eminem','HIP_HOP',326],['Take Five','Dave Brubeck','JAZZ',324],['Stayin Alive','Bee Gees','DISCO',285]].forEach(function(s){ songs.push({name:s[0],artist:s[1],genre:s[2],duration:s[3]}); });
+  refresh();
+  return {};
+})();
+
+/* ============================ HW4 — BINARY TREE ============================
+   PathFromRoot.doesPathExist + LevelLargestSum.getLevelWithLargestSum ported verbatim.
+   Trees built exactly like HW04/Main.java.                                          */
+var TREE = (function(){
+  function N(data,l,r){ return {data:data, left:l||null, right:r||null}; }
+  // Character tree from Main: h -> (e, a); e -> (B, y); B -> (k,null); y -> (M,!)
+  var charTree = N('h',
+    N('e', N('B', N('k'), null), N('y', N('M'), N('!'))),
+    N('a'));
+  // Integer tree from Main testPartA2
+  var intTree = N(5,
+    N(7, N(7, N(5), null), N(9, N(9), N(1))),
+    N(3));
+  var showChar=true;
+  var canvas=document.getElementById('treeCanvas'), outEl=document.getElementById('treeOut');
+  var highlight={}; // node -> color
+
+  // ---- ported PathFromRoot.doesPathExist (verbatim, null-safe) ----
+  function doesPathExist(root,str){
+    if(str.length===0) return true;
+    var check=str.charAt(0);
+    if(root===null || check!==String(root.data)) return false;
+    if(str.length===1 && String(root.data)===str.charAt(0)) return true;
+    else if(str.length===1) return false;
+    var lastChar=str.charAt(1);
+    if(str.length===2 && ((root.left&&lastChar===String(root.left.data)) || (root.right&&lastChar===String(root.right.data)))) return true;
+    check=str.charAt(1);
+    if(root.right && check===String(root.right.data)) return doesPathExist(root.right, str.substring(1));
+    if(root.left && check===String(root.left.data)) return doesPathExist(root.left, str.substring(1));
+    return false;
+  }
+  // path trace for animation
+  function tracePath(root,str,acc){
+    acc=acc||[];
+    if(str.length===0) return {ok:true,path:acc};
+    if(root===null||String(root.data)!==str.charAt(0)) return {ok:false,path:acc};
+    acc.push(root);
+    if(str.length===1) return {ok:true,path:acc};
+    var lastChar=str.charAt(1);
+    if(str.length===2 && ((root.left&&lastChar===String(root.left.data))||(root.right&&lastChar===String(root.right.data)))){
+      var child=(root.right&&lastChar===String(root.right.data))?root.right:root.left; acc.push(child); return {ok:true,path:acc};
+    }
+    if(root.right && str.charAt(1)===String(root.right.data)) return tracePath(root.right,str.substring(1),acc);
+    if(root.left && str.charAt(1)===String(root.left.data)) return tracePath(root.left,str.substring(1),acc);
+    return {ok:false,path:acc};
+  }
+
+  // ---- ported LevelLargestSum.getLevelWithLargestSum (verbatim, incl. the right/right quirk) ----
+  function getLevelWithLargestSum(root){
+    if(root===null) return -1;
+    var curr=[]; if(root.right) curr.push(root.right); if(root.left) curr.push(root.left);
+    var maxSum=root.data, maxLevel=0, level=1;
+    var levelSums=[root.data], levelNodes=[[root]];
+    while(curr.length>0){
+      var sum=0; for(var i=0;i<curr.length;i++) sum+=curr[i].data;
+      levelSums.push(sum); levelNodes.push(curr.slice());
+      if(sum>maxSum){ maxSum=sum; maxLevel=level; }
+      level++;
+      var prev=curr; curr=[];
+      for(var j=0;j<prev.length;j++){
+        if(prev[j].right) curr.push(prev[j].right);
+        if(prev[j].right) curr.push(prev[j].left); // <-- verbatim quirk from the Java source
+      }
+      // guard against null pushes from the quirk
+      curr=curr.filter(function(x){ return x; });
+    }
+    return {level:maxLevel, sums:levelSums, nodes:levelNodes, max:maxSum};
+  }
+
+  function layout(root){
+    // assign x by in-order index, y by depth
+    var positions=[]; var idx=0; var maxDepth=0;
+    (function rec(n,d){ if(!n) return; rec(n.left,d+1); n._x=idx++; n._d=d; maxDepth=Math.max(maxDepth,d); positions.push(n); rec(n.right,d+1); })(root,0);
+    return {positions:positions, count:idx, maxDepth:maxDepth};
+  }
+  function draw(){
+    var root=showChar?charTree:intTree;
+    var ctx=canvas.getContext('2d'), W=canvas.width, H=canvas.height;
+    ctx.clearRect(0,0,W,H);
+    var lay=layout(root);
+    var dx=W/(lay.count+1), dy=(H-40)/(lay.maxDepth+1);
+    lay.positions.forEach(function(n){ n._px=(n._x+1)*dx; n._py=20+n._d*dy; });
+    // edges
+    ctx.strokeStyle='#334155'; ctx.lineWidth=1.5;
+    (function edges(n){ if(!n) return; [n.left,n.right].forEach(function(c){ if(c){ ctx.beginPath(); ctx.moveTo(n._px,n._py); ctx.lineTo(c._px,c._py); ctx.stroke(); edges(c); } }); })(root);
+    // nodes
+    lay.positions.forEach(function(n){
+      var col=highlight[nid(n)]||'#1E293B';
+      ctx.fillStyle=col; ctx.strokeStyle='#243044'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.arc(n._px,n._py,17,0,Math.PI*2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle='#E2E8F0'; ctx.font='bold 14px JetBrains Mono, monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(String(n.data), n._px, n._py);
+    });
+  }
+  var _ids=new WeakMap(), _ctr=0;
+  function nid(n){ if(!_ids.has(n)) _ids.set(n,++_ctr); return _ids.get(n); }
+
+  function runPath(){
+    highlight={};
+    var str=document.getElementById('pathStr').value;
+    var res=doesPathExist(charTree,str);
+    var tr=tracePath(charTree,str,[]);
+    // animate path
+    tr.path.forEach(function(n,i){ setTimeout(function(){ highlight[nid(n)]=res?'#14B8A6':'#F87171'; draw(); }, i*260); });
+    setTimeout(function(){ draw(); }, tr.path.length*260+10);
+    outEl.textContent='doesPathExist(root, "'+str+'") = '+res+(tr.path.length?'\nmatched: '+tr.path.map(function(n){return n.data;}).join(' → '):'');
+  }
+  function runLevel(){
+    highlight={};
+    if(!showChar){ /* already int */ } else { showChar=false; document.getElementById('treeToggle').textContent='Show: Integer tree'; }
+    var r=getLevelWithLargestSum(intTree);
+    draw();
+    // highlight winning level
+    if(r.nodes && r.nodes[r.level]) r.nodes[r.level].forEach(function(n){ highlight[nid(n)]='#FBBF24'; });
+    draw();
+    var lines=r.sums.map(function(s,i){ return 'level '+i+': sum='+s+(i===r.level?'  ⬅ largest':''); }).join('\n');
+    outEl.textContent='getLevelWithLargestSum(root) = '+r.level+'\n'+lines;
+  }
+  document.getElementById('pathRun').onclick=function(){ if(showChar===false){ showChar=true; document.getElementById('treeToggle').textContent='Show: Character tree'; } runPath(); };
+  document.getElementById('levelRun').onclick=runLevel;
+  document.getElementById('treeToggle').onclick=function(){ showChar=!showChar; this.textContent='Show: '+(showChar?'Character tree':'Integer tree'); highlight={}; draw(); outEl.textContent=showChar?'Character tree (PathFromRoot).':'Integer tree (LevelLargestSum).'; };
+  function drawTree(){ draw(); }
+  return { draw:drawTree };
+})();
+function drawTree(){ TREE.draw(); }
+</script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Warset — Unified Analytics</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap');
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --bg: #0a0c10;
+  --panel: #111318;
+  --border: #1e2230;
+  --accent: #f5a623;
+  --text: #e8eaf0;
+  --muted: #6b7280;
+  --hover: #1a1f2e;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+}
+
+/* ── Global Sidebar ── */
+.app-sidebar {
+  width: 260px;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  z-index: 100;
+}
+
+.brand {
+  padding: 24px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.brand h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.brand span {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.nav-menu {
+  padding: 20px 12px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.nav-item:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.nav-item.active {
+  background: rgba(245, 166, 35, 0.1);
+  color: var(--accent);
+  border-color: rgba(245, 166, 35, 0.2);
+}
+
+.nav-icon {
+  font-size: 1.1rem;
+}
+
+/* ── Main Content Area ── */
+.app-content {
+  flex: 1;
+  position: relative;
+  background: var(--bg);
+}
+
+iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+/* Loader */
+#loader {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--muted);
+  font-size: 0.85rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+#loader.visible {
+  opacity: 1;
+}
+
+/* Status Footer */
+.app-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  font-size: 0.7rem;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+}
+</style>
+</head>
+<body>
+
+  <!-- Navigation Sidebar -->
+  <aside class="app-sidebar">
+    <div class="brand">
+      <h1>⚔ Warset</h1>
+      <span>Visualization Suite</span>
+    </div>
+
+    <nav class="nav-menu">
+      <div class="nav-item active" onclick="loadTab(VIZ + 'territory_flow/index.html', this)">
+        <span class="nav-icon">🌍</span> Interactive Map
+      </div>
+      <div class="nav-item" onclick="loadTab(VIZ + 'network/index.html', this)">
+        <span class="nav-icon">🕸️</span> Conflict Network
+      </div>
+      <div class="nav-item" onclick="loadTab(VIZ + 'insights/index.html', this)">
+        <span class="nav-icon">📊</span> Insights
+      </div>
+      <div class="nav-item" onclick="loadTab(VIZ + 'actor_timeline/index.html', this)">
+        <span class="nav-icon">📜</span> Actor Timeline
+      </div>
+      <div class="nav-item" onclick="loadTab('warprojects/causal/index.html', this)">
+        <span class="nav-icon">⚖️</span> Causal
+      </div>
+    </nav>
+
+    <div class="app-footer">
+      <span>Data Source: dataset.csv</span>
+      <span style="color:#3ecf8e">● Live</span>
+    </div>
+  </aside>
+
+  <!-- Main View -->
+  <main class="app-content">
+    <div id="loader" class="visible">Loading...</div>
+    <iframe id="view-frame" src="warprojects/visualization/territory_flow/index.html"></iframe>
+  </main>
+
+<script>
+  // Path from this root index.html to the visualization sub-apps.
+  const VIZ = 'warprojects/visualization/';
+  const frame = document.getElementById('view-frame');
+  const loader = document.getElementById('loader');
+
+  frame.addEventListener('load', () => {
+    loader.classList.remove('visible');
+  });
+
+  function loadTab(url, element) {
+    // Update active class
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    element.classList.add('active');
+
+    // Show loader and set new src
+    loader.classList.add('visible');
+    frame.src = url;
+  }
+</script>
+</body>
+</html>

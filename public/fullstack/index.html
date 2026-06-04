@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FullStack — Flask web course</title>
+<style>
+  :root{
+    --bg:#0B1220;--surface:#0F172A;--panel:#1E293B;--border:#243044;
+    --text:#E2E8F0;--muted:#94A3B8;--accent:#14B8A6;--blue:#60A5FA;--red:#F87171;
+    --gold:#e0b44a;--green:#34d399;--purple:#a78bfa;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.55}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 20px 56px}
+  h1{font-size:1.6rem;margin:0 0 4px}
+  h2{font-size:1.15rem;margin:0 0 10px}
+  h3{font-size:1rem;margin:16px 0 8px;color:var(--blue)}
+  .sub{color:var(--muted);font-size:.95rem;margin:0 0 18px}
+  code,.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+  .tag{display:inline-block;font-size:.72rem;padding:2px 9px;border-radius:999px;
+    background:rgba(20,184,166,.12);color:var(--accent);border:1px solid rgba(20,184,166,.3);margin-right:6px}
+  .tag.blue{background:rgba(96,165,250,.12);color:var(--blue);border-color:rgba(96,165,250,.3)}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 16px;border-bottom:1px solid var(--border);padding-bottom:10px}
+  .tab{cursor:pointer;padding:7px 14px;border-radius:8px;color:var(--muted);font-size:.9rem;
+    border:1px solid transparent;background:transparent;transition:.15s;font-family:inherit}
+  .tab:hover{color:var(--text);background:var(--panel)}
+  .tab.active{color:var(--accent);background:rgba(20,184,166,.1);border-color:rgba(20,184,166,.3)}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px}
+  .panel.alt{background:var(--panel)}
+  .view{display:none}.view.active{display:block}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:820px){.grid2{grid-template-columns:1fr}}
+  pre{background:#0a0f1a;border:1px solid var(--border);border-radius:10px;padding:14px;overflow:auto;
+    font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.76rem;color:#cbd5e1;margin:0}
+  .muted{color:var(--muted)}
+  .kw{color:var(--blue)}.fn{color:var(--accent)}.cm{color:#5b6b82;font-style:italic}.st{color:#f0b27a}.dec{color:var(--purple)}
+  .filebar{font-size:.74rem;color:var(--muted);margin-top:10px;font-family:"JetBrains Mono",monospace}
+  .badge{font-size:.78rem;color:var(--muted)}
+  .pipe{display:flex;gap:0;flex-wrap:wrap;margin:6px 0}
+  .stage{flex:1;min-width:200px;background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    padding:11px 13px;margin:4px}
+  .stage b{color:var(--blue);font-size:.86rem}.stage p{font-size:.75rem;color:var(--muted);margin:6px 0 0}
+  ul.tight{font-size:.86rem;color:var(--muted);margin:6px 0;padding-left:18px}
+  ul.tight li{margin:3px 0}
+  table{border-collapse:collapse;width:100%;font-size:.82rem;font-family:"JetBrains Mono",monospace;margin-top:6px}
+  th,td{border:1px solid var(--border);padding:6px 9px;text-align:left}
+  th{color:var(--blue);background:var(--panel)}
+  a{color:var(--blue)}
+  /* mock browser */
+  .browser{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#0a0f1a}
+  .chrome{display:flex;align-items:center;gap:8px;background:#10182a;padding:9px 12px;border-bottom:1px solid var(--border)}
+  .dot{width:11px;height:11px;border-radius:50%}
+  .urlbar{flex:1;background:#0a0f1a;border:1px solid var(--border);border-radius:7px;padding:6px 11px;
+    font-family:"JetBrains Mono",monospace;font-size:.8rem;color:#cbd5e1}
+  .urlbar input{all:unset;width:100%;color:#cbd5e1;font-family:inherit;font-size:.8rem}
+  .page{padding:18px;min-height:230px;color:#1f2937;background:#fff;border-radius:0 0 11px 11px}
+  .btn{background:#4CAF50;border:none;color:#fff;padding:9px 14px;border-radius:6px;cursor:pointer;font-size:.85rem;font-family:inherit}
+  .btn:hover{background:#43a047}
+  .btn.sec{background:#334155}.btn.sec:hover{background:#3e4d68}
+  .reqcol{font-family:"JetBrains Mono",monospace;font-size:.78rem}
+  .route{display:flex;justify-content:space-between;gap:10px;padding:7px 11px;border:1px solid var(--border);
+    border-radius:8px;margin:5px 0;font-family:"JetBrains Mono",monospace;font-size:.8rem;background:var(--panel);transition:.15s}
+  .route.hit{border-color:var(--accent);background:rgba(20,184,166,.12)}
+  .route.miss{opacity:.45}
+  .method{color:var(--green);font-weight:700}
+  .pweight{color:var(--gold)}
+  .resp{font-family:"JetBrains Mono",monospace;font-size:.78rem;white-space:pre-wrap;background:#0a0f1a;
+    border:1px solid var(--border);border-radius:8px;padding:11px;color:#cbd5e1;margin-top:8px}
+  .sline{color:var(--green)}.sline.err{color:var(--red)}
+  .pillrow{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+  .pill{cursor:pointer;font-size:.76rem;padding:4px 10px;border-radius:999px;border:1px solid var(--border);
+    background:var(--panel);color:var(--muted);font-family:"JetBrains Mono",monospace}
+  .pill:hover{color:var(--text);border-color:var(--accent)}
+  .matchbar{height:10px;border-radius:5px;background:linear-gradient(90deg,#14B8A6,#60A5FA);margin-top:3px}
+  .imgcell{width:74px;height:74px;border-radius:8px;cursor:pointer;border:2px solid transparent;object-fit:cover}
+  .imgcell.sel{border-color:#14B8A6}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div><span class="tag">Technion · FullStack web</span><span class="tag blue">Flask · Python · REST · Jinja2</span></div>
+  <h1>FullStack — building Flask websites</h1>
+  <p class="sub">Coursework repo <code>FullStack_950219</code>. The headline project (<b>HW1</b>) is a
+  <b>PictureServer</b>: a Flask image-classification micro-service with a REST API
+  (<code>/status</code>, <code>/upload_image</code>) and a tiny web UI; a separate <b>Lab4</b> teaches Flask
+  routing, <b>Blueprints</b> and HTTP status codes. Both demos below are faithful <b>client-side recreations</b>
+  of the real routes &amp; data model — see the honest note at the bottom of each.</p>
+
+  <div class="tabs">
+    <button class="tab active" data-v="ov">Overview</button>
+    <button class="tab" data-v="app">Live: PictureServer</button>
+    <button class="tab" data-v="router">Live: Flask routing</button>
+    <button class="tab" data-v="code">Code</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="view active" id="ov">
+    <div class="panel">
+      <h2>Two Flask apps</h2>
+      <div class="pipe">
+        <div class="stage"><b>HW1 · PictureServer</b>
+          <p>An app-factory Flask service (<code>create_app()</code>) using a <b>Blueprint</b>. Routes:
+          <code>GET /</code> (web UI), <code>GET /status</code> (JSON uptime + success/fail counters),
+          <code>POST /upload_image</code> (validate &amp; "classify" an uploaded JPEG/PNG, returns ranked matches).
+          Image validation via <b>Pillow</b>; tested with a pytest <code>test_client</code>.</p>
+          <div class="filebar">server/website/routes.py · stats.py · templates/index.html</div></div>
+        <div class="stage"><b>Lab4 · routing &amp; blueprints</b>
+          <p>Two Blueprints (<code>views</code>, <code>auth</code>) registered on one app. Teaches how a URL maps
+          to a view function and how view returns become HTTP responses: <code>/</code>, <code>/about</code>,
+          <code>/status</code> (200), <code>/secret</code> (401), <code>/login</code>, <code>/logout</code>,
+          <code>/sign-up</code>. Jinja2 template inheritance (<code>base.html</code> → <code>home.html</code>).</p>
+          <div class="filebar">Lab4/website/views.py · auth.py · __init__.py</div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>The PictureServer API contract <span class="badge">— routes.py</span></h2>
+      <table>
+        <tr><th>method</th><th>path</th><th>behaviour</th></tr>
+        <tr><td>GET</td><td>/</td><td><code>render_template('index.html')</code> — the upload UI</td></tr>
+        <tr><td>GET</td><td>/status</td><td>JSON: <code>{uptime, processed:{success,fail}, health, api_version}</code></td></tr>
+        <tr><td>POST</td><td>/upload_image</td><td>field <code>image</code>; reject if missing / bad extension /
+          empty / not a real JPEG/PNG (HTTP 400); else return <code>{matches:[{name,score}]}</code></td></tr>
+        <tr><td>405</td><td>(handler)</td><td>method-not-allowed → JSON error, bumps the fail counter</td></tr>
+      </table>
+      <p class="muted" style="font-size:.84rem;margin-top:10px"><code>health</code> flips from <code>"ok"</code> to
+      <code>"error"</code> as soon as any request fails. The classifier is a deliberate <b>mock</b>: it picks 2–4
+      random labels from a fixed class list, draws random scores, normalises them to sum to 1, rounds to 2 dp and
+      sorts descending — the demo reproduces that exact logic.</p>
+    </div>
+  </div>
+
+  <!-- LIVE APP -->
+  <div class="view" id="app">
+    <div class="panel">
+      <h2>PictureServer — recreated in the browser</h2>
+      <p class="muted" style="font-size:.88rem;margin:0 0 12px">This is the real <code>templates/index.html</code>
+      UI, but every <code>fetch('/status')</code> / <code>fetch('/upload_image')</code> is served by a tiny
+      in-page JS mock that runs the <b>same validation &amp; mock-classifier code as the Flask routes</b> — so the
+      <code>matches</code>, the normalised scores, and the live success/fail/health counters behave exactly like
+      the server. Pick an "image" to upload (or a deliberately bad file to see a 400 + health flip to error).</p>
+      <div class="grid2">
+        <div class="browser">
+          <div class="chrome">
+            <span class="dot" style="background:#ff5f57"></span>
+            <span class="dot" style="background:#febc2e"></span>
+            <span class="dot" style="background:#28c840"></span>
+            <span class="urlbar">http://127.0.0.1:5000/</span>
+          </div>
+          <div class="page">
+            <h2 style="margin:0 0 10px;color:#333">PictureServer — Image Classification</h2>
+            <div style="border:1px solid #ddd;border-radius:5px;padding:14px;background:#f9f9f9;margin-bottom:14px">
+              <h3 style="margin:0 0 8px;color:#333">Server Status</h3>
+              <button class="btn" id="chkStatus">Check Status</button>
+              <div id="statusData" style="margin-top:10px;font-size:.84rem;color:#444">Loading status…</div>
+            </div>
+            <div style="border:1px solid #ddd;border-radius:5px;padding:14px;background:#f9f9f9">
+              <h3 style="margin:0 0 8px;color:#333">Upload and Classify Image</h3>
+              <div style="font-size:.8rem;color:#555;margin-bottom:6px">Select a file:</div>
+              <div class="pillrow" id="fileChoices"></div>
+              <div id="selFile" style="font-size:.8rem;color:#333;margin:4px 0 10px">No file selected</div>
+              <button class="btn" id="doUpload">Upload and Classify</button>
+              <div id="results" style="margin-top:12px;font-size:.85rem;color:#333"></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="panel alt" style="padding:13px 15px">
+            <h3 style="margin:0 0 6px">What just happened (server side)</h3>
+            <div id="serverLog" class="resp" style="min-height:120px">waiting for a request…</div>
+          </div>
+          <div class="panel alt" style="padding:13px 15px;margin-top:12px">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:.82rem">
+              GET /status →<br>
+              &nbsp;&nbsp;uptime: <span id="mUp" style="color:var(--accent)">0.0</span>s ·
+              health: <span id="mHealth" style="color:var(--green)">ok</span><br>
+              &nbsp;&nbsp;processed.success: <span id="mOk" style="color:var(--green)">0</span> ·
+              processed.fail: <span id="mFail" style="color:var(--red)">0</span> ·
+              api_version: <span id="mVer" style="color:var(--blue)">1</span>
+            </div>
+          </div>
+          <p class="muted" style="font-size:.8rem;margin-top:10px"><b>Honest note:</b> the real app runs on
+          <b>Flask + a WSGI server</b> (<code>app.run(host, port)</code>), validates uploads with <b>Pillow</b>
+          server-side, and keeps stats in module globals. This page is a <b>client-side recreation</b> — no
+          Python and no network; the JS faithfully mirrors <code>routes.py</code> / <code>stats.py</code>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROUTER -->
+  <div class="view" id="router">
+    <div class="panel">
+      <h2>Flask routing — type a URL, watch it match a view</h2>
+      <p class="muted" style="font-size:.88rem;margin:0 0 12px">Flask's <code>@app.route(path)</code> (here via
+      <b>Blueprints</b>) builds a URL map; an incoming request is matched against it, the view function runs, and
+      whatever it <code>return</code>s becomes the HTTP response (a string → <code>text/html 200</code>; a
+      <code>dict</code> → JSON; a <code>(body, code)</code> tuple → custom status). Type a path below — these are
+      the <b>real routes</b> from HW1's <code>routes.py</code> and Lab4's <code>views.py</code> / <code>auth.py</code>.</p>
+      <div class="browser" style="margin-bottom:14px">
+        <div class="chrome">
+          <span class="dot" style="background:#ff5f57"></span>
+          <span class="dot" style="background:#febc2e"></span>
+          <span class="dot" style="background:#28c840"></span>
+          <span class="urlbar">http://127.0.0.1:5000<input id="routeInput" value="/status" spellcheck="false"></span>
+        </div>
+        <div class="page" id="routerPage" style="min-height:90px"></div>
+      </div>
+      <div class="grid2">
+        <div>
+          <h3>Method</h3>
+          <div class="pillrow">
+            <span class="pill" data-method="GET" style="border-color:var(--accent);color:var(--accent)">GET</span>
+            <span class="pill" data-method="POST">POST</span>
+          </div>
+          <h3>Try a route</h3>
+          <div class="pillrow" id="routePills"></div>
+        </div>
+        <div>
+          <h3>URL map (matched against in order)</h3>
+          <div id="routeList"></div>
+        </div>
+      </div>
+      <p class="muted" style="font-size:.8rem;margin-top:6px"><b>Honest note:</b> the real apps run on Flask's
+      Werkzeug router; this recreates the same route table &amp; the view-return → HTTP-response rules client-side.</p>
+    </div>
+  </div>
+
+  <!-- CODE -->
+  <div class="view" id="code">
+    <div class="panel">
+      <h2>The upload + classify route <span class="badge">— HW1/server/website/routes.py</span></h2>
+<pre><span class="dec">@bp.route</span>(<span class="st">'/upload_image'</span>, methods=[<span class="st">'POST'</span>])
+<span class="kw">def</span> <span class="fn">upload_image</span>():
+    <span class="kw">if</span> <span class="st">'image'</span> <span class="kw">not in</span> request.files:
+        increment_fail(); <span class="kw">return</span> jsonify({<span class="st">"error"</span>:{<span class="st">"http_status"</span>:<span class="st">400</span>,<span class="st">"message"</span>:<span class="st">"No image file uploaded"</span>}}), <span class="st">400</span>
+    file = request.files[<span class="st">'image'</span>]
+    <span class="kw">if not</span> allowed_file(file.filename):           <span class="cm"># extension in {png,jpg,jpeg}</span>
+        increment_fail(); <span class="kw">return</span> jsonify({...}), <span class="st">400</span>
+    img_bytes = file.read()
+    <span class="kw">try</span>:
+        img = Image.open(io.BytesIO(img_bytes))     <span class="cm"># Pillow: verify it's a real image</span>
+        <span class="kw">if</span> img.format <span class="kw">not in</span> [<span class="st">'JPEG'</span>,<span class="st">'PNG'</span>]: increment_fail(); <span class="kw">return</span> jsonify({...}), <span class="st">400</span>
+    <span class="kw">except</span> Exception: increment_fail(); <span class="kw">return</span> jsonify({...}), <span class="st">400</span>
+    classifications = get_mock_classifications()    <span class="cm"># 2–4 labels, scores normalised to sum 1</span>
+    increment_success()
+    <span class="kw">return</span> jsonify({<span class="st">"matches"</span>: classifications})</pre>
+    </div>
+    <div class="panel">
+      <h2>App factory + Blueprint + stats <span class="badge">— __init__.py · stats.py</span></h2>
+<pre><span class="kw">def</span> <span class="fn">create_app</span>():
+    app = Flask(__name__)
+    <span class="kw">from</span> . <span class="kw">import</span> routes, stats
+    app.register_blueprint(routes.bp)              <span class="cm"># bp = Blueprint('main', __name__, ...)</span>
+    stats.init(); <span class="kw">return</span> app
+
+<span class="cm"># stats.py — module-global counters, exposed by GET /status</span>
+<span class="kw">def</span> <span class="fn">get_stats</span>():
+    <span class="kw">return</span> {<span class="st">"uptime"</span>: round(get_uptime(),<span class="st">1</span>),
+            <span class="st">"processed"</span>: {<span class="st">"success"</span>: PROCESSED_SUCCESS, <span class="st">"fail"</span>: PROCESSED_FAIL},
+            <span class="st">"health"</span>: get_health(),       <span class="cm"># "error" once any fail occurs</span>
+            <span class="st">"api_version"</span>: API_VERSION}</pre>
+      <h2 style="margin-top:16px">Lab4 — routing, blueprints, status codes <span class="badge">— views.py · auth.py</span></h2>
+<pre><span class="cm"># views = Blueprint('views', __name__)   ·   auth = Blueprint('auth', __name__)</span>
+<span class="dec">@views.route</span>(<span class="st">'/'</span>)
+<span class="kw">def</span> <span class="fn">home</span>():    <span class="kw">return</span> render_template(<span class="st">'home.html'</span>), <span class="st">200</span>
+<span class="dec">@views.route</span>(<span class="st">'/status'</span>)
+<span class="kw">def</span> <span class="fn">status</span>():  <span class="kw">return</span> {<span class="st">"version"</span>:<span class="st">"1.0"</span>,<span class="st">"status"</span>:<span class="st">"OK"</span>}, <span class="st">200</span>     <span class="cm"># dict ⇒ JSON</span>
+<span class="dec">@views.route</span>(<span class="st">'/secret'</span>)
+<span class="kw">def</span> <span class="fn">secret</span>():  <span class="kw">return</span> {<span class="st">"error"</span>:{<span class="st">"http_status"</span>:<span class="st">401</span>,<span class="st">"message"</span>:<span class="st">"You are not logged in"</span>}}, <span class="st">401</span>
+<span class="dec">@auth.route</span>(<span class="st">'/login'</span>)
+<span class="kw">def</span> <span class="fn">login</span>():   <span class="kw">return</span> <span class="st">"&lt;h1&gt;Login&lt;/h1&gt;&lt;p&gt;This is the login page!&lt;/p&gt;"</span></pre>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------- tabs ----------
+document.querySelectorAll('.tab[data-v]').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab[data-v]').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');document.getElementById(t.dataset.v).classList.add('active');
+  };
+});
+
+// ============ MOCK FLASK SERVER (mirrors routes.py + stats.py) ============
+const Server=(function(){
+  let START=Date.now(), SUCCESS=0, FAIL=0; const API_VERSION=1;
+  function get_health(){ return FAIL>0 ? 'error' : 'ok'; }
+  function get_stats(){
+    return { uptime: Math.round((Date.now()-START)/100)/10,
+      processed:{ success:SUCCESS, fail:FAIL }, health:get_health(), api_version:API_VERSION };
+  }
+  // mirror get_mock_classifications(): 2-4 labels, random scores normalised to sum 1, round 2dp, sort desc
+  const CLASSES=["apple","banana","carrot","dog","cat","car","chair","table","computer","phone","book","pen","tomato"];
+  function classify(){
+    const n=2+Math.floor(Math.random()*3);            // 2..4
+    const pool=CLASSES.slice(); const picked=[];
+    for(let i=0;i<n;i++) picked.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
+    const raw=picked.map(()=>Math.random());
+    const tot=raw.reduce((a,b)=>a+b,0);
+    const res=picked.map((name,i)=>({name, score:Math.round(raw[i]/tot*100)/100}));
+    res.sort((a,b)=>b.score-a.score);
+    return res;
+  }
+  // mirror upload_image(): validate then classify. file={name, kind:'png'|'jpeg'|'corrupt'|'txt'|'empty'}
+  function upload_image(file){
+    const ALLOWED=['png','jpg','jpeg'];
+    if(!file){ FAIL++; return {status:400, body:{error:{http_status:400,message:"No image file uploaded"}}}; }
+    const ext=(file.name.split('.').pop()||'').toLowerCase();
+    if(!ALLOWED.includes(ext)){ FAIL++; return {status:400, body:{error:{http_status:400,message:"Unsupported image format: "+ext}}}; }
+    if(file.kind==='empty'){ FAIL++; return {status:400, body:{error:{http_status:400,message:"Empty file uploaded"}}}; }
+    if(file.kind==='corrupt'){ FAIL++; return {status:400, body:{error:{http_status:400,message:"Unsupported image format"}}}; }
+    SUCCESS++; return {status:200, body:{matches:classify()}};
+  }
+  return { status:()=>({status:200, body:{status:get_stats()}}), upload_image, get_stats };
+})();
+
+// ============ LIVE PICTURESERVER UI ============
+(function(){
+  const FILES=[
+    {name:'cat.jpg',   kind:'jpeg', label:'cat.jpg',   emoji:'🐱', ok:true},
+    {name:'fruit.png', kind:'png',  label:'fruit.png', emoji:'🍎', ok:true},
+    {name:'car.jpeg',  kind:'jpeg', label:'car.jpeg',  emoji:'🚗', ok:true},
+    {name:'notes.txt', kind:'txt',  label:'notes.txt (bad ext)', emoji:'📄', ok:false},
+    {name:'broken.png',kind:'corrupt',label:'broken.png (corrupt)', emoji:'💥', ok:false}
+  ];
+  let sel=FILES[0];
+  const choices=document.getElementById('fileChoices');
+  FILES.forEach((f,i)=>{
+    const b=document.createElement('span'); b.className='pill'; b.textContent=f.emoji+' '+f.label;
+    if(i===0){ b.style.borderColor='var(--accent)'; b.style.color='var(--accent)'; }
+    b.onclick=()=>{ sel=f;
+      document.querySelectorAll('#fileChoices .pill').forEach(p=>{p.style.borderColor='';p.style.color='';});
+      b.style.borderColor='var(--accent)'; b.style.color='var(--accent)';
+      document.getElementById('selFile').textContent='Selected: '+f.name;
+    };
+    choices.appendChild(b);
+  });
+  document.getElementById('selFile').textContent='Selected: '+sel.name;
+
+  function refreshStatus(){
+    const r=Server.status().body.status;
+    document.getElementById('statusData').innerHTML=
+      `<div><b>API Version:</b> ${r.api_version}</div>`+
+      `<div><b>Health:</b> <span style="color:${r.health==='ok'?'#2e7d32':'#c62828'}">${r.health}</span></div>`+
+      `<div><b>Uptime:</b> ${r.uptime} seconds</div>`+
+      `<div><b>Successful Requests:</b> ${r.processed.success}</div>`+
+      `<div><b>Failed Requests:</b> ${r.processed.fail}</div>`;
+    document.getElementById('mUp').textContent=r.uptime.toFixed(1);
+    document.getElementById('mHealth').textContent=r.health;
+    document.getElementById('mHealth').style.color=r.health==='ok'?'var(--green)':'var(--red)';
+    document.getElementById('mOk').textContent=r.processed.success;
+    document.getElementById('mFail').textContent=r.processed.fail;
+    document.getElementById('mVer').textContent=r.api_version;
+  }
+  function log(line){ document.getElementById('serverLog').textContent=line; }
+
+  document.getElementById('chkStatus').onclick=()=>{ log('GET /status  →  200\n'+JSON.stringify(Server.status().body,null,2)); refreshStatus(); };
+  document.getElementById('doUpload').onclick=()=>{
+    const res=Server.upload_image(sel);
+    log('POST /upload_image  (image='+sel.name+')  →  '+res.status+'\n'+JSON.stringify(res.body,null,2));
+    const out=document.getElementById('results');
+    if(res.status!==200){
+      out.innerHTML=`<div style="color:#c62828;font-weight:700">Error (${res.body.error.http_status}): ${res.body.error.message}</div>`;
+    } else {
+      let rows=res.body.matches.map(m=>{
+        const pct=(m.score*100).toFixed(0);
+        return `<tr><td style="border:1px solid #ddd;padding:5px">${m.name}</td>`+
+               `<td style="border:1px solid #ddd;padding:5px">${m.score}</td>`+
+               `<td style="border:1px solid #ddd;padding:5px"><div class="matchbar" style="width:${Math.max(8,pct)}%"></div></td></tr>`;
+      }).join('');
+      out.innerHTML=`<div style="color:#2e7d32;font-weight:700">Image classified successfully!</div>`+
+        `<table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:.82rem">`+
+        `<tr><th style="border:1px solid #ddd;padding:5px;background:#f2f2f2">Class</th>`+
+        `<th style="border:1px solid #ddd;padding:5px;background:#f2f2f2">Score</th>`+
+        `<th style="border:1px solid #ddd;padding:5px;background:#f2f2f2">Confidence</th></tr>${rows}</table>`;
+    }
+    refreshStatus();
+  };
+  refreshStatus();
+})();
+
+// ============ LIVE FLASK ROUTER ============
+(function(){
+  // real routes from HW1 routes.py + Lab4 views.py/auth.py
+  const ROUTES=[
+    {m:'GET', p:'/',            app:'HW1',  resp:()=>({type:'html', code:200, body:'<PictureServer UI — render_template("index.html")>'})},
+    {m:'GET', p:'/status',      app:'HW1',  resp:()=>({type:'json', code:200, body:{status:Server.get_stats()}})},
+    {m:'POST',p:'/upload_image',app:'HW1',  resp:()=>({type:'json', code:200, body:{matches:[{name:'cat',score:0.62},{name:'dog',score:0.38}]}})},
+    {m:'GET', p:'/about',       app:'Lab4', resp:()=>({type:'html', code:200, body:'<h1>About</h1><p>This is the about page!</p>'})},
+    {m:'GET', p:'/secret',      app:'Lab4', resp:()=>({type:'json', code:401, body:{error:{http_status:401,message:'You are not logged in'}}})},
+    {m:'GET', p:'/login',       app:'Lab4', resp:()=>({type:'html', code:200, body:'<h1>Login</h1><p>This is the login page!</p>'})},
+    {m:'GET', p:'/logout',      app:'Lab4', resp:()=>({type:'html', code:200, body:'<h1>Logout</h1><p>This is the logout page!</p>'})},
+    {m:'GET', p:'/sign-up',     app:'Lab4', resp:()=>({type:'html', code:200, body:'<h1>Signup</h1><p>This is the signup page!</p>'})}
+  ];
+  let method='GET';
+  const input=document.getElementById('routeInput');
+  const list=document.getElementById('routeList');
+  const page=document.getElementById('routerPage');
+  const pills=document.getElementById('routePills');
+
+  ['/','/status','/upload_image','/secret','/login','/about','/nope'].forEach(p=>{
+    const s=document.createElement('span'); s.className='pill'; s.textContent=p;
+    s.onclick=()=>{ input.value=p; route(); }; pills.appendChild(s);
+  });
+  document.querySelectorAll('[data-method]').forEach(b=>{
+    b.onclick=()=>{
+      document.querySelectorAll('[data-method]').forEach(x=>{x.style.borderColor='';x.style.color='';});
+      b.style.borderColor='var(--accent)'; b.style.color='var(--accent)';
+      method=b.dataset.method; route();
+    };
+  });
+
+  function statusText(c){
+    return {200:'200 OK',401:'401 UNAUTHORIZED',404:'404 NOT FOUND',405:'405 METHOD NOT ALLOWED'}[c]||c;
+  }
+  function route(){
+    let path=(input.value||'/').trim(); if(!path.startsWith('/')) path='/'+path;
+    path=path.split('?')[0];
+    // build url-map view
+    let hit=null, pathExists=false;
+    list.innerHTML='';
+    ROUTES.forEach(r=>{
+      const pMatch=r.p===path; if(pMatch) pathExists=true;
+      const full=pMatch && r.m===method;
+      if(full && !hit) hit=r;
+      const div=document.createElement('div');
+      div.className='route'+(full?' hit':(pMatch?'':' miss'));
+      div.innerHTML=`<span><span class="method">${r.m}</span> ${r.p}</span><span class="pweight">${r.app}</span>`;
+      list.appendChild(div);
+    });
+    // render the rendered response in the browser pane
+    let code, kind, body, headLine;
+    if(hit){
+      const r=hit.resp(); code=r.code; kind=r.type; body=r.body;
+      headLine=`<span class="sline">→ matched <b>${hit.m} ${hit.p}</b>  ·  view in ${hit.app}  ·  ${statusText(code)}</span>`;
+    } else if(pathExists){
+      code=405; kind='json'; body={error:{http_status:405,message:'Method not allowed'}};
+      headLine=`<span class="sline err">→ path exists but not for <b>${method}</b>  ·  ${statusText(405)}</span>`;
+    } else {
+      code=404; kind='html'; body='<title>404 Not Found</title>\n<h1>Not Found</h1>\n<p>The requested URL was not found on the server.</p>';
+      headLine=`<span class="sline err">→ no route matched <b>${path}</b>  ·  ${statusText(404)}</span>`;
+    }
+    let rendered;
+    if(kind==='json'){ rendered=`Content-Type: application/json\n\n`+JSON.stringify(body,null,2); }
+    else { rendered=`Content-Type: text/html\n\n`+body; }
+    page.innerHTML=`<div class="reqcol" style="color:#334155">${headLine}</div>`+
+      `<div class="resp">${rendered.replace(/</g,'&lt;')}</div>`;
+  }
+  input.addEventListener('input',route);
+  input.addEventListener('keydown',e=>{ if(e.key==='Enter') route(); });
+  route();
+})();
+</script>
+</body>
+</html>

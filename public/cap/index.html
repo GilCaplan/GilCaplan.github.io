@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CAP — a scripting language for AI agents</title>
+<style>
+  :root{
+    --bg:#0B1220; --surface:#0F172A; --panel:#1E293B; --border:#243044;
+    --text:#E2E8F0; --muted:#94A3B8; --accent:#14B8A6; --blue:#60A5FA; --red:#F87171;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    --ui:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--ui);line-height:1.55;
+    -webkit-font-smoothing:antialiased;padding:20px;}
+  .wrap{max-width:1080px;margin:0 auto;}
+  header.hd{display:flex;flex-wrap:wrap;align-items:baseline;gap:14px;margin-bottom:6px}
+  .logo{font-family:var(--mono);font-weight:700;font-size:30px;letter-spacing:.5px}
+  .logo .dot{color:var(--accent)}
+  .tag{color:var(--muted);font-size:15px}
+  .sub{color:var(--muted);font-size:13px;margin:2px 0 18px;max-width:760px}
+  .sub code{font-family:var(--mono);color:var(--blue);background:#0d1830;padding:1px 6px;border-radius:5px}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:10px}
+  .tab{font-family:var(--ui);font-size:13.5px;color:var(--muted);background:transparent;border:1px solid transparent;
+    padding:7px 14px;border-radius:9px;cursor:pointer;transition:.15s}
+  .tab:hover{color:var(--text);background:#16223a}
+  .tab.active{color:var(--bg);background:var(--accent);font-weight:600}
+  .view{display:none;animation:fade .25s ease}
+  .view.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px}
+  h2{font-size:17px;margin:0 0 10px}
+  h3{font-size:14px;margin:18px 0 8px;color:var(--accent);font-family:var(--mono);letter-spacing:.3px}
+  p{font-size:14px;color:#cbd6e6}
+  .muted{color:var(--muted)}
+  pre{margin:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;
+    padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.5}
+  code{font-family:var(--mono)}
+  .cmt{color:#5e718e}.kw{color:#c792ea}.str{color:#9ad17a}.num{color:#f2b56b}.fn{color:var(--blue)}.op{color:var(--accent)}.out{color:var(--accent);font-weight:600}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+  .io{display:grid;grid-template-columns:1fr;gap:0;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+  .io .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.6px;color:var(--muted);
+    background:#0d1830;padding:6px 14px;border-bottom:1px solid var(--border);text-transform:uppercase}
+  .io pre{border:0;border-radius:0}
+  .explain{font-size:13px;color:var(--muted);margin:6px 0 0;padding-left:12px;border-left:2px solid var(--accent)}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin:4px 0 0}
+  .chip{font-family:var(--mono);font-size:11.5px;color:var(--blue);background:#0d1830;border:1px solid var(--border);
+    padding:4px 9px;border-radius:7px;cursor:pointer;transition:.12s;user-select:none}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .chip.active{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:600}
+  .note{font-size:12.5px;color:var(--muted);background:#10192c;border:1px dashed var(--border);
+    border-radius:9px;padding:10px 13px;margin-top:14px}
+  .note b{color:var(--red)}
+  table{border-collapse:collapse;width:100%;font-size:12.5px;margin-top:8px}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-family:var(--mono);font-size:11px;letter-spacing:.5px;text-transform:uppercase}
+  td code{color:var(--blue)}
+  .pill{display:inline-block;font-family:var(--mono);font-size:11px;color:var(--accent);border:1px solid var(--accent);
+    border-radius:20px;padding:2px 10px}
+  .src{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+  .src b{color:var(--blue);font-weight:500}
+  a{color:var(--blue)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hd">
+    <div class="logo">cap<span class="dot">.</span></div>
+    <div class="tag">A scripting language for AI agents — written in Rust</div>
+    <span class="pill">interactive explainer · showcase</span>
+  </header>
+  <div class="sub">
+    No blocks, no semicolons, no boilerplate — just expressions and pipelines.
+    Variables without <code>let</code>, functions as lambdas, <code>|&gt;</code> pipelines, a huge built-in
+    stdlib, and a <code>pyval</code> Python bridge. Everything below is copied verbatim from the
+    repository (README, QUICKSTART, LANGUAGE.md, and <code>tests/*.cap</code>).
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-v="tour">Syntax tour</button>
+    <button class="tab" data-v="examples">Real programs</button>
+    <button class="tab" data-v="stdlib">Standard library</button>
+    <button class="tab" data-v="run">Install &amp; run</button>
+  </div>
+
+  <!-- ───────────────── SYNTAX TOUR ───────────────── -->
+  <section class="view active" id="tour">
+    <div class="panel">
+      <h2>Click a construct to jump to it</h2>
+      <div class="chips" id="tourChips"></div>
+    </div>
+
+    <div class="panel" id="t-vars">
+      <h3>Variables &amp; strings</h3>
+      <pre><code><span class="cmt"># No let/var/const — just name = value</span>
+x = <span class="num">42</span>
+name = <span class="str">"Alice"</span>
+active = <span class="kw">true</span>
+nothing = <span class="kw">null</span>
+
+<span class="cmt"># Embed any expression with {...}</span>
+greeting = <span class="str">"Hello, {name}! Next year you'll be {age + 1}."</span></code></pre>
+      <p class="explain">Double-quoted strings. Interpolate with <code>{...}</code>; literal braces are <code>{{</code> / <code>}}</code>.</p>
+    </div>
+
+    <div class="panel" id="t-fns">
+      <h3>Functions are lambdas</h3>
+      <div class="io">
+        <div class="lbl">code (QUICKSTART §4)</div>
+        <pre><code>double  = <span class="op">|</span>x<span class="op">|</span> x * <span class="num">2</span>
+add     = <span class="op">|</span>a, b<span class="op">|</span> a + b
+greet   = <span class="op">|</span>name<span class="op">|</span> <span class="str">"Hello, {name}!"</span>
+zero    = <span class="op">||</span> <span class="num">42</span>          <span class="cmt"># no-arg lambda</span>
+
+<span class="cmt"># Closures capture the enclosing scope</span>
+make_adder = <span class="op">|</span>n<span class="op">|</span> <span class="op">|</span>x<span class="op">|</span> x + n
+add5 = make_adder(<span class="num">5</span>)</code></pre>
+        <div class="lbl">documented results</div>
+        <pre><code><span class="fn">double</span>(<span class="num">5</span>)       <span class="cmt"># =&gt;</span> <span class="out">10</span>
+<span class="fn">add</span>(<span class="num">3</span>, <span class="num">4</span>)       <span class="cmt"># =&gt;</span> <span class="out">7</span>
+<span class="fn">add5</span>(<span class="num">3</span>)         <span class="cmt"># =&gt;</span> <span class="out">8</span></code></pre>
+      </div>
+    </div>
+
+    <div class="panel" id="t-pipe">
+      <h3>Pipelines <code>|&gt;</code></h3>
+      <div class="io">
+        <div class="lbl">code (README / QUICKSTART §5)</div>
+        <pre><code>result = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>]
+  <span class="op">|&gt;</span> <span class="fn">filter</span>(<span class="op">|</span>x<span class="op">|</span> x &gt; <span class="num">2</span>)
+  <span class="op">|&gt;</span> <span class="fn">map</span>(<span class="op">|</span>x<span class="op">|</span> x * <span class="num">10</span>)
+  <span class="op">|&gt;</span> <span class="fn">sum</span></code></pre>
+        <div class="lbl">documented result</div>
+        <pre><code><span class="cmt"># =&gt;</span> <span class="out">120</span></code></pre>
+      </div>
+      <p class="explain"><code>|&gt;</code> passes the left value as the <b>first argument</b> of the right call. Wrap a pipeline in <code>()</code> to span multiple lines.</p>
+    </div>
+
+    <div class="panel" id="t-ctrl">
+      <h3>Control flow — <code>if</code> &amp; <code>match</code> are expressions</h3>
+      <div class="grid2">
+        <pre><code><span class="cmt"># if always needs then + else</span>
+label = <span class="kw">if</span> score &gt;= <span class="num">90</span>
+  <span class="kw">then</span> <span class="str">"A"</span>
+  <span class="kw">elif</span> score &gt;= <span class="num">80</span>
+  <span class="kw">then</span> <span class="str">"B"</span>
+  <span class="kw">else</span> <span class="str">"C"</span></code></pre>
+        <pre><code><span class="cmt"># match with comma-separated arms</span>
+msg = <span class="kw">match</span> code,
+  <span class="num">0</span> -&gt; <span class="str">"ok"</span>,
+  <span class="num">1</span> -&gt; <span class="str">"warn"</span>,
+  _ -&gt; <span class="str">"error"</span></code></pre>
+      </div>
+    </div>
+
+    <div class="panel" id="t-loop">
+      <h3>Loops &amp; <code>do…end</code></h3>
+      <div class="io">
+        <div class="lbl">code (QUICKSTART §6b)</div>
+        <pre><code>i = <span class="num">0</span>
+total = <span class="num">0</span>
+<span class="kw">while</span> i &lt; <span class="num">5</span> <span class="kw">do</span>
+  total = total + i
+  i = i + <span class="num">1</span>
+<span class="kw">end</span>
+<span class="fn">println</span>(total)</code></pre>
+        <div class="lbl">documented result</div>
+        <pre><code><span class="cmt"># =&gt;</span> <span class="out">10</span></code></pre>
+      </div>
+    </div>
+
+    <div class="panel" id="t-oop">
+      <h3>Classes — desugar to a constructor returning a map of closures</h3>
+      <div class="io">
+        <div class="lbl">code (README / QUICKSTART §11)</div>
+        <pre><code><span class="kw">class</span> Point(x, y),
+  dist = <span class="op">||</span> (x*x + y*y) ** <span class="num">0.5</span>,
+  str  = <span class="op">||</span> <span class="str">"({x}, {y})"</span>
+
+p = Point(<span class="num">3</span>, <span class="num">4</span>)</code></pre>
+        <div class="lbl">documented results</div>
+        <pre><code>p.<span class="fn">dist</span>()   <span class="cmt"># =&gt;</span> <span class="out">5.0</span>
+p.<span class="fn">str</span>()    <span class="cmt"># =&gt;</span> <span class="out">"(3, 4)"</span></code></pre>
+      </div>
+      <p class="explain">Methods read constructor args via closure — no <code>self</code>. Inheritance uses <code>extends</code> (see <code>tests/oop.cap</code> &amp; <code>test_class_inheritance.cap</code>).</p>
+    </div>
+
+    <div class="panel" id="t-null">
+      <h3>Null safety &amp; optional chaining</h3>
+      <div class="io">
+        <div class="lbl">code (LANGUAGE.md)</div>
+        <pre><code>port = config[<span class="str">"port"</span>] <span class="op">??</span> <span class="num">8080</span>   <span class="cmt"># ?? = null-coalesce</span>
+
+city = user<span class="op">?.</span>address<span class="op">?.</span>city
+city = <span class="kw">null</span><span class="op">?.</span>address<span class="op">?.</span>city</code></pre>
+        <div class="lbl">documented results</div>
+        <pre><code><span class="cmt"># =&gt;</span> <span class="out">"Paris"</span>
+<span class="cmt"># =&gt;</span> <span class="out">null</span></code></pre>
+      </div>
+    </div>
+
+    <div class="panel" id="t-compose">
+      <h3>Function composition <code>&gt;&gt;</code></h3>
+      <div class="io">
+        <div class="lbl">code (LANGUAGE.md)</div>
+        <pre><code>double = <span class="op">|</span>x<span class="op">|</span> x * <span class="num">2</span>
+inc    = <span class="op">|</span>x<span class="op">|</span> x + <span class="num">1</span>
+double_then_inc = double <span class="op">&gt;&gt;</span> inc</code></pre>
+        <div class="lbl">documented results</div>
+        <pre><code><span class="fn">double_then_inc</span>(<span class="num">5</span>)   <span class="cmt"># =&gt;</span> <span class="out">11</span>
+<span class="num">5</span> <span class="op">|&gt;</span> (double <span class="op">&gt;&gt;</span> inc) <span class="cmt"># =&gt;</span> <span class="out">11</span></code></pre>
+      </div>
+    </div>
+
+    <div class="note">
+      <b>Faithfulness note:</b> the Rust toolchain wasn't available in this environment, so no programs were
+      executed. Every <span class="out">=&gt; result</span> shown above is a value the repository itself documents (the
+      <code># =&gt;</code> annotations in README.md / QUICKSTART.md / LANGUAGE.md). No outputs were fabricated.
+    </div>
+  </section>
+
+  <!-- ───────────────── REAL PROGRAMS ───────────────── -->
+  <section class="view" id="examples">
+    <div class="panel">
+      <h2>Real <code>.cap</code> programs from the repo</h2>
+      <p class="muted">Pick a program from the test suite. Source is shown verbatim; behaviour is described from
+        the assertions / comments the file itself contains.</p>
+      <div class="chips" id="exChips"></div>
+    </div>
+    <div class="panel">
+      <div class="src" id="exSrc"></div>
+      <div style="height:8px"></div>
+      <div class="io">
+        <div class="lbl" id="exLbl">source</div>
+        <pre><code id="exCode"></code></pre>
+      </div>
+      <p class="explain" id="exExplain"></p>
+    </div>
+  </section>
+
+  <!-- ───────────────── STDLIB ───────────────── -->
+  <section class="view" id="stdlib">
+    <div class="panel">
+      <h2>Built-in standard library</h2>
+      <p class="muted">CAP ships a large stdlib — no imports. Core/list/string/IO modules are pure-Rust;
+        advanced data/ML/AI modules call out through the <code>pyval</code> Python bridge and need the listed pip packages.
+        (Verbatim from README.md.)</p>
+      <table>
+        <thead><tr><th>Module</th><th>Functions (sample)</th><th>Requires</th></tr></thead>
+        <tbody id="stdRows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ───────────────── RUN ───────────────── -->
+  <section class="view" id="run">
+    <div class="panel">
+      <h2>Install</h2>
+      <p class="muted">macOS / Linux — one command (from README.md):</p>
+      <pre><code><span class="fn">git</span> clone https://github.com/GilCaplan/cap
+<span class="fn">cd</span> cap
+./install.sh   <span class="cmt"># installs Rust via rustup, builds release, adds cap to PATH</span></code></pre>
+      <p class="muted" style="margin-top:14px">From source (requires Rust 1.70+):</p>
+      <pre><code>cargo build --release
+./target/release/cap --help</code></pre>
+    </div>
+    <div class="panel">
+      <h2>CLI</h2>
+      <pre><code>cap &lt;file.cap&gt;           <span class="cmt"># run a script</span>
+cap repl                 <span class="cmt"># interactive REPL</span>
+cap check &lt;file.cap&gt;     <span class="cmt"># syntax check (no execution)</span>
+cap ast &lt;file.cap&gt;       <span class="cmt"># print AST (debug)</span></code></pre>
+      <p class="muted" style="margin-top:12px">REPL session from the README:</p>
+      <pre><code>&gt;&gt;&gt; x = [<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>,<span class="num">4</span>,<span class="num">5</span>] <span class="op">|&gt;</span> <span class="fn">map</span>(<span class="op">|</span>n<span class="op">|</span> n * n) <span class="op">|&gt;</span> <span class="fn">sum</span>
+&gt;&gt;&gt; <span class="fn">println</span>(x)   <span class="cmt"># =&gt;</span> <span class="out">55</span></code></pre>
+    </div>
+    <div class="panel">
+      <h2>Implementation</h2>
+      <p class="muted">CAP is a tree-walking interpreter in Rust. Source layout (<code>src/</code>):
+        <code>lexer/</code> → <code>parser/</code> → <code>interpreter/</code>, with <code>main.rs</code> wiring the CLI
+        (clap) and REPL (rustyline). Built on reqwest, serde, rusqlite (bundled), regex, csv, chrono, and the
+        <code>pyval</code> Python bridge for the data-science/ML stdlib.</p>
+    </div>
+  </section>
+
+  <div class="panel" style="margin-top:4px">
+    <div class="src">
+      <b>Grounded in:</b> README.md · QUICKSTART.md · LANGUAGE.md ·
+      tests/{hello,pipelines,oop,test_quicksort,test_match,test_brainfuck}.cap · Cargo.toml · src/ layout
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- tabs ----
+document.getElementById('tabs').addEventListener('click',e=>{
+  const b=e.target.closest('.tab'); if(!b)return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===b));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===b.dataset.v));
+});
+
+// ---- syntax tour quick-jump chips ----
+const tourItems=[
+  ['Variables','t-vars'],['Functions','t-fns'],['Pipelines |>','t-pipe'],
+  ['Control flow','t-ctrl'],['Loops','t-loop'],['Classes','t-oop'],
+  ['Null safety','t-null'],['Compose >>','t-compose']
+];
+const tc=document.getElementById('tourChips');
+tourItems.forEach(([label,id])=>{
+  const c=document.createElement('span');c.className='chip';c.textContent=label;
+  c.onclick=()=>document.getElementById(id).scrollIntoView({behavior:'smooth',block:'center'});
+  tc.appendChild(c);
+});
+
+// ---- real programs ----
+const programs={
+  hello:{
+    file:'tests/hello.cap',
+    desc:'Phase-1 smoke test: printing, arithmetic, string interpolation, lambdas, inline if/else, higher-order apply.',
+    code:`# hello.cap — Phase 1 smoke test
+println("Hello, world!")
+
+x = 10
+y = 3
+println("x + y =", x + y)
+println("x ** y =", x ** y)
+
+name = "flux"
+println("Welcome to {name}!")
+
+double = |x| x * 2
+square = |x| x * x
+add    = |a, b| a + b
+
+println("double(7) =", double(7))
+println("square(5) =", square(5))
+println("add(3, 4) =", add(3, 4))
+
+abs_val = |x| if x >= 0 then x else -x
+println("abs(-9) =", abs_val(-9))
+
+apply = |f, x| f(x)
+println("apply(double, 6) =", apply(double, 6))`
+  },
+  quicksort:{
+    file:'tests/test_quicksort.cap',
+    desc:'Recursive quicksort written purely with lambdas and pipelines — partitions via filter, no mutation. The final line sorts a 10-element list.',
+    code:`quicksort = |arr| (
+  if arr.len <= 1 then arr else (
+    (|pivot|
+      (|rest|
+        (|left|
+          (|right|
+             left + [pivot] + right
+          )(quicksort(rest |> filter(|x| x > pivot)))
+        )(quicksort(rest |> filter(|x| x <= pivot)))
+      )(1..arr.len |> map(|i| arr[i]))
+    )(arr[0])
+  )
+)
+
+println(quicksort([3, 1, 4, 1, 5, 9, 2, 6, 5, 3]))`
+  },
+  match:{
+    file:'tests/test_match.cap',
+    desc:'Match-expression test. Each assert encodes the expected value the language guarantees — e.g. match on 404 → "not found", multi-line match on 1 → "warning", string and bool matches.',
+    code:`assert = |cond, msg| if cond then null else error(msg)
+
+status = 404
+msg = match status, 200 -> "ok", 404 -> "not found", _ -> "error"
+assert(msg == "not found", "basic match")
+
+code = 1
+res = (match code,
+  0 -> "success",
+  1 -> "warning",
+  _ -> "failure"
+)
+assert(res == "warning", "multi-line match")
+
+s = "b"
+s_res = match s, "a" -> 1, "b" -> 2, _ -> 3
+assert(s_res == 2, "string match")
+
+b = true
+b_res = match b, true -> "T", false -> "F"
+assert(b_res == "T", "bool match")
+
+println("match test completed.")`
+  },
+  pipelines:{
+    file:'tests/pipelines.cap',
+    desc:'Phase-2 core features: chained pipelines, tap for debugging, string pipelines, match grading, null-coalescing ??, enumerate + interpolation, reduce, ranges and nested map/filter over records.',
+    code:`double = |x| x * 2
+is_big = |x| x > 5
+result = [1, 2, 3, 4, 5] |> map(double) |> filter(is_big)
+println("doubled and filtered:", result)
+
+total = range(1, 11) |> filter(|n| n % 2 == 0) |> sum
+println("sum of even 1-10:", total)
+
+config = {"host": "localhost"}
+port = config["port"] ?? 8080
+println("port:", port)
+
+users = [
+  {"name": "Alice", "age": 30, "active": true},
+  {"name": "Bob",   "age": 25, "active": false},
+  {"name": "Carol", "age": 35, "active": true}
+]
+active_names = (
+  users
+  |> filter(|u| u["active"])
+  |> map(|u| u["name"])
+  |> sort
+)
+println("active users:", active_names)`
+  },
+  oop:{
+    file:'tests/oop.cap',
+    desc:'OOP via class syntax. Immutable Point/Stack/Counter classes whose methods are closures over the constructor args; push/pop/inc return brand-new instances.',
+    code:`class Point(x, y),
+  get_x = || x,
+  get_y = || y,
+  dist  = || (x*x + y*y) ** 0.5,
+  add   = |other| Point(x + other["get_x"](), y + other["get_y"]()),
+  str   = || "({x}, {y})"
+
+p1 = Point(3, 4)
+p2 = Point(1, 2)
+p3 = p1["add"](p2)
+println("p3 = p1 + p2:", p3["str"]())
+println("dist(p1):", p1["dist"]())
+
+class Counter(n),
+  inc   = || Counter(n + 1),
+  value = || n,
+  str   = || "Counter({n})"
+
+c = Counter(0)
+c = c["inc"]()
+c = c["inc"]()
+println("counter:", c["str"]())`
+  },
+  brainfuck:{
+    file:'tests/test_brainfuck.cap',
+    desc:'A Brainfuck interpreter written in CAP to stress functional constructs: a functional "tape" rebuilt with map on every cell write, recursive run_step with match over instructions, and self-recursing lambdas to scan matching brackets.',
+    code:`# A simple Brainfuck interpreter in Cap
+code = "+++++[>++++++++<-]>." # prints '(' (ASCII 40)
+tape_size = 10
+init_tape = 0..tape_size |> map(|_| 0)
+
+update_tape = |t, p, v| 0..tape_size |> map(|i| if i == p then v else t[i])
+
+run_step = |ip, ptr, tape, out| (
+  if ip >= code.len then out else (
+    (|c|
+      match c,
+        ">" -> run_step(ip + 1, ptr + 1, tape, out),
+        "<" -> run_step(ip + 1, ptr - 1, tape, out),
+        "+" -> run_step(ip + 1, ptr, update_tape(tape, ptr, tape[ptr] + 1), out),
+        "-" -> run_step(ip + 1, ptr, update_tape(tape, ptr, tape[ptr] - 1), out),
+        "." -> run_step(ip + 1, ptr, tape, out + "[" + str(tape[ptr]) + "]"),
+        _ -> run_step(ip + 1, ptr, tape, out)
+    )(code.chars[ip])
+  )
+)
+
+res = run_step(0, 0, init_tape, "")
+println("Brainfuck Output: " + res)`
+  }
+};
+const exOrder=['hello','pipelines','quicksort','match','oop','brainfuck'];
+const exNames={hello:'hello.cap',pipelines:'pipelines.cap',quicksort:'quicksort',match:'match',oop:'oop.cap',brainfuck:'brainfuck'};
+const exChips=document.getElementById('exChips');
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function highlight(s){
+  // line-based: comments, then tokens
+  return esc(s).split('\n').map(line=>{
+    const h=line.indexOf('#');
+    let codePart=line, cmt='';
+    if(h>=0){codePart=line.slice(0,h);cmt='<span class="cmt">'+line.slice(h)+'</span>';}
+    codePart=codePart
+      .replace(/(&quot;[^&]*?&quot;|"[^"]*")/g,'<span class="str">$1</span>')
+      .replace(/\b(if|then|elif|else|match|while|do|end|for|in|class|extends|true|false|null|return)\b/g,'<span class="kw">$1</span>')
+      .replace(/\b(\d+\.?\d*)\b/g,'<span class="num">$1</span>')
+      .replace(/(\|&gt;|\?\?|&gt;&gt;|-&gt;)/g,'<span class="op">$1</span>')
+      .replace(/\b(println|map|filter|reduce|sum|sort|range|str|error|assert|len|quicksort)\b/g,'<span class="fn">$1</span>');
+    return codePart+cmt;
+  }).join('\n');
+}
+function showProgram(k){
+  const p=programs[k];
+  document.getElementById('exSrc').innerHTML='<b>'+p.file+'</b>';
+  document.getElementById('exLbl').textContent=p.file+'  (verbatim source)';
+  document.getElementById('exCode').innerHTML=highlight(p.code);
+  document.getElementById('exExplain').textContent=p.desc;
+  document.querySelectorAll('#exChips .chip').forEach(c=>c.classList.toggle('active',c.dataset.k===k));
+}
+exOrder.forEach(k=>{
+  const c=document.createElement('span');c.className='chip';c.dataset.k=k;c.textContent=exNames[k];
+  c.onclick=()=>showProgram(k);exChips.appendChild(c);
+});
+showProgram('hello');
+
+// ---- stdlib table (verbatim subset from README) ----
+const std=[
+  ['Core','len, range, type, str, int, float, bool, keys, values, items, set, merge, try, error','—'],
+  ['List','map, filter, reduce, each, sort, zip, flatten, sum, min, max, first, last, any, all, find, enumerate, reverse, tap','—'],
+  ['String','split, join, trim, upper, lower, replace, contains, starts_with, ends_with, lines, chars','—'],
+  ['I/O · FS','read, write, file_append, exists, ls · fs_*, os_cwd/home/path_join/basename/...','—'],
+  ['JSON/YAML/TOML','json_parse/stringify, yaml_parse/stringify, toml_parse/stringify','—'],
+  ['HTTP','http_get, http_post, http_put, http_delete, http_request','—'],
+  ['SQLite','sql_open, sql_exec, sql_query, sql_query_one, sql_begin/commit/rollback, sql_tables','bundled'],
+  ['Crypto','hash_sha256/512, hmac_*, b64_*, hex_*, uuid_v4/v5, rand_*, pbkdf2_hash/verify','—'],
+  ['LLM','llm_chat/complete/embed, ollama_*, openai_*, anthropic_chat, gemini_chat','Ollama / API keys'],
+  ['Vector DB','chroma_*, pinecone_*, vec_cosine_sim/dot/norm','pip chromadb pinecone-client'],
+  ['DataFrames','df_read/write/head/select/filter/sort/groupby/join/apply','pip pandas openpyxl'],
+  ['Plots','plt_line/bar/scatter/hist/heatmap/boxplot/pie/show','pip matplotlib seaborn'],
+  ['Scikit-Learn','sklearn_train/predict/score/kmeans/dbscan/grid_search','pip scikit-learn'],
+  ['PyTorch','torch_device/tensor/zeros/ones/train_linear/predict','pip torch'],
+  ['Python bridge','python(code), pyval(code) — run arbitrary Python','Python 3'],
+];
+const sr=document.getElementById('stdRows');
+std.forEach(([m,f,r])=>{
+  const tr=document.createElement('tr');
+  tr.innerHTML='<td><b style="color:#E2E8F0">'+m+'</b></td><td><code>'+f+'</code></td><td class="muted">'+r+'</td>';
+  sr.appendChild(tr);
+});
+</script>
+</body>
+</html>

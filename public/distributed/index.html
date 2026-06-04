@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Distributed Systems / Databases (096224)</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0B1220; --surface:#0F172A; --panel:#1E293B; --border:#243044;
+  --text:#E2E8F0; --muted:#94A3B8; --accent:#14B8A6; --blue:#60A5FA; --red:#F87171;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.5;}
+.wrap{max-width:1040px;margin:0 auto;padding:22px 18px 60px;}
+h1{font-size:1.5rem;margin:0 0 4px;}
+h2{font-size:1.1rem;margin:0 0 10px;}
+.sub{color:var(--muted);font-size:.92rem;margin:0 0 18px;}
+.mono{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:10px;}
+.tab{background:var(--panel);border:1px solid var(--border);color:var(--muted);
+  padding:7px 14px;border-radius:9px;cursor:pointer;font-size:.88rem;transition:.15s;}
+.tab:hover{color:var(--text);border-color:var(--accent);}
+.tab.active{background:var(--accent);color:#04201c;border-color:var(--accent);font-weight:600;}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px;}
+.view{display:none;} .view.active{display:block;}
+pre{background:#0a0f1c;border:1px solid var(--border);border-radius:10px;padding:14px 16px;
+  overflow:auto;font-size:.82rem;color:#cbd5e1;font-family:'JetBrains Mono',monospace;}
+.k{color:var(--accent);} .b{color:var(--blue);} .c{color:#64748b;} .s{color:#fbbf24;}
+.tag{display:inline-block;background:var(--panel);border:1px solid var(--border);
+  color:var(--muted);border-radius:20px;padding:3px 11px;font-size:.76rem;margin:0 6px 6px 0;}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:14px;}
+.card h3{margin:0 0 6px;font-size:.95rem;color:var(--accent);}
+.card p{margin:0;color:var(--muted);font-size:.85rem;}
+.btn{background:var(--accent);color:#04201c;border:none;border-radius:9px;padding:9px 16px;font-weight:600;cursor:pointer;font-size:.88rem;}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+.muted{color:var(--muted);font-size:.85rem;}
+label{font-size:.83rem;color:var(--muted);}
+.out{font-family:'JetBrains Mono',monospace;font-size:.82rem;background:#0a0f1c;border:1px solid var(--border);border-radius:9px;padding:12px;color:#cbd5e1;white-space:pre-wrap;}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:760px){.split{grid-template-columns:1fr;}}
+.chartbox{background:#0a0f1c;border:1px solid var(--border);border-radius:10px;padding:10px;}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0;}
+.node{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 13px;font-size:.84rem;}
+.node b{color:var(--accent);} .arrow{color:var(--muted);font-size:1.2rem;}
+.note{background:#0a0f1c;border:1px solid var(--border);border-left:3px solid var(--blue);border-radius:8px;padding:10px 13px;font-size:.84rem;color:var(--muted);}
+a{color:var(--blue);}
+.states{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0;}
+.st{background:var(--panel);border:2px solid var(--border);border-radius:50%;width:54px;height:54px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;transition:.2s;}
+.st.on{border-color:var(--accent);background:#04201c;color:var(--accent);transform:scale(1.12);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Distributed Systems &amp; Databases</h1>
+  <p class="sub mono">Technion 096224 (DataBase, Spring) · data wrangling · MapReduce / Spark · stochastic analysis</p>
+
+  <div class="tabs">
+    <div class="tab active" data-v="overview">Overview</div>
+    <div class="tab" data-v="etl">Pokédex ETL</div>
+    <div class="tab" data-v="mr">MapReduce / Spark</div>
+    <div class="tab" data-v="sim">Live: Markov Simulation</div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="view active" id="overview">
+    <div class="panel">
+      <h2>What's in this repo</h2>
+      <p class="muted">A small set of database / distributed-data report scripts (the IDE project is
+      named <span class="mono">DataBase_Spring</span>). The work spans three practical tasks: flattening
+      nested JSON into a tabular feed, distributed aggregation with <b>MapReduce</b> (mrjob) and
+      <b>Apache Spark</b>, and a Monte-Carlo analysis of a small stochastic process.</p>
+      <div style="margin-top:8px">
+        <span class="tag">JSON → TSV ETL</span>
+        <span class="tag">mrjob MapReduce</span>
+        <span class="tag">multi-step jobs</span>
+        <span class="tag">PySpark (sc.textFile)</span>
+        <span class="tag">map / combine / reduce</span>
+        <span class="tag">Monte-Carlo simulation</span>
+        <span class="tag">nbconvert reporting</span>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="card"><h3>report1.py — ETL</h3><p>Recursively flattens 801 nested Pokédex JSON
+        records into a sorted, padded TSV feed.</p></div>
+      <div class="card"><h3>report2.py — MapReduce</h3><p>An mrjob multi-step job that finds the
+        most-viewed program in a viewing log, then counts its viewers.</p></div>
+      <div class="card"><h3>ddHW1q1a.ipynb — Spark</h3><p>A PySpark + mrjob word-frequency job over a
+        50k-row daily-program CSV with custom CSV parsing.</p></div>
+      <div class="card"><h3>report3.py — Simulation</h3><p>A 1,000-run Monte-Carlo estimate of the
+        expected hitting time of a small Markov chain.</p></div>
+    </div>
+    <div class="note" style="margin-top:14px">The repo ships the Pokédex JSON (<span class="mono">pokedex.json</span>)
+    and PDF report exports, but not the large CSV viewing logs the MapReduce/Spark jobs run on. Those
+    jobs are shown as real code; their numeric outputs aren't reproduced here since the input data
+    isn't in the repo.</div>
+  </div>
+
+  <!-- ETL -->
+  <div class="view" id="etl">
+    <div class="panel">
+      <h2>Nested JSON → flat TSV (report1.py)</h2>
+      <p class="muted">Each Pokédex entry has nested objects and lists (stats, types, abilities,
+      evolution). <span class="mono">flatten_json</span> walks the structure recursively, building
+      dotted column keys, then writes a column-aligned TSV sorted by name with empty columns dropped.</p>
+      <div class="flow">
+        <div class="node"><b>pokedex.json</b><br><span class="muted">801 nested records</span></div>
+        <span class="arrow">→</span>
+        <div class="node"><b>flatten_json</b><br><span class="muted">recursive, dotted keys</span></div>
+        <span class="arrow">→</span>
+        <div class="node">sort by name<br><span class="muted">drop empty cols</span></div>
+        <span class="arrow">→</span>
+        <div class="node"><b>output_pokemons.tsv</b><br><span class="muted">padded columns</span></div>
+      </div>
+      <h2 style="font-size:1rem;margin-top:14px">Real input record (from pokedex.json)</h2>
+      <pre>{
+  <span class="s">"id"</span>: <span class="s">"001"</span>, <span class="s">"name"</span>: <span class="s">"Bulbasaur"</span>, <span class="s">"species"</span>: <span class="s">"Seed Pokemon"</span>,
+  <span class="s">"type"</span>: [<span class="s">"Grass"</span>, <span class="s">"Poison"</span>],
+  <span class="s">"height"</span>: <span class="s">"2ft.4in. (0.71m)"</span>, <span class="s">"weight"</span>: <span class="s">"15.2 lbs (6.9 kg)"</span>,
+  <span class="s">"abilities"</span>: [<span class="s">"Overgrow"</span>, <span class="s">"Chlorophyll"</span>],
+  <span class="s">"stats"</span>: {<span class="s">"hp"</span>:45,<span class="s">"attack"</span>:49,<span class="s">"defense"</span>:49,
+            <span class="s">"sp.atk"</span>:65,<span class="s">"sp.def"</span>:65,<span class="s">"speed"</span>:45,<span class="s">"total"</span>:318},
+  <span class="s">"evolution"</span>: [<span class="s">"Bulbasaur"</span>,<span class="s">"Ivysaur"</span>,<span class="s">"Venusaur"</span>], <span class="s">"gen"</span>: 1
+}</pre>
+      <p class="muted">Flattens to columns like
+      <span class="mono">stats.hp, stats.attack, type.0, type.1, abilities.0, evolution.0…</span>
+      A regex also extracts the parenthesized metric value from strings (e.g.
+      <span class="mono">"2ft.4in. (0.71m)" → "0.71m"</span>).</p>
+      <pre><span class="k">def</span> <span class="b">flatten_json</span>(nested_json, parent_key=<span class="s">''</span>, sep=<span class="s">'.'</span>):
+    items = []
+    <span class="k">for</span> k, v <span class="k">in</span> nested_json.items():
+        new_key = f<span class="s">"{parent_key}{sep}{k}"</span> <span class="k">if</span> parent_key <span class="k">else</span> k
+        <span class="k">if</span> isinstance(v, dict):
+            items.extend(next(flatten_json(v, new_key, sep)).items())
+        <span class="k">elif</span> isinstance(v, list):
+            <span class="k">for</span> i, item <span class="k">in</span> enumerate(v): ...   <span class="c"># index into key</span>
+        <span class="k">else</span>:
+            <span class="k">if</span> isinstance(v, str):
+                m = re.search(r<span class="s">'\((.*?)\)'</span>, v)  <span class="c"># pull "(0.71m)"</span>
+                <span class="k">if</span> m: v = m.group(1)
+            items.append((new_key, v))
+    <span class="k">yield</span> dict(items)</pre>
+    </div>
+  </div>
+
+  <!-- MR -->
+  <div class="view" id="mr">
+    <div class="panel">
+      <h2>Distributed aggregation — MapReduce &amp; Spark</h2>
+      <p class="muted">Two distributed jobs over TV-viewing logs. <span class="mono">report2.py</span>
+      uses <b>mrjob</b> with a multi-step pipeline; the notebook
+      <span class="mono">ddHW1q1a.ipynb</span> uses <b>PySpark</b> (<span class="mono">sc.textFile</span>)
+      with a hand-written CSV splitter that handles quoted fields containing commas.</p>
+
+      <h2 style="font-size:1rem">Multi-step mrjob: most-viewed program (report2.py)</h2>
+      <pre><span class="k">class</span> <span class="b">MRMostUsedViewed</span>(MRJob):
+    <span class="k">def</span> steps(self):
+        <span class="k">return</span> [
+            MRStep(mapper=self.mapper_get_words,        <span class="c"># emit (prog_code, 1)</span>
+                   combiner=self.combiner_count_words,  <span class="c"># local sum</span>
+                   reducer=self.reducer_count_words),   <span class="c"># global sum → (count, prog)</span>
+            MRStep(reducer=self.reducer_find_max_word)  <span class="c"># max over all programs</span>
+        ]
+    <span class="k">def</span> mapper_get_words(self, _, row):
+        <span class="k">if</span> 20000 &lt;= row[<span class="s">'event_time'</span>] &lt;= 2300:
+            <span class="k">yield</span> (row[<span class="s">'prog_code'</span>], 1)
+    <span class="k">def</span> reducer_find_max_word(self, _, pairs):
+        <span class="k">yield</span> max(pairs)        <span class="c"># (count, prog) — Python max picks largest count</span></pre>
+      <p class="muted">The classic word-count pattern, repurposed: map each viewing event to its program
+      code, combine partial counts locally, sum globally, then a second reduce step takes the max. A
+      companion class <span class="mono">MRCountMostViewers</span> then counts viewers of that top program.</p>
+
+      <h2 style="font-size:1rem;margin-top:14px">Spark job with custom CSV parsing (ddHW1q1a.ipynb)</h2>
+      <pre>data   = sc.textFile(<span class="s">'tiny_50k_daily_prog_data.csv.csv'</span>)
+header = data.first()
+
+<span class="k">class</span> <span class="b">MRWordFrequencyCount</span>(MRJob):
+    <span class="k">def</span> mapper(self, _, line):
+        title, genres, air_time, date = split_properley(line)  <span class="c"># quote-aware CSV split</span>
+        <span class="k">if</span> line != header <span class="k">and</span> 70000 &lt;= air_time &lt; 90000:
+            <span class="k">for</span> l <span class="k">in</span> [<span class="s">'j'</span>,<span class="s">'q'</span>,<span class="s">'z'</span>]:
+                <span class="k">if</span> l <span class="k">in</span> title.lower():
+                    <span class="k">for</span> k <span class="k">in</span> [<span class="s">'Sitcom'</span>,<span class="s">'Talk'</span>,<span class="s">'Politics'</span>,<span class="s">'Spanish'</span>,...]:
+                        <span class="k">if</span> k <span class="k">in</span> genres:
+                            <span class="k">yield</span> ((title, date, genres), 1)</pre>
+      <p class="muted"><span class="mono">split_properley</span> finds quote positions to correctly split
+      rows where the title or genre field itself contains commas — then the job filters by air-time
+      window, title letters (j/q/z) and a genre whitelist, and counts matches.</p>
+    </div>
+  </div>
+
+  <!-- SIM -->
+  <div class="view" id="sim">
+    <div class="panel">
+      <h2>Markov-chain hitting time — live Monte-Carlo (report3.py)</h2>
+      <p class="muted">A small stochastic process on states 0,1,2,3. From states 0 and 1 you always
+      advance by one. From state 2 you reset to state 0 with probability
+      <span class="mono">min(1, (state−1)/10) = 0.1</span>, otherwise advance to state 3. State 3 is
+      absorbing. The script runs <b>1,000</b> simulations and reports the mean number of steps to
+      reach state 3. Run it here — same logic as the repo.</p>
+
+      <div class="states" id="states">
+        <div class="st" data-st="0">0</div>
+        <div class="st" data-st="1">1</div>
+        <div class="st" data-st="2">2</div>
+        <div class="st" data-st="3">3</div>
+      </div>
+
+      <div class="row" style="margin:8px 0 14px">
+        <label>runs <input id="runs" type="range" min="100" max="5000" step="100" value="1000" oninput="rv.textContent=this.value"></label>
+        <span class="mono" id="rv" style="color:var(--blue)">1000</span>
+        <button class="btn" onclick="runSim()">Run simulation</button>
+        <button class="btn" style="background:var(--panel);color:var(--text);border:1px solid var(--border)" onclick="animateOne()">Trace one run</button>
+      </div>
+      <div class="split">
+        <div class="chartbox"><canvas id="simChart" height="240"></canvas></div>
+        <div class="out" id="simOut"></div>
+      </div>
+      <div class="panel" style="margin-top:16px;background:#0a0f1c">
+        <pre><span class="k">def</span> <span class="b">simulation</span>():
+    time, curr_state = 0, 0
+    <span class="k">while</span> curr_state &lt; 3:
+        <span class="k">if</span> curr_state <span class="k">in</span> [0, 1]:
+            curr_state += 1; time += 1
+        <span class="k">else</span>:
+            <span class="k">if</span> random.random() &lt; min([1, (curr_state-1)/10]):
+                curr_state = 0; time += 1          <span class="c"># reset</span>
+            <span class="k">else</span>:
+                time += 1; curr_state += 1          <span class="c"># advance</span>
+    <span class="k">return</span> time
+
+score = [simulation() <span class="k">for</span> _ <span class="k">in</span> range(1000)]
+print(np.mean(score))</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active'); document.getElementById(t.dataset.v).classList.add('active');
+});
+
+function simulate(){
+  let time=0, s=0;
+  while(s<3){
+    if(s===0||s===1){s++;time++;}
+    else{ if(Math.random() < Math.min(1,(s-1)/10)){s=0;time++;} else {time++;s++;} }
+  }
+  return time;
+}
+let simChart;
+function runSim(){
+  const n=+document.getElementById('runs').value;
+  const scores=[]; for(let i=0;i<n;i++)scores.push(simulate());
+  const mean=scores.reduce((a,b)=>a+b,0)/n;
+  // histogram
+  const maxV=Math.max(...scores), hist={};
+  for(let v=3;v<=Math.min(maxV,20);v++)hist[v]=0;
+  scores.forEach(v=>{const b=Math.min(v,20);hist[b]=(hist[b]||0)+1;});
+  const labels=Object.keys(hist), counts=labels.map(l=>hist[l]);
+  if(simChart)simChart.destroy();
+  simChart=new Chart(document.getElementById('simChart'),{type:'bar',
+    data:{labels,datasets:[{label:'# runs',data:counts,backgroundColor:'#14B8A6'}]},
+    options:{responsive:true,scales:{
+      x:{grid:{color:'#1e293b'},ticks:{color:'#94A3B8'},title:{display:true,text:'steps to reach state 3',color:'#94A3B8'}},
+      y:{grid:{color:'#1e293b'},ticks:{color:'#94A3B8'}}},
+      plugins:{legend:{labels:{color:'#cbd5e1'}}}}});
+  document.getElementById('simOut').textContent=
+`runs            = ${n}
+mean hitting time = ${mean.toFixed(4)} steps
+min / max        = ${Math.min(...scores)} / ${maxV}
+
+(report3.py runs 1000 and prints np.mean(score).
+The reset probability from state 2 is min(1,(2-1)/10)=0.1,
+so most runs finish in 3 steps; occasional resets lengthen the tail.)`;
+}
+let animTimer=null;
+async function animateOne(){
+  if(animTimer)return;
+  const cells=document.querySelectorAll('.st');
+  let s=0,t=0; const clear=()=>cells.forEach(c=>c.classList.remove('on'));
+  return new Promise(res=>{
+    animTimer=setInterval(()=>{
+      clear(); cells[s].classList.add('on');
+      if(s>=3){clearInterval(animTimer);animTimer=null;
+        document.getElementById('simOut').textContent=`single traced run reached state 3 in ${t} steps.`;res();return;}
+      if(s===0||s===1)s++;
+      else{ if(Math.random()<0.1)s=0; else s++; }
+      t++;
+    },500);
+  });
+}
+runSim();
+</script>
+</body>
+</html>

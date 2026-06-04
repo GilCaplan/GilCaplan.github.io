@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MACalendar — a voice-driven, privacy-first calendar assistant for macOS</title>
+<style>
+  :root{
+    --bg:#0B1220; --surface:#0F172A; --panel:#1E293B; --border:#243044;
+    --text:#E2E8F0; --muted:#94A3B8; --accent:#14B8A6; --blue:#60A5FA; --red:#F87171;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    --ui:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--ui);line-height:1.55;padding:20px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1100px;margin:0 auto}
+  header.hd{display:flex;flex-wrap:wrap;align-items:baseline;gap:14px;margin-bottom:4px}
+  .logo{font-size:26px;font-weight:700}.logo b{color:var(--accent)}
+  .pill{display:inline-block;font-family:var(--mono);font-size:11px;color:var(--blue);border:1px solid var(--blue);border-radius:20px;padding:2px 10px}
+  .sub{color:var(--muted);font-size:13px;margin:4px 0 18px;max-width:840px}
+  .sub code{font-family:var(--mono);color:var(--blue);background:#0d1830;padding:1px 6px;border-radius:5px}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:10px}
+  .tab{font-size:13.5px;color:var(--muted);background:transparent;border:1px solid transparent;padding:7px 14px;border-radius:9px;cursor:pointer;transition:.15s}
+  .tab:hover{color:var(--text);background:#16223a}.tab.active{color:var(--bg);background:var(--accent);font-weight:600}
+  .view{display:none;animation:fade .25s ease}.view.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px}
+  h2{font-size:17px;margin:0 0 6px}h3{font-size:13px;margin:0 0 8px;color:var(--accent);font-family:var(--mono);letter-spacing:.4px;text-transform:uppercase}
+  p{font-size:14px;color:#cbd6e6}.muted{color:var(--muted)}
+  pre{margin:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.55}
+  code{font-family:var(--mono)}
+  .cmt{color:#5e718e}.key{color:var(--blue)}.str{color:#9ad17a}.num{color:#f2b56b}.boo{color:#c792ea}
+  /* flow */
+  .flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:9px;margin-top:6px}
+  .stage{flex:1;min-width:130px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px 12px;cursor:pointer;transition:.15s}
+  .stage:hover{border-color:var(--accent);transform:translateY(-2px)}
+  .stage.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+  .stage .n{font-family:var(--mono);font-size:10px;color:var(--muted)}
+  .stage .t{font-size:13px;font-weight:600;margin:3px 0}
+  .stage .f{font-family:var(--mono);font-size:10px;color:var(--blue);word-break:break-all}
+  .arrow{align-self:center;color:var(--muted);font-size:17px}
+  @media(max-width:860px){.arrow{display:none}.stage{min-width:0;flex-basis:46%}}
+  .detail{margin-top:14px;font-size:13.5px;color:#cbd6e6;border-left:2px solid var(--accent);padding-left:12px;min-height:40px}
+  .branch{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+  @media(max-width:760px){.branch{grid-template-columns:1fr}}
+  .bx{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+  .bx h4{margin:0 0 6px;font-size:13px;color:var(--blue)}
+  .bx.alt h4{color:var(--accent)}
+  .bx p{font-size:12.5px;color:var(--muted);margin:0}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{font-family:var(--mono);font-size:11.5px;color:var(--blue);background:var(--surface);border:1px solid var(--border);padding:5px 10px;border-radius:7px;cursor:pointer;user-select:none;transition:.12s}
+  .chip:hover{border-color:var(--accent)}.chip.on{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:600}
+  table{border-collapse:collapse;width:100%;font-size:12.5px;margin-top:6px}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-family:var(--mono);font-size:11px;letter-spacing:.5px;text-transform:uppercase}
+  td code{color:var(--blue)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:860px){.grid2{grid-template-columns:1fr}}
+  .ex{font-family:var(--mono);font-size:12.5px;color:#cbd6e6;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:9px 12px;margin:7px 0}
+  .ex .q{color:var(--accent)}
+  .badge{display:inline-block;font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:6px;margin-left:6px}
+  .b-local{background:#10261f;color:var(--accent);border:1px solid var(--accent)}
+  .src{font-family:var(--mono);font-size:11.5px;color:var(--muted)}.src b{color:var(--blue);font-weight:500}
+  .note{font-size:12.5px;color:var(--muted);background:#10192c;border:1px dashed var(--border);border-radius:9px;padding:10px 13px;margin-top:12px}
+  .feat{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+  .feat .c{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 14px}
+  .feat .c .ic{font-size:18px}.feat .c h4{margin:6px 0 4px;font-size:13.5px}.feat .c p{font-size:12.5px;color:var(--muted);margin:0}
+  a{color:var(--blue)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hd">
+    <div class="logo">📅 MA<b>Calendar</b></div>
+    <span class="pill">desktop app · showcase</span>
+  </header>
+  <div class="sub">
+    A privacy-focused, voice-driven calendar &amp; task assistant for <b>macOS</b> (PyQt6 desktop app).
+    Speech-to-text runs locally with <code>faster-whisper</code>; reasoning defaults to a local
+    <code>Ollama</code> model (or OpenAI / Gemini / Claude if you opt in). Press a hotkey, speak a request,
+    and it parses your intent and updates a local SQLite calendar — no audio leaves your Mac by default.
+    Everything below is grounded in the repo's README, <code>config.example.yaml</code>, and source.
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-v="flow">Voice pipeline</button>
+    <button class="tab" data-v="features">Features</button>
+    <button class="tab" data-v="commands">Voice commands</button>
+    <button class="tab" data-v="config">Config &amp; install</button>
+  </div>
+
+  <!-- ───────── PIPELINE ───────── -->
+  <section class="view active" id="flow">
+    <div class="panel">
+      <h2>From your voice to a calendar change</h2>
+      <p class="muted">Click a stage. The orchestration is in <code>assistant/pipeline.py</code>
+        (<code>Pipeline._run_pipeline</code>): <code>AudioCapture → STT → IntentParser → ConfirmationHandler → Action.execute()</code>,
+        running on a worker thread that streams status to the PyQt6 UI.</p>
+      <div class="flow" id="flowEls"></div>
+      <div class="detail" id="flowDetail">Select a stage above.</div>
+
+      <div class="branch">
+        <div class="bx">
+          <h4>⚡ Rule fast-path (no LLM)</h4>
+          <p>A spaCy-based <code>RuleBasedParser</code> tries first. If its confidence ≥ threshold with no
+            missing slots, the command executes immediately — no model call. Simple, single-event commands
+            (e.g. "meeting tomorrow at 10am") take this path.</p>
+        </div>
+        <div class="bx alt">
+          <h4>🤖 Background verify</h4>
+          <p>After a fast-path action runs, a daemon thread can ask the LLM to judge it in three tiers:
+            <b>ok</b> (silent), <b>minor</b> (silently PATCH fields), <b>major</b> (undo the create, re-execute
+            the corrected intent) — but only if the user hasn't already edited the record.</p>
+        </div>
+      </div>
+      <div class="note">
+        <b>Stop words:</b> say <code>"execute"</code>, <code>"done"</code>, <code>"stop"</code>, <code>"set events"</code>
+        (and more) to finish recording immediately. A streaming transcription checks the growing audio buffer every
+        2.5s to detect them. Source: <code>_BUILTIN_STOP_PATTERNS</code> in pipeline.py.
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────── FEATURES ───────── -->
+  <section class="view" id="features">
+    <div class="panel">
+      <h2>What it does</h2>
+      <div class="feat" id="featGrid"></div>
+    </div>
+    <div class="panel">
+      <h2>iPhone companion (SwiftUI + Flask API)</h2>
+      <p class="muted">The Mac is the source of truth; a native SwiftUI app connects over Tailscale to a Flask
+        REST API (<code>python -m assistant.api --tailscale</code>). Quick reference (README):</p>
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>GET</td><td><code>/health</code></td><td>Server status</td></tr>
+          <tr><td>GET</td><td><code>/events?date=YYYY-MM-DD</code></td><td>Events for a day</td></tr>
+          <tr><td>POST</td><td><code>/events</code></td><td>Create event</td></tr>
+          <tr><td>POST</td><td><code>/voice/text</code></td><td>Voice command as text</td></tr>
+          <tr><td>GET</td><td><code>/todos</code></td><td>Todo list</td></tr>
+          <tr><td>PATCH</td><td><code>/todos/&lt;id&gt;/toggle</code></td><td>Complete a task</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ───────── COMMANDS ───────── -->
+  <section class="view" id="commands">
+    <div class="grid2">
+      <div class="panel">
+        <h2>Calendar voice commands</h2>
+        <p class="muted">Filter by the action they trigger. Example phrases are from the README;
+          action names &amp; descriptions are from <code>actions/calendar/action.py</code>.</p>
+        <div class="ex"><span class="q">"Schedule a dentist appointment for tomorrow at 2 PM"</span></div>
+        <div class="ex"><span class="q">"Cancel my meeting with Alex"</span></div>
+        <div class="ex"><span class="q">"What does my day look like?" · "When is my first meeting?"</span></div>
+        <div class="ex"><span class="q">"Set a meeting at 10am and another at 2pm"</span> <span class="muted">→ two events</span></div>
+        <table style="margin-top:10px">
+          <thead><tr><th>Action</th><th>Triggers on</th></tr></thead>
+          <tbody>
+            <tr><td><code>create_event</code></td><td>"schedule a meeting", "add an event", "remind me to", "set up a call"</td></tr>
+            <tr><td><code>update_event</code></td><td>move / reschedule / rename an existing event</td></tr>
+            <tr><td><code>delete_event</code></td><td>"cancel", "delete it", "remove that event"</td></tr>
+            <tr><td><code>query_schedule</code></td><td>"what's on today", "when is my next…", morning briefing</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="panel">
+        <h2>Tasks-mode voice commands</h2>
+        <p class="muted">When the Tasks tab is active the mic enters <b>Tasks mode</b> — the transcript is
+          prefixed <code>[TASKS VIEW]</code> so the parser biases toward todo actions. Phrases from README;
+          actions from <code>actions/todo/action.py</code>.</p>
+        <div class="ex"><span class="q">"Add task buy groceries"</span></div>
+        <div class="ex"><span class="q">"Add tasks: buy milk, call dentist, walk the dog"</span> <span class="muted">→ multiple</span></div>
+        <div class="ex"><span class="q">"Mark buy milk done" · "Rename buy milk to buy oat milk"</span></div>
+        <div class="ex"><span class="q">"Delete buy groceries" · "Remove it"</span> <span class="muted">("it" = last task)</span></div>
+        <table style="margin-top:10px">
+          <thead><tr><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td><code>create_todo</code> · <code>complete_todo</code> · <code>delete_todo</code> · <code>update_todo</code></td></tr>
+            <tr><td><code>add_subtask</code> · <code>complete_subtask</code> · <code>delete_subtask</code></td></tr>
+            <tr><td><code>query_todos</code> · <code>clarify</code> (asks a follow-up question)</td></tr>
+          </tbody>
+        </table>
+        <p class="note muted"><b>Context memory:</b> within the Tasks/Day views, "it" and "that task/event"
+          always refer to the last item you created or modified.</p>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Real test transcript (from <code>tests/test_ollama_parser.py</code>)</h2>
+      <p class="muted">The repo's own test feeds this complex, multi-event utterance and asserts <b>3</b> events
+        are created in the SQLite DB:</p>
+      <pre><code><span class="str">"Set an event for tomorrow at 10 a.m., 2 p.m., and 3 p.m.
+ For now, while the first one is, I'll meet up with a friend.
+ The second one is, I'm going to Tel Aviv.
+ And the third one is, doing some activity. Thanks."</span>
+
+<span class="cmt"># test asserts: 3 events created; one mentions "friend", one "Tel Aviv"</span></code></pre>
+      <p class="muted" style="margin-top:10px">A second test asserts that <span class="str">"Schedule a daily standup for 10am
+        tomorrow, repeating daily."</span> generates &gt;100 recurring instances in the DB.</p>
+    </div>
+  </section>
+
+  <!-- ───────── CONFIG / INSTALL ───────── -->
+  <section class="view" id="config">
+    <div class="grid2">
+      <div class="panel">
+        <h2><code>config.example.yaml</code> (verbatim)</h2>
+        <pre><code><span class="key">hotkey</span>:
+  <span class="key">modifiers</span>: [<span class="str">"cmd"</span>, <span class="str">"shift"</span>]
+  <span class="key">key</span>: <span class="str">"space"</span>
+
+<span class="cmt"># whisper = free, local, no internet</span>
+<span class="key">stt_engine</span>: <span class="str">"whisper"</span>
+<span class="key">whisper</span>:
+  <span class="key">model_size</span>: <span class="str">"base"</span>     <span class="cmt"># tiny|base|small|medium|large-v3</span>
+  <span class="key">compute_type</span>: <span class="str">"int8"</span>   <span class="cmt"># fastest on Apple Silicon</span>
+  <span class="key">device</span>: <span class="str">"cpu"</span>
+  <span class="key">language</span>: <span class="str">"en"</span>
+
+<span class="cmt"># ollama (default) | openai | gemini | claude</span>
+<span class="key">llm_engine</span>: <span class="str">"ollama"</span>
+<span class="key">ollama</span>:
+  <span class="key">base_url</span>: <span class="str">"http://localhost:11434"</span>
+  <span class="key">model</span>: <span class="str">"llama3.1:8b"</span>
+  <span class="key">temperature</span>: <span class="num">0.1</span>
+  <span class="key">timeout_seconds</span>: <span class="num">180</span>
+
+<span class="cmt"># 0 = fully autonomous, 1 = yes/no per action</span>
+<span class="key">confirmation_level</span>: <span class="num">1</span>
+
+<span class="key">tts</span>:
+  <span class="key">mute</span>: <span class="boo">false</span>
+  <span class="key">voice</span>: <span class="str">"Samantha"</span>   <span class="cmt"># say -v ? to list</span>
+  <span class="key">rate</span>: <span class="num">200</span></code></pre>
+      </div>
+      <div class="panel">
+        <h2>Install &amp; run (from README)</h2>
+        <h3>Prerequisites</h3>
+        <p class="muted">macOS · Python 3.11+ · microphone permission · Ollama with
+          <code>ollama pull llama3.1:8b</code>.</p>
+        <h3>Install</h3>
+        <pre><code>python3.11 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -e .
+
+cp config.example.yaml config.yaml</code></pre>
+        <h3>Run</h3>
+        <pre><code><span class="cmt"># Easy way: double-click in Finder</span>
+Launch Calendar.command
+
+<span class="cmt"># Terminal way</span>
+python -m assistant.main</code></pre>
+        <h3>Test</h3>
+        <pre><code>python tests/test_ollama_parser.py   <span class="cmt"># needs Ollama</span>
+python tests/test_todo_parser.py --direct  <span class="cmt"># no LLM</span>
+pytest tests/</code></pre>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Privacy</h2>
+      <p class="muted">By default everything is local: audio is transcribed on-device with
+        <code>faster-whisper</code> and reasoning runs through local Ollama. Switching <code>llm_engine</code> to
+        <code>openai</code>, <code>gemini</code>, or <code>claude</code> sends transcripts to that provider. Basic
+        prompt-injection sanitization guards against malicious voice commands. State persists to a local
+        <code>.db</code> file on close.</p>
+    </div>
+    <div class="note"><b>Showcase only:</b> MACalendar is a native macOS PyQt6 desktop app, so it can't run in a
+      browser. The repository ships <b>no screenshots or GIFs</b> (only an iOS app icon), so none are embedded here —
+      this page diagrams the real flow and reproduces the real README / config / source instead of inventing UI imagery.</div>
+  </section>
+
+  <div class="panel" style="margin-top:4px">
+    <div class="src"><b>Grounded in:</b> README.md · config.example.yaml · assistant/pipeline.py ·
+      assistant/actions/{__init__,calendar/action,todo/action,clarify}.py · tests/test_ollama_parser.py ·
+      DOCUMENTATION/ · MACalendar-iOS/</div>
+  </div>
+</div>
+
+<script>
+// flow stages
+const stages=[
+  ['1','🎙 Listen','AudioCapture','Hotkey (Cmd+Shift+Space) or mic button starts recording. record_until_silence captures audio; a stream-checker transcribes the growing buffer every 2.5s to catch stop words like "execute".'],
+  ['2','📝 Transcribe','STT (whisper/google)','faster-whisper turns audio into text locally (WhisperSTT). If the stream-checker already produced a fresh transcript it is reused — skipping a second pass. Trailing stop words are stripped.'],
+  ['3','🧠 Parse intent','rule fast-path → IntentParser','A spaCy RuleBasedParser tries first; on low confidence or missing slots it hands off to the LLM (Ollama/OpenAI/Gemini/Claude) which returns a strict JSON {"actions":[...]} envelope. Multi-event utterances become multiple actions.'],
+  ['4','✅ Confirm','ConfirmationHandler','Depending on confirmation_level, each action is confirmed (yes/no) or auto-approved. Clarify actions never prompt. "Auto-Approve" in Settings skips dialogs.'],
+  ['5','⚙️ Execute','Action.execute()','The matched action class runs against the local SQLite DB (create/update/delete event or todo, query schedule). Context memory records the last touched item so "it" resolves later.'],
+  ['6','🔊 Speak + refresh','TTS + UI','The result is spoken via the macOS say voice and a status/toast is pushed to the PyQt6 calendar UI, which refreshes (or switches view, e.g. to Tasks) on the main thread.'],
+];
+const fe=document.getElementById('flowEls');
+stages.forEach((s,i)=>{
+  if(i>0){const a=document.createElement('div');a.className='arrow';a.textContent='→';fe.appendChild(a);}
+  const d=document.createElement('div');d.className='stage';
+  d.innerHTML='<div class="n">STAGE '+s[0]+'</div><div class="t">'+s[1]+'</div><div class="f">'+s[2]+'</div>';
+  d.onclick=()=>{document.querySelectorAll('.stage').forEach(x=>x.classList.remove('active'));d.classList.add('active');
+    document.getElementById('flowDetail').textContent=s[3];};
+  fe.appendChild(d);
+});
+document.querySelector('.stage').click();
+
+// features
+const feats=[
+  ['🗣️','Voice control','Press a hotkey, speak naturally ("Schedule a dentist appointment for tomorrow at 2 PM"), say "execute" to run.'],
+  ['🔒','Local & private','faster-whisper STT + Ollama reasoning run on-device. Nothing leaves your Mac unless you opt into a cloud LLM.'],
+  ['📅','Month / Week / Day','Toolbar views. The Day view shows an hourly timeline with a live red current-time indicator.'],
+  ['🌅','Morning briefing','"Brief Me" (or a voice query) reads today’s full schedule aloud — hands-free.'],
+  ['✅','Tasks panel','Apple-Reminders-style Today + General lists. "Sync Today" pulls today’s events in as tasks.'],
+  ['🤖','Hybrid parsing','Fast rule-based parser for simple commands; LLM fallback for complex ones, with background self-correction.'],
+  ['📱','iPhone app','Native SwiftUI companion over a Flask API, connected securely via Tailscale.'],
+  ['🧩','Pluggable LLMs','Swap Ollama for OpenAI, Gemini, or Claude with one config line (llm_engine).'],
+];
+const fg=document.getElementById('featGrid');
+feats.forEach(([ic,h,p])=>{
+  const c=document.createElement('div');c.className='c';
+  c.innerHTML='<div class="ic">'+ic+'</div><h4>'+h+'</h4><p>'+p+'</p>';
+  fg.appendChild(c);
+});
+
+// tabs
+document.getElementById('tabs').addEventListener('click',e=>{
+  const b=e.target.closest('.tab'); if(!b)return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===b));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===b.dataset.v));
+});
+</script>
+</body>
+</html>

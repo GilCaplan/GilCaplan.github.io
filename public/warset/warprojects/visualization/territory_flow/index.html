@@ -1,0 +1,1644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Warset — Territory Flow</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap');
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --bg: #0a0c10;
+  --panel: #111318;
+  --border: #1e2230;
+  --accent: #f5a623;
+  --text: #e8eaf0;
+  --muted: #6b7280;
+  --hover: #1a1f2e;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top bar */
+.topbar {
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  background: var(--panel);
+  flex-wrap: wrap;
+}
+.topbar h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem;
+  letter-spacing: 0.01em;
+}
+.topbar .meta {
+  font-size: 0.7rem;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+button.ctrl {
+  background: var(--hover);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+button.ctrl:hover { border-color: var(--accent); color: var(--accent); }
+button.ctrl.active { background: rgba(245,166,35,0.15); color: var(--accent); border-color: rgba(245,166,35,0.4); }
+
+.year-display {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.2rem;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+  min-width: 140px;
+  text-align: center;
+}
+.year-display small {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.7rem;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  display: block;
+  text-transform: uppercase;
+}
+
+/* Slider */
+.slider-row {
+  padding: 10px 22px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.slider-row input[type=range] {
+  flex: 1;
+  accent-color: var(--accent);
+}
+.slider-row .endpoint {
+  font-size: 0.7rem;
+  color: var(--muted);
+  min-width: 60px;
+}
+.slider-row .endpoint.right { text-align: right; }
+
+/* Main layout */
+.main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  overflow: hidden;
+}
+.map-wrap {
+  position: relative;
+  background: #06080c;
+  overflow: hidden;
+}
+svg#map {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.country {
+  fill: #1a1f28;
+  stroke: #0a0c10;
+  stroke-width: 0.5px;
+  cursor: pointer;
+  transition: fill 0.3s ease;
+}
+.country.highlight {
+  stroke: var(--accent);
+  stroke-width: 1.5px;
+}
+.sphere { fill: #06080c; }
+.graticule {
+  fill: none;
+  stroke: #1a1f28;
+  stroke-width: 0.4px;
+}
+
+/* Side panel */
+.side {
+  background: var(--panel);
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 18px;
+}
+.side h2 {
+  font-size: 0.7rem;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  margin-bottom: 2px;
+}
+.legend-item:hover { background: var(--hover); }
+.legend-item.dim { opacity: 0.35; }
+.swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.legend-item .count {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.section { margin-bottom: 22px; }
+
+/* Tooltip */
+#tooltip {
+  position: fixed;
+  background: rgba(10,12,16,0.95);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 0.78rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  max-width: 280px;
+  z-index: 50;
+}
+#tooltip .name {
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+#tooltip .actor {
+  color: var(--accent);
+  font-size: 0.85rem;
+  margin: 2px 0;
+}
+#tooltip .meta {
+  color: var(--muted);
+  font-size: 0.7rem;
+  margin-top: 4px;
+}
+
+/* Detail panel (when country clicked) */
+#detail {
+  position: absolute;
+  bottom: 18px;
+  left: 18px;
+  width: 360px;
+  max-height: 50%;
+  background: rgba(17,19,24,0.97);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  overflow-y: auto;
+  font-size: 0.8rem;
+  z-index: 30;
+  display: none;
+}
+#detail h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.05rem;
+  margin-bottom: 4px;
+}
+#detail .close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 1.2rem;
+}
+.epoch-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--border);
+  font-size: 0.74rem;
+}
+.epoch-row:last-child { border-bottom: none; }
+.epoch-row .yr {
+  color: var(--muted);
+  min-width: 110px;
+  font-variant-numeric: tabular-nums;
+}
+.epoch-row .actor-name { flex: 1; }
+.epoch-row .swatch { width: 10px; height: 10px; }
+
+.empty-state {
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 30px 18px;
+  text-align: center;
+  line-height: 1.5;
+}
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.65rem;
+  background: var(--hover);
+  color: var(--muted);
+  margin-right: 4px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.badge.full   { background: rgba(62,207,142,0.15); color: #3ecf8e; }
+.badge.contested { background: rgba(245,87,87,0.15); color: #f55757; }
+.badge.suzerainty,
+.badge.vassal { background: rgba(245,166,35,0.15); color: #f5a623; }
+.badge.occupation { background: rgba(127,90,240,0.15); color: #7f5af0; }
+.badge.partial { background: rgba(150,150,180,0.15); color: #aaa; }
+
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h1>Territory Flow</h1>
+    <div class="meta" id="dataset-meta">loading…</div>
+  </div>
+
+  <div class="year-display">
+    <div id="year-num">—</div>
+    <small id="year-era">—</small>
+    <small class="snapshot-label" style="display:block;font-size:0.62rem;color:var(--muted);margin-top:2px"></small>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl layer-toggle active" id="t-territory" title="Country fills colored by controlling actor">🗺️ Territory</button>
+    <button class="ctrl layer-toggle" id="t-heatmap" title="Country fills colored by aggregated conflict density up to selected year">🔥 Heatmap</button>
+    <button class="ctrl layer-toggle" id="t-historical" title="Use historical-era borders (aourednik basemaps) instead of modern country shapes">🏛️ Historical</button>
+    <button class="ctrl layer-toggle" id="t-bubbles" title="Conflict bubbles (active wars in selected year)">⚫ Conflicts</button>
+    <button class="ctrl layer-toggle" id="t-arrows" title="Aggressor→theater arrows for active wars">➤ Arrows</button>
+    <span style="width:1px;height:24px;background:var(--border);margin:0 6px"></span>
+    <button class="ctrl" id="btn-step-back">◀</button>
+    <button class="ctrl" id="btn-play">▶ Play</button>
+    <button class="ctrl" id="btn-step-fwd">▶</button>
+    <button class="ctrl" id="btn-speed">1×</button>
+  </div>
+</div>
+<style>
+  .layer-toggle.active { background: rgba(245,166,35,0.15); color: var(--accent); border-color: rgba(245,166,35,0.4); }
+  .conflict-bubble { fill-opacity: 0.55; stroke: #fff; stroke-width: 0.8; cursor: pointer; pointer-events: all; }
+  .conflict-bubble:hover { fill-opacity: 0.9; stroke-width: 1.6; }
+  .arrow-path { fill: none; stroke: var(--accent); stroke-width: 1.2; opacity: 0.75; pointer-events: none; }
+  .arrow-path.contested { stroke: #f55757; }
+</style>
+
+<div class="slider-row">
+  <span class="endpoint" id="slider-min">—</span>
+  <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+    <canvas id="coverage-strip" height="22" style="display:block;width:100%;height:22px;border-radius:3px;background:#0d1017;border:1px solid var(--border)"></canvas>
+    <input id="slider" type="range" min="-3100" max="2026" value="0" step="1" style="width:100%;margin:0">
+  </div>
+  <span class="endpoint right" id="slider-max">—</span>
+</div>
+
+<div style="padding:6px 22px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:0.72rem;color:var(--muted)">
+  <span style="margin-right:6px">Jump to:</span>
+  <button class="ctrl jump" data-y="-2500">2500 BCE</button>
+  <button class="ctrl jump" data-y="-500">500 BCE</button>
+  <button class="ctrl jump" data-y="-200">200 BCE</button>
+  <button class="ctrl jump" data-y="100">100 CE</button>
+  <button class="ctrl jump" data-y="500">500 CE</button>
+  <button class="ctrl jump" data-y="800">800 CE</button>
+  <button class="ctrl jump" data-y="1200">1200 CE</button>
+  <button class="ctrl jump" data-y="1600">1600 CE</button>
+  <button class="ctrl jump" data-y="1900">1900 CE</button>
+  <button class="ctrl jump" data-y="peak" id="jump-peak" style="color:var(--accent);border-color:rgba(245,166,35,0.4)">peak coverage</button>
+</div>
+
+<div class="main">
+  <div class="map-wrap">
+    <svg id="map"></svg>
+    <div id="tooltip"></div>
+    <div id="detail">
+      <span class="close" id="detail-close">×</span>
+      <h3 id="detail-title">—</h3>
+      <div class="meta" id="detail-subtitle"></div>
+      <div style="margin-top: 12px;" id="detail-body"></div>
+    </div>
+  </div>
+
+  <aside class="side">
+    <div class="section" id="heatmap-options" style="display:none; padding:8px; background:rgba(245,166,35,0.05); border:1px solid rgba(245,166,35,0.2); border-radius:6px; margin-bottom:16px;">
+      <h2 style="color:var(--accent); margin-bottom:8px;">🔥 Heatmap Options</h2>
+      <label style="color:var(--muted); font-size:0.74rem; display:block; margin-bottom:4px;">Aggregated up to current timeline year.</label>
+      <label style="color:var(--muted); font-size:0.74rem;">Metric
+        <select id="heatmap-metric" style="width:100%;margin-top:2px;padding:5px 7px;background:#0a0c10;color:var(--text);border:1px solid var(--border);border-radius:4px;font-size:0.74rem">
+          <option value="count">Number of conflicts</option>
+          <option value="cas">Total casualties</option>
+        </select>
+      </label>
+    </div>
+    <div class="section">
+      <h2>Conflict filters</h2>
+      <div style="display:flex;flex-direction:column;gap:6px;font-size:0.74rem">
+        <label style="color:var(--muted)">Conflict type
+          <select id="war-filter-type" style="width:100%;margin-top:2px;padding:5px 7px;background:#0a0c10;color:var(--text);border:1px solid var(--border);border-radius:4px;font-size:0.74rem">
+            <option value="">All types</option>
+            <option>Interstate</option><option>Intrastate (Civil)</option>
+            <option>Extrastate</option><option>Imperial Expansion</option><option>Non-State</option>
+          </select>
+        </label>
+        <label style="color:var(--muted)">Historical period
+          <select id="war-filter-period" style="width:100%;margin-top:2px;padding:5px 7px;background:#0a0c10;color:var(--text);border:1px solid var(--border);border-radius:4px;font-size:0.74rem">
+            <option value="">All periods</option>
+            <option>Antiquity</option><option>Late Antiquity</option><option>Medieval</option>
+            <option>Early Modern</option><option>Industrial Age</option>
+            <option>World Wars Era</option><option>Cold War</option><option>Contemporary</option>
+          </select>
+        </label>
+        <label style="color:var(--muted)">Min casualties
+          <select id="war-filter-cas" style="width:100%;margin-top:2px;padding:5px 7px;background:#0a0c10;color:var(--text);border:1px solid var(--border);border-radius:4px;font-size:0.74rem">
+            <option value="0">Any</option><option value="10000">10K+</option>
+            <option value="100000">100K+</option><option value="1000000">1M+</option><option value="10000000">10M+</option>
+          </select>
+        </label>
+      </div>
+      <div style="margin-top:8px;font-size:0.7rem;color:var(--muted)">
+        Wars in view <span id="war-list-count" style="color:var(--accent)"></span>
+      </div>
+      <div id="war-in-view" style="max-height:160px;overflow-y:auto;margin-top:4px;font-size:0.72rem"></div>
+    </div>
+    <div class="section">
+      <h2>Find polity</h2>
+      <input id="actor-filter" type="text" placeholder="Type empire / state / dynasty…"
+        style="width:100%;padding:6px 8px;background:#0a0c10;color:var(--text);border:1px solid var(--border);border-radius:4px;font-size:0.78rem"/>
+      <div id="actor-filter-results" style="max-height:170px;overflow-y:auto;margin-top:6px;font-size:0.74rem"></div>
+      <div id="actor-pinned" style="display:none;margin-top:8px;padding:6px 8px;background:rgba(245,166,35,0.10);border:1px solid rgba(245,166,35,0.35);border-radius:4px;font-size:0.74rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
+          <span><strong id="actor-pinned-name"></strong></span>
+          <button id="actor-pinned-clear" class="ctrl" style="padding:2px 6px;font-size:0.7rem">×</button>
+        </div>
+        <div id="actor-pinned-meta" style="color:var(--muted);font-size:0.68rem;margin-top:2px"></div>
+        <button id="actor-pinned-peak" class="ctrl" style="margin-top:4px;width:100%;font-size:0.7rem">Jump to peak year</button>
+      </div>
+    </div>
+    <div class="section">
+      <h2>Active Actors</h2>
+      <div id="legend-active"></div>
+    </div>
+    <div class="section">
+      <h2>Stats</h2>
+      <div id="stats" style="font-size:0.78rem;color:var(--muted);line-height:1.6"></div>
+    </div>
+    <div class="section">
+      <h2>How to read this</h2>
+      <p style="font-size:0.74rem;color:var(--muted);line-height:1.5">
+        Each country is shaded by the actor that controlled the historical region it overlaps in the selected year.
+        Gray = no recorded control in <code>landproject/</code>. The data is sparse — coverage grows as
+        <code>territorial_control.csv</code> is filled in.
+      </p>
+    </div>
+  </aside>
+</div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://unpkg.com/topojson-client@3"></script>
+<script src="../territory.js?v=b0c9ae42"></script>
+<script src="../wars.js?v=278add4e"></script>
+<script src="../historical_basemaps/manifest.js?v=2026-05-29c"></script>
+<script src="../world_atlas/countries-110m.js?v=2026-05-29c"></script>
+
+<script>
+/* ──────────────────────────────────────────────────────────
+   1. Build country -> [(epoch, territory)] index for fast lookup
+   ────────────────────────────────────────────────────────── */
+const CONTROL_PRECEDENCE = {
+  full: 5, occupation: 4, suzerainty: 3, vassal: 3, partial: 2, contested: 1, nominal: 1, colonial: 4
+};
+
+function buildCountryIndex() {
+  const idx = {};  // country_id (string) -> [{epoch, territory}, ...]
+  for (const ep of territoryData.epochs) {
+    const terr = territoryData.territories[ep.t];
+    if (!terr) continue;
+    for (const cid of terr.country_ids) {
+      if (!idx[cid]) idx[cid] = [];
+      idx[cid].push({ ep, terr });
+    }
+  }
+  return idx;
+}
+const countryIndex = buildCountryIndex();
+
+// ── Actor index: for each actor, the set of country_ids it ever controlled + peak year ──
+function buildActorIndex() {
+  const byActor = {};  // aid -> { countries: Set, epochs: [], counts: {year: n} }
+  for (const ep of territoryData.epochs) {
+    const terr = territoryData.territories[ep.t];
+    if (!terr) continue;
+    if (!byActor[ep.a]) byActor[ep.a] = { countries: new Set(), epochs: [] };
+    byActor[ep.a].epochs.push(ep);
+    for (const cid of terr.country_ids) byActor[ep.a].countries.add(cid);
+  }
+  // Compute peak year (year with the most countries simultaneously held)
+  for (const aid in byActor) {
+    const entry = byActor[aid];
+    const yearSamples = new Set();
+    entry.epochs.forEach(ep => { yearSamples.add(ep.s); yearSamples.add(ep.e); });
+    let peakYear = null, peakCount = 0;
+    yearSamples.forEach(y => {
+      let n = 0;
+      const seen = new Set();
+      for (const ep of entry.epochs) {
+        if (y >= ep.s && y <= ep.e) {
+          const terr = territoryData.territories[ep.t];
+          if (terr) terr.country_ids.forEach(c => seen.add(c));
+        }
+      }
+      n = seen.size;
+      if (n > peakCount) { peakCount = n; peakYear = y; }
+    });
+    entry.peakYear = peakYear;
+    entry.peakCount = peakCount;
+  }
+  return byActor;
+}
+const actorIndex = buildActorIndex();
+
+// Currently-pinned actor (from the filter UI). When set, the map shows that actor's
+// all-time extent regardless of currentYear.
+let pinnedActor = null;
+
+function controlAt(countryId, year) {
+  const entries = countryIndex[countryId];
+  if (!entries) return null;
+  const active = entries.filter(({ep}) => year >= ep.s && year <= ep.e);
+  if (active.length === 0) return null;
+  // Pick by precedence, then by smaller area (more specific region wins)
+  active.sort((a, b) => {
+    const pa = CONTROL_PRECEDENCE[a.ep.ct] || 1;
+    const pb = CONTROL_PRECEDENCE[b.ep.ct] || 1;
+    if (pa !== pb) return pb - pa;
+    const aArea = a.terr.area || Infinity;
+    const bArea = b.terr.area || Infinity;
+    return aArea - bArea;
+  });
+  return active[0];
+}
+
+/* ──────────────────────────────────────────────────────────
+   2. Map setup
+   ────────────────────────────────────────────────────────── */
+let projection, path, svg, world, countriesFeature, countryNeighbors = {};
+
+// Distinct palette for greedy actor coloring — perceptually separated jewel tones.
+const ACTOR_PALETTE = [
+  '#e6194b', '#3cb44b', '#4363d8', '#f58231', '#911eb4',
+  '#46c4d4', '#f032e6', '#bcf60c', '#fabebe', '#008080',
+  '#9a6324', '#fffac8', '#800000', '#aaffc3', '#808000',
+  '#ffd8b1', '#000075', '#a9a9a9', '#e6beff', '#42d4f4',
+];
+
+// ── Historical-basemap state ───────────────────────────────────────────
+// Manifest is loaded synchronously via <script src="../historical_basemaps/manifest.js">
+// which defines `basemapManifestData`. We alias to basemapManifest for back-compat.
+let basemapManifest = (typeof basemapManifestData !== 'undefined') ? basemapManifestData : null;
+const basemapCache = {};          // file -> {features, neighborsByIdx, nameToActor}
+let currentBasemap = null;        // currently-rendered snapshot ref (or null = modern)
+let actorNameLookup = null;       // lowercased name/alias -> actor_id
+
+function buildActorNameLookup() {
+  if (actorNameLookup) return actorNameLookup;
+  actorNameLookup = {};
+  const norm = s => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  for (const aid in territoryData.actors) {
+    const a = territoryData.actors[aid];
+    const keys = [a.name, ...(a.aliases || [])].map(norm).filter(Boolean);
+    for (const k of keys) {
+      if (!actorNameLookup[k]) actorNameLookup[k] = aid;
+    }
+  }
+  return actorNameLookup;
+}
+
+function matchPolityToActor(name) {
+  if (!name) return null;
+  const lookup = buildActorNameLookup();
+  const norm = name.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  if (lookup[norm]) return lookup[norm];
+  // substring fallback (>=4 chars both ways)
+  if (norm.length < 4) return null;
+  for (const k in lookup) {
+    if (k.length >= 4 && (k.includes(norm) || norm.includes(k))) return lookup[k];
+  }
+  return null;
+}
+
+function nearestBasemap(year) {
+  if (!basemapManifest || !basemapManifest.length) return null;
+  let best = basemapManifest[0], bestDist = Math.abs(year - best.year);
+  for (const m of basemapManifest) {
+    const d = Math.abs(year - m.year);
+    if (d < bestDist) { best = m; bestDist = d; }
+  }
+  return best;
+}
+
+// In-flight script loads share a promise so concurrent renders don't queue duplicate requests.
+const _basemapLoadPromises = {};
+
+function loadBasemap(file) {
+  if (basemapCache[file]) return Promise.resolve(basemapCache[file]);
+  if (_basemapLoadPromises[file]) return _basemapLoadPromises[file];
+
+  // Load via dynamic <script> insertion — works under file:// (fetch does not).
+  // Each basemap .js file assigns to window.__basemapCache[file].
+  const jsFile = file.replace(/\.geojson$/, '.js');
+  _basemapLoadPromises[file] = new Promise((resolve, reject) => {
+    // Already loaded by an earlier script tag?
+    if (window.__basemapCache && window.__basemapCache[file]) {
+      return resolve(finalizeBasemap(file, window.__basemapCache[file]));
+    }
+    const s = document.createElement('script');
+    s.src = `../historical_basemaps/${jsFile}`;
+    s.onload = () => {
+      const geo = window.__basemapCache && window.__basemapCache[file];
+      if (!geo) return reject(new Error('Basemap loaded but global missing: ' + file));
+      resolve(finalizeBasemap(file, geo));
+    };
+    s.onerror = () => reject(new Error('Failed to load ' + jsFile));
+    document.head.appendChild(s);
+  });
+  return _basemapLoadPromises[file];
+}
+
+function finalizeBasemap(file, geo) {
+  const features = geo.features.filter(f => f.geometry);
+  for (const f of features) {
+    f._actor = matchPolityToActor(f.properties?.NAME);
+    f._polityName = f.properties?.NAME || '(unnamed)';
+  }
+  const entry = { features, geo, file };
+  projectBasemap(entry);   // precompute SVG path strings once
+  basemapCache[file] = entry;
+  return entry;
+}
+
+// Point-in-polygon mapping of each war to a basemap polygon — the slow part of
+// the historical heatmap. It is PRECOMPUTED offline by precompute_hist_poly.py
+// into historical_basemaps/hist_poly.js and lazy-loaded the first time the
+// heatmap is used in historical mode (the file is ~4 MB, so we don't load it on
+// page load). If the precompute is missing we fall back to computing it live.
+let _histPolyLoading = false;
+function loadHistPolyData(cb) {
+  if (typeof histPolyData !== 'undefined') { cb(); return; }
+  if (_histPolyLoading) return;
+  _histPolyLoading = true;
+  const s = document.createElement('script');
+  s.src = '../historical_basemaps/hist_poly.js?v=2026-05-29';
+  s.onload = () => { _histPolyLoading = false; cb(); };
+  s.onerror = () => { _histPolyLoading = false; cb(); };  // fall back to live compute
+  document.head.appendChild(s);
+}
+function ensureHistPoly(entry) {
+  if (!entry || entry._histPolyDone) return;
+  const m = (typeof histPolyData !== 'undefined') ? histPolyData[entry.file] : null;
+  if (m) {
+    entry._histPolyDone = true;
+    warsData.forEach(w => { if (m[w.id] !== undefined) (w._hist_poly = w._hist_poly || {})[entry.file] = m[w.id]; });
+    return;
+  }
+  // Fallback: compute live (slower) if the precompute isn't available for this file.
+  entry._histPolyDone = true;
+  warsData.forEach(w => {
+    if (typeof w.lon === 'number' && typeof w.lat === 'number') {
+      const idx = entry.features.findIndex(f => d3.geoContains(f, [w.lon, w.lat]));
+      if (idx !== -1) (w._hist_poly = w._hist_poly || {})[entry.file] = idx;
+    }
+  });
+}
+
+// Project every polygon to an SVG path string ONCE and cache it on the entry.
+// d3.geoPath projection is the costly part of drawing a historical basemap; by
+// caching the result we only pay it once per basemap (not on every redraw), and
+// the warm-up loop below pays it ahead of time so dragging stays smooth. Zoom is
+// an SVG transform (not a re-projection), so cached paths stay valid until a
+// resize changes the projection — projectAllBasemaps() refreshes them then.
+function projectBasemap(entry) {
+  if (!path) return;  // projection not ready yet; will be projected on first use
+  entry._paths = entry.features.map(f => path(f));
+}
+function projectAllBasemaps() {
+  for (const file in basemapCache) projectBasemap(basemapCache[file]);
+}
+
+// Map each war to the modern country polygon containing it — needed only for the
+// modern-map heatmap, so computed lazily on first use rather than on page load.
+let _modernPolyDone = false;
+function ensureModernPoly() {
+  if (_modernPolyDone || !countriesFeature) return;
+  _modernPolyDone = true;
+  warsData.forEach(w => {
+    if (typeof w.lon === 'number' && typeof w.lat === 'number') {
+      const match = countriesFeature.features.find(f => d3.geoContains(f, [w.lon, w.lat]));
+      if (match) w._modern_polygon_id = match.id;
+    }
+  });
+}
+
+function assignActorColors(countryToActor) {
+  // Build actor adjacency from country adjacency.
+  const actorNeighbors = {};
+  for (const cid in countryToActor) {
+    const a = countryToActor[cid];
+    if (!actorNeighbors[a]) actorNeighbors[a] = new Set();
+    const ns = countryNeighbors[cid] || new Set();
+    ns.forEach(nb => {
+      const na = countryToActor[nb];
+      if (na && na !== a) actorNeighbors[a].add(na);
+    });
+  }
+  // Greedy color: sort actors by degree descending. Pick the lowest palette index not used
+  // by any colored neighbor. To spread unconstrained actors, prefer the least-globally-used
+  // index among those valid choices (round-robin tiebreak).
+  const actors = Object.keys(actorNeighbors).sort((a, b) => actorNeighbors[b].size - actorNeighbors[a].size);
+  const color = {};
+  const usageCount = new Array(ACTOR_PALETTE.length).fill(0);
+  for (const a of actors) {
+    const taken = new Set();
+    actorNeighbors[a].forEach(nb => { if (color[nb] != null) taken.add(color[nb]); });
+    let best = -1, bestUsage = Infinity;
+    for (let i = 0; i < ACTOR_PALETTE.length; i++) {
+      if (taken.has(i)) continue;
+      if (usageCount[i] < bestUsage) { best = i; bestUsage = usageCount[i]; }
+    }
+    if (best === -1) best = 0;  // palette exhausted, shouldn't happen with 20 colors
+    color[a] = best;
+    usageCount[best]++;
+  }
+  return color;  // actor_id -> palette index
+}
+let currentYear = 0;
+let peakYear = 0;
+// Monotonic render token. render() is async (awaits basemap loads); a newer
+// render — triggered by any layer toggle, filter change, or slider move —
+// invalidates an in-flight one so a stale resume can't repaint the wrong layer.
+let _renderToken = 0;
+// Coalesce render() calls to at most one per animation frame. The slider's
+// 'input' event fires dozens of times per second during a drag; calling the
+// (heavy) render() on each one synchronously made the map stutter. requestRender
+// collapses a burst of requests into a single repaint on the next frame.
+// Filename of the historical basemap whose polygons are currently drawn. Polygon
+// geometry (the expensive d3.geoPath projection) only changes when the snapshot
+// file changes — NOT when the year ticks within the same snapshot, and NOT on
+// zoom (which is an SVG transform). Caching this lets us skip re-projecting every
+// polygon on each slider step, which was the cause of historical-mode lag.
+let _lastHistFile = null;
+let _rafPending = false;
+function requestRender() {
+  if (_rafPending) return;
+  _rafPending = true;
+  requestAnimationFrame(() => { _rafPending = false; render(); });
+}
+// Cheap, synchronous year readout — keeps the displayed year responsive while
+// the actual map repaint is deferred to the next animation frame.
+function updateYearLabel() {
+  document.getElementById('year-num').textContent = Math.abs(currentYear);
+  document.getElementById('year-era').textContent = currentYear < 0 ? 'BCE' : 'CE';
+}
+const tooltip = document.getElementById('tooltip');
+
+/* Pre-compute per-year coverage = number of active (epoch, country) pairs */
+function buildCoverageProfile() {
+  const profile = {};  // year -> total country-shadings
+  for (const ep of territoryData.epochs) {
+    const terr = territoryData.territories[ep.t];
+    if (!terr) continue;
+    const weight = terr.country_ids.length || 1;
+    const end = ep.e === 9999 ? 2026 : ep.e;
+    for (let y = ep.s; y <= end; y++) {
+      profile[y] = (profile[y] || 0) + weight;
+    }
+  }
+  return profile;
+}
+const coverageProfile = buildCoverageProfile();
+const coverageYears = Object.keys(coverageProfile).map(Number).sort((a, b) => a - b);
+const coverageMax = Math.max(0, ...Object.values(coverageProfile));
+peakYear = coverageYears.reduce((best, y) =>
+  coverageProfile[y] > (coverageProfile[best] || 0) ? y : best, coverageYears[0] || 0);
+
+function fmtYear(y) {
+  if (y === 9999) return 'present';
+  if (y < 0) return `${-y} BCE`;
+  if (y === 0) return '1 BCE';
+  return `${y} CE`;
+}
+
+function init() {
+  // Header meta
+  const m = territoryData.meta;
+  document.getElementById('dataset-meta').textContent =
+    `${m.n_actors} actors · ${m.n_territories} territories · ${m.n_epochs} epochs · range ${fmtYear(m.min_year)} → ${fmtYear(m.max_year)}`;
+  document.getElementById('slider-min').textContent = fmtYear(m.min_year);
+  document.getElementById('slider-max').textContent = fmtYear(m.max_year);
+
+  // Slider range — auto-seed to peak coverage year (most actors active)
+  const slider = document.getElementById('slider');
+  slider.min = m.min_year;
+  slider.max = Math.max(m.max_year, 2026);
+  currentYear = peakYear;
+  slider.value = currentYear;
+
+  // Draw coverage strip
+  drawCoverageStrip();
+  window.addEventListener('resize', drawCoverageStrip);
+
+  // SVG
+  svg = d3.select('#map');
+  const rect = svg.node().getBoundingClientRect();
+  projection = d3.geoNaturalEarth1().fitSize([rect.width, rect.height], { type: 'Sphere' });
+  path = d3.geoPath(projection);
+
+  const zoom = d3.zoom().scaleExtent([1, 10]).on('zoom', e => {
+    svg.select('g.layers').attr('transform', e.transform);
+  });
+  svg.call(zoom);
+
+  // Load world — sync from window.__countries110m (loaded via <script> for file:// compat)
+  // with async fallback to CDN if running in environment where the local file is missing.
+  const initWorld = (w) => {
+    world = w;
+    countriesFeature = topojson.feature(w, w.objects.countries);
+    const neighborsByIdx = topojson.neighbors(w.objects.countries.geometries);
+    countryNeighbors = {};
+    const features = countriesFeature.features;
+    features.forEach((f, i) => {
+      const ns = (neighborsByIdx[i] || []).map(j => features[j]?.id).filter(x => x != null);
+      countryNeighbors[f.id] = new Set(ns);
+    });
+
+    drawBase();
+    render();
+  };
+  if (typeof window.__countries110m !== 'undefined') {
+    initWorld(window.__countries110m);
+  } else {
+    // Fallback: CDN fetch (only works under http(s)://)
+    fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+      .then(r => r.json()).then(initWorld)
+      .catch(err => console.error('Could not load world-atlas:', err));
+  }
+
+  // Slider handler
+  slider.addEventListener('input', e => {
+    currentYear = +e.target.value;
+    updateYearLabel();
+    requestRender();
+  });
+
+  // Controls
+  document.getElementById('btn-step-back').onclick = () => step(-stepSize());
+  document.getElementById('btn-step-fwd').onclick = () => step(stepSize());
+  document.getElementById('btn-play').onclick = togglePlay;
+  document.getElementById('btn-speed').onclick = cycleSpeed;
+  document.getElementById('detail-close').onclick = () => {
+    document.getElementById('detail').style.display = 'none';
+  };
+  document.querySelectorAll('button.jump').forEach(b => {
+    b.onclick = () => {
+      const v = b.dataset.y === 'peak' ? peakYear : +b.dataset.y;
+      slider.value = v; currentYear = v; render();
+    };
+  });
+
+  // Layer toggles
+  const wireToggle = (id, key) => {
+    const el = document.getElementById(id);
+    el.onclick = () => {
+      layerState[key] = !layerState[key];
+      el.classList.toggle('active', layerState[key]);
+      applyLayerVisibility();
+      render();
+    };
+  };
+  wireToggle('t-territory', 'territory');
+  wireToggle('t-heatmap', 'heatmap');
+  wireToggle('t-historical', 'historical');
+  wireToggle('t-bubbles', 'bubbles');
+  wireToggle('t-arrows', 'arrows');
+
+  document.getElementById('heatmap-metric')?.addEventListener('change', (e) => {
+    layerState.heatmapMetric = e.target.value;
+    render();
+  });
+
+  // Manifest is already loaded synchronously via manifest.js script tag above.
+
+  setupActorFilter();
+  ['war-filter-type', 'war-filter-period', 'war-filter-cas'].forEach(id => {
+    document.getElementById(id)?.addEventListener('change', render);
+  });
+
+  // Resize
+  window.addEventListener('resize', () => {
+    const r = svg.node().getBoundingClientRect();
+    projection.fitSize([r.width, r.height], { type: 'Sphere' });
+    projectAllBasemaps();  // projection changed — refresh every cached path string
+    drawBase();
+    render();
+  });
+}
+
+function drawCoverageStrip() {
+  const canvas = document.getElementById('coverage-strip');
+  const slider = document.getElementById('slider');
+  const minY = +slider.min, maxY = +slider.max;
+  const w = canvas.clientWidth, h = canvas.height;
+  canvas.width = w;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, w, h);
+
+  // Density bars
+  for (let x = 0; x < w; x++) {
+    const y0 = minY + (x / w) * (maxY - minY);
+    const y1 = minY + ((x + 1) / w) * (maxY - minY);
+    let total = 0, count = 0;
+    for (let y = Math.floor(y0); y <= Math.ceil(y1); y++) {
+      total += coverageProfile[y] || 0;
+      count++;
+    }
+    const avg = count ? total / count : 0;
+    const norm = coverageMax ? avg / coverageMax : 0;
+    if (norm > 0) {
+      const lightness = 25 + 35 * norm;
+      ctx.fillStyle = `hsl(40, 80%, ${lightness}%)`;
+      const barH = Math.max(2, h * norm);
+      ctx.fillRect(x, h - barH, 1, barH);
+    } else {
+      ctx.fillStyle = '#15181f';
+      ctx.fillRect(x, h - 1, 1, 1);
+    }
+  }
+
+  // Year-zero tick
+  if (minY < 0 && maxY > 0) {
+    const zx = ((0 - minY) / (maxY - minY)) * w;
+    ctx.strokeStyle = 'rgba(245,166,35,0.6)';
+    ctx.beginPath(); ctx.moveTo(zx, 0); ctx.lineTo(zx, h); ctx.stroke();
+  }
+
+  // Current-year cursor
+  const cx = ((currentYear - minY) / (maxY - minY)) * w;
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke();
+}
+
+function drawBase() {
+  svg.selectAll('*').remove();
+  const g = svg.append('g').attr('class', 'layers');
+  g.append('path').attr('class', 'sphere').attr('d', path({ type: 'Sphere' }));
+  g.append('path').attr('class', 'graticule').attr('d', path(d3.geoGraticule()()));
+
+  g.append('g').attr('class', 'countries')
+    .selectAll('path')
+    .data(countriesFeature.features)
+    .join('path')
+    .attr('class', 'country')
+    .attr('data-id', d => d.id)
+    .attr('d', path)
+    .on('mouseover', (ev, d) => onHoverCountry(ev, d))
+    .on('mousemove', (ev) => moveTooltip(ev))
+    .on('mouseout', () => tooltip.style.opacity = 0)
+    .on('click', (ev, d) => showDetail(d));
+
+  // Arrowhead marker for war direction arrows
+  let defs = svg.select('defs');
+  if (defs.empty()) defs = svg.append('defs');
+  defs.html(`
+    <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="var(--accent)" opacity="0.85"/>
+    </marker>
+    <marker id="arrowhead-red" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#f55757" opacity="0.85"/>
+    </marker>`);
+
+  // Historical-basemap layer (drawn above modern countries when toggled on)
+  g.append('g').attr('class', 'historical-countries').style('display', 'none');
+  _lastHistFile = null;  // layer was just recreated (e.g. resize re-projects) — force redraw
+  // Bubble and arrow layers (drawn on top of countries)
+  g.append('g').attr('class', 'arrows');
+  g.append('g').attr('class', 'bubbles');
+}
+
+/* ──────────────────────────────────────────────────────────
+   Build actor-name → home-coords index (for arrows)
+   Uses each actor's first core_territory_id → that territory's (lat,lon)
+   ────────────────────────────────────────────────────────── */
+const actorHomeCoords = (() => {
+  const m = {};
+  for (const [aid, a] of Object.entries(territoryData.actors)) {
+    for (const tid of (a.core || [])) {
+      const t = territoryData.territories[tid];
+      if (t && t.lat != null && t.lon != null) {
+        m[aid] = [t.lon, t.lat];
+        break;
+      }
+    }
+  }
+  return m;
+})();
+
+/* Resolve a free-text aggressor string against actor canonical/alias names */
+const aliasIndex = (() => {
+  const idx = {};
+  for (const [aid, a] of Object.entries(territoryData.actors)) {
+    const names = [a.name, ...(a.aliases || [])].filter(Boolean);
+    for (const n of names) idx[n.toLowerCase()] = aid;
+  }
+  return idx;
+})();
+function resolveActorName(name) {
+  if (!name) return null;
+  const nl = name.toLowerCase().trim();
+  if (aliasIndex[nl]) return aliasIndex[nl];
+  for (const k in aliasIndex) {
+    if (k.length >= 4 && (k.includes(nl) || nl.includes(k))) return aliasIndex[k];
+  }
+  return null;
+}
+
+function warsActiveAt(year) {
+  if (typeof warsData === 'undefined') return [];
+  const fType = document.getElementById('war-filter-type')?.value || '';
+  const fPeriod = document.getElementById('war-filter-period')?.value || '';
+  const fCas = +(document.getElementById('war-filter-cas')?.value || 0);
+  return warsData.filter(w => {
+    if (typeof w.start !== 'number') return false;
+    const end = (typeof w.end === 'number') ? w.end : w.start;
+    if (!(w.start <= year && year <= end + 1)) return false;
+    if (fType && w.type !== fType) return false;
+    if (fPeriod && w.period !== fPeriod) return false;
+    if (fCas && (w.cas || 0) < fCas) return false;
+    return true;
+  });
+}
+
+function updateWarsInViewList(active) {
+  const listEl = document.getElementById('war-in-view');
+  const countEl = document.getElementById('war-list-count');
+  if (!listEl) return;
+  if (countEl) countEl.textContent = `(${active.length})`;
+  const sorted = [...active].sort((a, b) => (b.cas || 0) - (a.cas || 0)).slice(0, 80);
+  listEl.innerHTML = sorted.map(w => {
+    const casStr = w.cas ? ` <span style="color:var(--muted)">· ${w.cas >= 1e6 ? (w.cas/1e6).toFixed(1)+'M' : w.cas >= 1e3 ? Math.round(w.cas/1e3)+'K' : w.cas}</span>` : '';
+    return `<div class="war-in-view-item" data-id="${w.id}" style="padding:3px 4px;cursor:pointer;border-radius:3px;color:var(--text)">${w.name}${casStr}</div>`;
+  }).join('') + (active.length > 80 ? `<div style="color:var(--muted);font-size:0.66rem;padding:3px 4px">…and ${active.length - 80} more</div>` : '');
+  listEl.querySelectorAll('.war-in-view-item').forEach(el => {
+    el.addEventListener('mouseover', () => el.style.background = 'rgba(245,166,35,0.10)');
+    el.addEventListener('mouseout', () => el.style.background = '');
+  });
+}
+
+// Aggregate conflict density up to currentYear, keyed by polygon id.
+// histFile = the loaded historical basemap filename (keys w._hist_poly), or
+// null for the modern map (keys w._modern_polygon_id). Must run AFTER the
+// relevant basemap is loaded so the polygon indices line up with what's drawn.
+function computeHeatmap(histFile) {
+  currentHeatmapData = {};
+  warsData.forEach(w => {
+    if (w.start <= currentYear) {
+      const pId = histFile ? (w._hist_poly && w._hist_poly[histFile]) : w._modern_polygon_id;
+      if (pId !== undefined && pId !== null) {
+        const val = layerState.heatmapMetric === 'count' ? 1 : (w.cas || 0);
+        currentHeatmapData[pId] = (currentHeatmapData[pId] || 0) + val;
+      }
+    }
+  });
+  // Conflict/casualty totals span several orders of magnitude, so a linear 0→max
+  // ramp crushes everything well below the max into the same pale shade (e.g. 130k
+  // and 2M both read as near-identical light tones when the max is tens of millions).
+  // A log scale anchored on the actual min/max of populated cells spreads that
+  // dynamic range so adjacent magnitudes are visually distinct. Floor at 1 (log
+  // needs a positive domain) and widen a degenerate all-equal domain to avoid NaN.
+  const vals = Object.values(currentHeatmapData).filter(v => v > 0);
+  maxHeat = vals.length ? Math.max(...vals) : 1;
+  const lo = Math.max(1, vals.length ? Math.min(...vals) : 1);
+  const hi = Math.max(lo + 1, maxHeat);
+  heatColor = d3.scaleSequentialLog(d3.interpolateYlOrRd).domain([lo, hi]);
+}
+
+async function render() {
+  const myToken = ++_renderToken;
+  // Update year display
+  document.getElementById('year-num').textContent = Math.abs(currentYear);
+  document.getElementById('year-era').textContent = currentYear < 0 ? 'BCE' : 'CE';
+  if (document.getElementById('coverage-strip')) drawCoverageStrip();
+
+  let actorCounts = {};
+  let actorColor = {};
+
+  // Modern-map heatmap can be computed up front; historical-mode heatmap is
+  // computed after its basemap loads (below), since it needs that file's indices.
+  if (layerState.heatmap && !layerState.historical) { ensureModernPoly(); computeHeatmap(null); }
+
+  if (layerState.historical) {
+    // ── HISTORICAL-BASEMAP MODE ─────────────────────────────────────
+    // Keep modern country layer visible underneath as a neutral base — so areas
+    // that the historical basemap doesn't cover still show land vs sea geography
+    // rather than going totally blank.
+    d3.selectAll('.country')
+      .style('display', null)
+      .style('fill', '#1a1f28')
+      .style('stroke', 'rgba(255,255,255,0.04)')
+      .style('stroke-width', 0.3);
+    const snap = nearestBasemap(currentYear);
+    if (!snap) {
+      d3.select('.historical-countries').selectAll('*').remove();
+      _lastHistFile = null;
+      d3.select('.snapshot-label').text('No basemap available');
+    } else {
+      const wasLoaded = !!basemapCache[snap.file];
+      if (!wasLoaded) d3.select('.snapshot-label').text(`Loading ${fmtYear(snap.year)} basemap…`);
+      let entry;
+      try {
+        entry = await loadBasemap(snap.file);
+      } catch (e) {
+        d3.select('.snapshot-label').text('Basemap load failed — check console');
+        console.error('Basemap load failed for', snap.file, e);
+        return;
+      }
+      // If a newer render started while we were loading (slider moved, layer
+      // toggled, or filter changed), this render is stale — abort before it can
+      // repaint a layer the current state no longer wants.
+      if (myToken !== _renderToken) return;
+      currentBasemap = entry;
+      if (layerState.heatmap) {
+        if (typeof histPolyData === 'undefined') { loadHistPolyData(() => requestRender()); }
+        else { ensureHistPoly(entry); computeHeatmap(entry.file); }
+      }
+      const polyToActor = {};
+      entry.features.forEach((f, i) => {
+        if (f._actor) {
+          polyToActor[i] = f._actor;
+          actorCounts[f._actor] = (actorCounts[f._actor] || 0) + 1;
+        }
+      });
+      const paletteIdx = assignActorColors(polyToActor);
+      for (const a in paletteIdx) actorColor[a] = ACTOR_PALETTE[paletteIdx[a] % ACTOR_PALETTE.length];
+
+      // Color unmatched-but-named polygons too: assign each unique polity NAME a
+      // deterministic palette slot via a small hash, so the map shows the historical
+      // polity even when our actors.csv has no entry yet.
+      function hashSlot(s) {
+        let h = 0;
+        for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+        return Math.abs(h) % ACTOR_PALETTE.length;
+      }
+      const fillFn = (f, i) => {
+        if (layerState.heatmap) {
+          const val = currentHeatmapData[i] || 0;
+          return val > 0 ? heatColor(val) : 'transparent';
+        }
+        const a = polyToActor[i];
+        if (a) return actorColor[a];
+        if (f._polityName && f._polityName !== '(unnamed)') {
+          return ACTOR_PALETTE[hashSlot(f._polityName)] + 'aa';
+        }
+        return 'transparent';
+      };
+
+      // Draw historical polygons. The geoPath projection (.attr('d', …)) is the
+      // expensive part, so only recompute geometry when the snapshot file actually
+      // changes. On same-snapshot year ticks we just re-apply fills (cheap), which
+      // keeps the heatmap and pin/unpin overlays correct without re-projecting.
+      const layer = d3.select('.historical-countries');
+      if (_lastHistFile !== entry.file) {
+        if (!entry._paths) projectBasemap(entry);  // safety: project if warm-up hasn't run yet
+        const sel = layer.selectAll('path').data(entry.features, (_, i) => i);
+        sel.enter().append('path')
+          .attr('class', 'country-historical')
+          .merge(sel)
+          .attr('d', (f, i) => entry._paths[i])
+          .style('fill', fillFn)
+          .style('stroke', '#06080c')
+          .style('stroke-width', 0.4)
+          .on('mouseover', function(ev, f) {
+            const lines = [`<div class="name">${f._polityName}</div>`];
+            const i = entry.features.indexOf(f);
+
+            if (layerState.heatmap) {
+              const val = currentHeatmapData[i] || 0;
+              const lbl = layerState.heatmapMetric === 'count' ? 'Conflicts' : 'Casualties';
+              lines.push(`<div class="actor">Total ${lbl}: ${val.toLocaleString()}</div>`);
+              lines.push(`<div class="meta">Up to ${fmtYear(currentYear)}</div>`);
+            } else {
+              const a = f._actor ? territoryData.actors[f._actor] : null;
+              if (a) {
+                lines.push(`<div class="actor">${a.name || f._actor}</div>`);
+                if (a.type) lines.push(`<div class="meta">${a.type}</div>`);
+                if (a.start !== undefined && a.end !== undefined) {
+                  lines.push(`<div class="meta">${fmtYear(a.start)} – ${a.extant ? 'ongoing' : fmtYear(a.end)}</div>`);
+                }
+              } else {
+                lines.push(`<div class="meta">No matching polity in <code>actors.csv</code></div>`);
+              }
+            }
+            lines.push(`<div class="meta" style="margin-top:4px;opacity:0.7">${fmtYear(snap.year)} basemap snapshot</div>`);
+            tooltip.innerHTML = lines.join('');
+            tooltip.style.opacity = 1;
+            moveTooltip(ev);
+          })
+          .on('mousemove', (ev) => moveTooltip(ev))
+          .on('mouseout', () => tooltip.style.opacity = 0);
+        sel.exit().remove();
+        _lastHistFile = entry.file;
+      } else {
+        // Same snapshot — geometry already drawn; only fills may have changed.
+        layer.selectAll('path').style('fill', fillFn);
+      }
+      layer.style('display', null);
+      d3.select('.snapshot-label').text(`Showing ${fmtYear(snap.year)} basemap`);
+    }
+  } else {
+    // ── MODERN-MAP MODE ─────────────────────────────────────────────
+    d3.select('.historical-countries').style('display', 'none').selectAll('*').remove();
+    _lastHistFile = null;  // historical polygons were just cleared — force a redraw on re-entry
+    d3.selectAll('.country').style('display', layerState.territory ? null : 'none');
+    d3.select('.snapshot-label').text('');
+
+    const countryToActor = {};
+    d3.selectAll('.country').each(function(d) {
+      const hit = controlAt(d.id, currentYear);
+      if (hit) {
+        countryToActor[d.id] = hit.ep.a;
+        actorCounts[hit.ep.a] = (actorCounts[hit.ep.a] || 0) + 1;
+      }
+    });
+    const paletteIdx = assignActorColors(countryToActor);
+    for (const a in paletteIdx) actorColor[a] = ACTOR_PALETTE[paletteIdx[a] % ACTOR_PALETTE.length];
+    d3.selectAll('.country').each(function(d) {
+      if (layerState.heatmap) {
+        const val = currentHeatmapData[d.id] || 0;
+        d3.select(this).style('fill', val > 0 ? heatColor(val) : '#1a1f28');
+      } else {
+        const a = countryToActor[d.id];
+        d3.select(this).style('fill', a ? actorColor[a] : null);
+      }
+    });
+    // Dissolve internal borders: hide stroke between countries of the same actor.
+    d3.selectAll('.country').style('stroke', function(d) {
+      if (layerState.heatmap) return null;
+      return countryToActor[d.id] ? 'rgba(0,0,0,0.4)' : null;
+    });
+  }
+
+  // Pinned-actor overlay (works in both modes): dim everything except countries that
+  // the pinned actor ever controlled, and tint those in accent orange.
+  if (pinnedActor) {
+    const ever = actorIndex[pinnedActor]?.countries || new Set();
+    d3.selectAll('.country').style('opacity', d => ever.has(d.id) ? 1 : 0.18);
+    d3.selectAll('.country').filter(d => ever.has(d.id))
+      .style('fill', 'rgba(245,166,35,0.85)')
+      .style('stroke', '#fff')
+      .style('stroke-width', 0.5);
+    // For historical mode: also highlight matched polygons whose actor is the pinned one
+    d3.selectAll('.country-historical').style('opacity', f => f._actor === pinnedActor ? 1 : 0.18);
+    d3.selectAll('.country-historical').filter(f => f._actor === pinnedActor)
+      .style('fill', 'rgba(245,166,35,0.85)')
+      .style('stroke', '#fff');
+  } else {
+    d3.selectAll('.country').style('opacity', 1);
+    d3.selectAll('.country-historical').style('opacity', 1);
+  }
+
+  // Active actor legend
+  const legend = document.getElementById('legend-active');
+  const items = Object.entries(actorCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([aid, n]) => {
+      const a = territoryData.actors[aid] || {};
+      return `<div class="legend-item" data-actor="${aid}">
+        <span class="swatch" style="background:${actorColor[aid] || a.color}"></span>
+        <span>${a.name || aid}</span>
+        <span class="count">${n}</span>
+      </div>`;
+    });
+  if (items.length) {
+    legend.innerHTML = items.join('');
+  } else {
+    // Find nearest year with data, both directions
+    let before = null, after = null;
+    for (const y of coverageYears) {
+      if (y < currentYear) before = y;
+      else if (y > currentYear && after === null) after = y;
+    }
+    const links = [];
+    if (before !== null) links.push(`<a href="#" data-y="${before}" class="jump-link">← ${fmtYear(before)}</a>`);
+    links.push(`<a href="#" data-y="${peakYear}" class="jump-link">peak (${fmtYear(peakYear)})</a>`);
+    if (after !== null) links.push(`<a href="#" data-y="${after}" class="jump-link">${fmtYear(after)} →</a>`);
+    legend.innerHTML = `
+      <div class="empty-state" style="padding:14px 6px">
+        No control records active at ${fmtYear(currentYear)}.<br>
+        Try: ${links.join(' · ')}
+      </div>`;
+    legend.querySelectorAll('a.jump-link').forEach(a => {
+      a.onclick = (ev) => {
+        ev.preventDefault();
+        const v = +a.dataset.y;
+        document.getElementById('slider').value = v;
+        currentYear = v;
+        render();
+      };
+    });
+  }
+
+  // Bind legend hover to highlight
+  legend.querySelectorAll('.legend-item').forEach(el => {
+    el.addEventListener('mouseover', () => highlightActor(el.dataset.actor));
+    el.addEventListener('mouseout', () => clearHighlight());
+  });
+
+  // ── Bubble + arrow layers (new)
+  renderBubbles();
+  renderArrows();
+
+  // Stats
+  const totalControlled = Object.values(actorCounts).reduce((a, b) => a + b, 0);
+  const activeWars = warsActiveAt(currentYear);
+  updateWarsInViewList(activeWars);
+  document.getElementById('stats').innerHTML = `
+    <div>Year: <span style="color:var(--text)">${fmtYear(currentYear)}</span></div>
+    <div>Countries shaded: ${totalControlled}</div>
+    <div>Active polities: ${Object.keys(actorCounts).length}</div>
+    <div>Active conflicts: ${activeWars.length}</div>
+  `;
+}
+
+/* ──────────────────────────────────────────────────────────
+   Layer toggles + bubble/arrow rendering
+   ────────────────────────────────────────────────────────── */
+const layerState = { territory: true, historical: false, bubbles: false, arrows: false, heatmap: false, heatmapMetric: 'count' };
+let currentHeatmapData = {};
+let maxHeat = 1;
+let heatColor = null;
+
+function applyLayerVisibility() {
+  // Show heatmap options side panel
+  const optPanel = document.getElementById('heatmap-options');
+  if (optPanel) optPanel.style.display = layerState.heatmap ? 'block' : 'none';
+
+  // Modern country layer: always visible when Territory or Heatmap is on.
+  const baseVisible = layerState.territory || layerState.heatmap;
+  d3.selectAll('.country').style('display', baseVisible ? null : 'none');
+  // Bubble + arrow groups handled by render functions
+  d3.select('.bubbles').style('display', layerState.bubbles ? null : 'none');
+  d3.select('.arrows').style('display', layerState.arrows ? null : 'none');
+}
+
+function bubbleColor(w) {
+  if (!w.outcome) return '#aaa';
+  const o = w.outcome.toLowerCase();
+  if (o.includes('aggressor')) return '#f55757';
+  if (o.includes('defender')) return '#3ecf8e';
+  if (o.includes('compromise') || o.includes('negotia')) return '#f5a623';
+  if (o.includes('stalemate') || o.includes('inconclusive')) return '#7f5af0';
+  return '#aaa';
+}
+
+function renderBubbles() {
+  if (!layerState.bubbles || !projection) {
+    d3.select('.bubbles').selectAll('*').remove();
+    return;
+  }
+  const active = warsActiveAt(currentYear)
+    .filter(w => typeof w.lat === 'number' && typeof w.lon === 'number');
+  const maxCas = d3.max(active, w => w.cas || 0) || 1;
+  const rScale = d3.scaleSqrt().domain([0, maxCas]).range([2.5, 24]).clamp(true);
+
+  d3.select('.bubbles')
+    .selectAll('circle')
+    .data(active, w => w.id)
+    .join('circle')
+    .attr('class', 'conflict-bubble')
+    .attr('cx', w => projection([w.lon, w.lat])?.[0])
+    .attr('cy', w => projection([w.lon, w.lat])?.[1])
+    .attr('r', w => rScale(w.cas || 1000))
+    .attr('fill', bubbleColor)
+    .on('mouseover', (ev, w) => {
+      const aggCmd = w.agg_commander ? `<div class="meta">🗡 Commander: ${w.agg_commander}</div>` : '';
+      const defCmd = w.def_commander ? `<div class="meta">🛡 Commander: ${w.def_commander}</div>` : '';
+      const termInfo = w.termination ? `<div class="meta" style="margin-top:4px;">End: ${w.termination}${w.treaty ? ` (${w.treaty})` : ''}</div>` : '';
+      tooltip.innerHTML = `
+        <div class="name">${w.name}</div>
+        <div class="actor">${fmtYear(w.start)}${w.end !== w.start ? ' – ' + fmtYear(w.end) : ''}</div>
+        <div class="meta" style="margin-bottom:2px;">${w.aggressors || ''} <span style="opacity:0.5">vs</span> ${w.defenders || ''}</div>
+        ${aggCmd}${defCmd}
+        <div class="meta" style="margin-top:4px;">${w.outcome || ''} · cas ${w.cas?.toLocaleString() || 'n/a'}</div>
+        ${termInfo}`;
+      tooltip.style.opacity = 1;
+      moveTooltip(ev);
+    })
+    .on('mousemove', moveTooltip)
+    .on('mouseout', () => tooltip.style.opacity = 0);
+}
+
+function renderArrows() {
+  const arrowG = d3.select('.arrows');
+  arrowG.selectAll('*').remove();
+  if (!layerState.arrows || !projection) return;
+
+  const active = warsActiveAt(currentYear);
+  const arrows = [];
+  for (const w of active) {
+    if (typeof w.lat !== 'number' || typeof w.lon !== 'number') continue;
+    const aggStr = (w.aggressors || '').split(/[;\/]/)[0].trim();
+    const aid = resolveActorName(aggStr);
+    if (!aid) continue;
+    const home = actorHomeCoords[aid];
+    if (!home) continue;
+    const target = [w.lon, w.lat];
+    // Skip near-zero-length arrows
+    const dx = target[0] - home[0], dy = target[1] - home[1];
+    if (dx * dx + dy * dy < 4) continue;
+    arrows.push({
+      home, target,
+      contested: (w.outcome || '').toLowerCase().includes('stalemate') ||
+                 (w.outcome || '').toLowerCase().includes('compromise'),
+      war: w
+    });
+  }
+
+  const link = d3.geoPath(projection);
+  arrowG.selectAll('path.arrow-path')
+    .data(arrows)
+    .join('path')
+    .attr('class', d => 'arrow-path' + (d.contested ? ' contested' : ''))
+    .attr('d', d => {
+      // Curved great-circle line
+      const interp = d3.geoInterpolate(d.home, d.target);
+      const mid = interp(0.5);
+      // Use a quadratic curve through the midpoint, offset slightly for visibility
+      const p0 = projection(d.home);
+      const p1 = projection(mid);
+      const p2 = projection(d.target);
+      if (!p0 || !p1 || !p2) return '';
+      // Offset midpoint perpendicular for arc
+      const ox = (p2[1] - p0[1]) * 0.15;
+      const oy = -(p2[0] - p0[0]) * 0.15;
+      return `M${p0[0]},${p0[1]} Q${p1[0]+ox},${p1[1]+oy} ${p2[0]},${p2[1]}`;
+    })
+    .attr('marker-end', d => d.contested ? 'url(#arrowhead-red)' : 'url(#arrowhead)');
+}
+
+function setupActorFilter() {
+  const input = document.getElementById('actor-filter');
+  const results = document.getElementById('actor-filter-results');
+  const pinnedBox = document.getElementById('actor-pinned');
+  const pinnedName = document.getElementById('actor-pinned-name');
+  const pinnedMeta = document.getElementById('actor-pinned-meta');
+  const pinnedClear = document.getElementById('actor-pinned-clear');
+  const pinnedPeak = document.getElementById('actor-pinned-peak');
+
+  // Pre-build a searchable list of (aid, name, type, countryCount).
+  const items = Object.entries(territoryData.actors)
+    .map(([aid, a]) => ({
+      aid,
+      name: a.name || aid,
+      aliases: (a.aliases || []).join(' '),
+      type: a.type || '',
+      n: (actorIndex[aid]?.countries.size) || 0,
+      start: a.start, end: a.end,
+    }))
+    .filter(x => x.n > 0)  // only show actors with at least one country
+    .sort((a, b) => b.n - a.n);
+
+  function renderFilterList(query) {
+    const q = (query || '').toLowerCase().trim();
+    const matched = q
+      ? items.filter(x =>
+          x.name.toLowerCase().includes(q) ||
+          x.aliases.toLowerCase().includes(q) ||
+          x.type.toLowerCase().includes(q) ||
+          x.aid.toLowerCase().includes(q))
+      : items;
+    const list = matched.slice(0, 100);
+    results.innerHTML = list.map(x => `
+      <div class="filter-item" data-aid="${x.aid}"
+        style="padding:4px 6px;cursor:pointer;border-radius:3px;display:flex;justify-content:space-between;gap:8px;align-items:center">
+        <span>
+          <span style="color:var(--text)">${x.name}</span>
+          <span style="color:var(--muted);font-size:0.66rem"> ${x.type ? '· ' + x.type : ''}</span>
+        </span>
+        <span style="color:var(--muted);font-size:0.66rem">${x.n}🗺</span>
+      </div>`).join('') +
+      (matched.length > list.length ? `<div style="color:var(--muted);font-size:0.66rem;padding:4px 6px">…and ${matched.length - list.length} more — refine search</div>` : '');
+    results.querySelectorAll('.filter-item').forEach(el => {
+      el.addEventListener('click', () => pinActor(el.dataset.aid));
+      el.addEventListener('mouseover', () => el.style.background = 'rgba(245,166,35,0.10)');
+      el.addEventListener('mouseout', () => el.style.background = '');
+    });
+  }
+
+  function pinActor(aid) {
+    pinnedActor = aid;
+    const a = territoryData.actors[aid] || {};
+    const entry = actorIndex[aid] || {};
+    pinnedBox.style.display = '';
+    pinnedName.textContent = a.name || aid;
+    const lifespan = (a.start !== undefined && a.end !== undefined)
+      ? `${fmtYear(a.start)} – ${a.extant ? 'ongoing' : fmtYear(a.end)}`
+      : '';
+    pinnedMeta.innerHTML = `${entry.countries?.size || 0} countries ever controlled · peak ${entry.peakYear !== null ? fmtYear(entry.peakYear) : '—'} (${entry.peakCount || 0})<br>${lifespan}`;
+    renderFilterList(input.value);
+    render();
+  }
+  function unpin() {
+    pinnedActor = null;
+    pinnedBox.style.display = 'none';
+    renderFilterList(input.value);
+    render();
+  }
+
+  pinnedClear.onclick = unpin;
+  pinnedPeak.onclick = () => {
+    const py = actorIndex[pinnedActor]?.peakYear;
+    if (py != null) {
+      document.getElementById('slider').value = py;
+      currentYear = py;
+      render();
+    }
+  };
+
+  input.addEventListener('input', () => renderFilterList(input.value));
+  renderFilterList();
+}
+
+function highlightActor(aid) {
+  d3.selectAll('.country').classed('highlight', false).style('opacity', 0.3);
+  d3.selectAll('.country').each(function(d) {
+    const hit = controlAt(d.id, currentYear);
+    if (hit && hit.ep.a === aid) {
+      d3.select(this).classed('highlight', true).style('opacity', 1);
+    }
+  });
+}
+function clearHighlight() {
+  d3.selectAll('.country').classed('highlight', false).style('opacity', 1);
+}
+
+function onHoverCountry(ev, d) {
+  const lines = [`<div class="name">${d.properties.name}</div>`];
+  
+  if (layerState.heatmap && !layerState.historical) {
+    const val = currentHeatmapData[d.id] || 0;
+    const lbl = layerState.heatmapMetric === 'count' ? 'Conflicts' : 'Casualties';
+    lines.push(`<div class="actor">Total ${lbl}: ${val.toLocaleString()}</div>`);
+    lines.push(`<div class="meta">Up to ${fmtYear(currentYear)}</div>`);
+  } else {
+    const hit = controlAt(d.id, currentYear);
+    const actor = hit ? territoryData.actors[hit.ep.a] : null;
+    const terr = hit ? hit.terr : null;
+    
+    if (actor) {
+      lines.push(`<div class="actor">${actor.name}</div>`);
+      if (terr) lines.push(`<div class="meta">via region: ${terr.name}</div>`);
+      lines.push(`<div class="meta">${hit.ep.ct} · ${hit.ep.c} certainty</div>`);
+      lines.push(`<div class="meta">${fmtYear(hit.ep.s)} – ${fmtYear(hit.ep.e)}</div>`);
+    } else {
+      lines.push(`<div class="meta">No control record in this year.</div>`);
+    }
+  }
+  
+  tooltip.innerHTML = lines.join('');
+  tooltip.style.opacity = 1;
+}
+
+function moveTooltip(ev) {
+  // Tooltip is position:fixed, so clientX/clientY map directly to viewport coords.
+  // Offset by 12px and flip to the other side of the cursor if we'd overflow the viewport.
+  const pad = 12;
+  const tw = tooltip.offsetWidth || 200;
+  const th = tooltip.offsetHeight || 60;
+  let x = ev.clientX + pad;
+  let y = ev.clientY + pad;
+  if (x + tw > window.innerWidth)  x = ev.clientX - tw - pad;
+  if (y + th > window.innerHeight) y = ev.clientY - th - pad;
+  tooltip.style.left = x + 'px';
+  tooltip.style.top  = y + 'px';
+}
+
+function showDetail(d) {
+  const detail = document.getElementById('detail');
+  document.getElementById('detail-title').textContent = d.properties.name;
+
+  // Gather all epochs ever touching this country
+  const entries = (countryIndex[d.id] || []).slice()
+    .sort((a, b) => a.ep.s - b.ep.s);
+
+  document.getElementById('detail-subtitle').textContent =
+    entries.length ? `${entries.length} control epoch(s) recorded` : 'No territorial-control records reference this country.';
+
+  const body = document.getElementById('detail-body');
+  if (!entries.length) {
+    body.innerHTML = '<div class="empty-state" style="padding:14px 0">This country is not currently mapped to any territory in <code>territories.csv</code>.</div>';
+  } else {
+    body.innerHTML = entries.map(({ep, terr}) => {
+      const a = territoryData.actors[ep.a] || {};
+      return `
+        <div class="epoch-row">
+          <span class="yr">${fmtYear(ep.s)} → ${fmtYear(ep.e)}</span>
+          <span class="swatch" style="background:${a.color}"></span>
+          <span class="actor-name">
+            ${a.name || ep.a}
+            <span class="badge ${ep.ct}">${ep.ct}</span>
+            <div style="color:var(--muted);font-size:0.65rem;margin-top:2px">via ${terr.name}</div>
+          </span>
+        </div>`;
+    }).join('');
+  }
+  detail.style.display = 'block';
+}
+
+/* ──────────────────────────────────────────────────────────
+   3. Playback
+   ────────────────────────────────────────────────────────── */
+let playing = false;
+let playTimer = null;
+const SPEEDS = [1, 5, 25, 100];
+let speedIdx = 0;
+
+function stepSize() { return SPEEDS[speedIdx]; }
+
+function step(delta) {
+  const slider = document.getElementById('slider');
+  let v = +slider.value + delta;
+  v = Math.max(+slider.min, Math.min(+slider.max, v));
+  slider.value = v;
+  currentYear = v;
+  updateYearLabel();
+  requestRender();
+  if (playing && v >= +slider.max) stopPlay();
+}
+
+function togglePlay() {
+  if (playing) stopPlay();
+  else startPlay();
+}
+function startPlay() {
+  playing = true;
+  document.getElementById('btn-play').textContent = '⏸ Pause';
+  document.getElementById('btn-play').classList.add('active');
+  playTimer = setInterval(() => step(stepSize()), 80);
+}
+function stopPlay() {
+  playing = false;
+  document.getElementById('btn-play').textContent = '▶ Play';
+  document.getElementById('btn-play').classList.remove('active');
+  if (playTimer) clearInterval(playTimer);
+}
+function cycleSpeed() {
+  speedIdx = (speedIdx + 1) % SPEEDS.length;
+  document.getElementById('btn-speed').textContent = `${SPEEDS[speedIdx]}× yr/tick`;
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+  if (e.key === 'ArrowLeft') step(-stepSize());
+  if (e.key === 'ArrowRight') step(stepSize());
+});
+
+init();
+</script>
+</body>
+</html>

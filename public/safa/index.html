@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Computational Psycholinguistics — Safa</title>
+<style>
+:root{
+  --bg:#0B1220;--surface:#0F172A;--panel:#1E293B;--border:#243044;
+  --text:#E2E8F0;--muted:#94A3B8;--accent:#14B8A6;--blue:#60A5FA;--red:#F87171;--amber:#FBBF24;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:Inter,system-ui,-apple-system,sans-serif;line-height:1.55;font-size:15px}
+.wrap{max-width:1040px;margin:0 auto;padding:24px 20px 60px}
+h1{font-size:24px;margin:0 0 4px}
+h2{font-size:18px;margin:0 0 12px}
+h3{font-size:15px;margin:18px 0 8px;color:var(--accent)}
+.sub{color:var(--muted);font-size:13px;margin-bottom:18px}
+.tag{display:inline-block;font-family:var(--mono);font-size:11px;color:var(--accent);
+  border:1px solid var(--border);border-radius:6px;padding:2px 8px;margin:0 6px 6px 0;background:var(--surface)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 16px;border-bottom:1px solid var(--border);padding-bottom:10px}
+.tab{cursor:pointer;padding:7px 14px;border-radius:8px;font-size:13.5px;color:var(--muted);user-select:none}
+.tab:hover{color:var(--text);background:var(--surface)}
+.tab.active{color:var(--accent);background:var(--surface);border:1px solid var(--border)}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px}
+.view{display:none}.view.active{display:block}
+code,.mono{font-family:var(--mono);font-size:12.5px}
+pre{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;overflow:auto;
+  font-family:var(--mono);font-size:12px;color:#cbd5e1;margin:10px 0;line-height:1.5}
+.muted{color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:720px){.grid2{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px}
+.card h4{margin:0 0 6px;font-size:14px;color:var(--blue)}
+.pipe{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+.stage{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12.5px}
+.arrow{color:var(--muted)}
+.eq{font-family:var(--mono);font-size:13px;color:var(--blue);background:var(--bg);border:1px solid var(--border);
+  border-radius:8px;padding:10px 12px;margin:8px 0;overflow:auto}
+ul{margin:6px 0;padding-left:20px}li{margin:3px 0}
+.note{font-size:12px;color:var(--muted);border-left:2px solid var(--border);padding-left:10px;margin:10px 0}
+.cite{font-family:var(--mono);font-size:11px;color:var(--amber)}
+table{border-collapse:collapse;width:100%;font-size:12.5px;margin:8px 0}
+th,td{border:1px solid var(--border);padding:6px 9px;text-align:left}
+th{color:var(--muted);font-weight:600;background:var(--panel)}
+img.fig{width:100%;border:1px solid var(--border);border-radius:10px;background:#fff;margin:8px 0}
+.figcap{font-size:11.5px;color:var(--muted);margin:-2px 0 12px}
+/* surprisal demo */
+.sent{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0;align-items:flex-end}
+.word{display:flex;flex-direction:column;align-items:center;font-family:var(--mono);font-size:13px}
+.bar{width:30px;border-radius:4px 4px 0 0;background:var(--accent);margin-bottom:4px;transition:height .3s}
+.wtxt{padding:2px 4px;border-radius:4px}
+.cap{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.pbtn{background:var(--panel);border:1px solid var(--border);color:var(--text);border-radius:8px;
+  padding:7px 12px;font-size:12.5px;cursor:pointer}
+.pbtn:hover{border-color:var(--accent)}.pbtn.on{border-color:var(--accent);color:var(--accent)}
+.legend{font-size:11.5px;color:var(--muted);margin-top:4px}
+.tin{flex:1;min-width:240px;background:var(--bg);color:var(--text);border:1px solid var(--border);
+  border-radius:8px;padding:8px 11px;font-family:var(--mono);font-size:13px}
+.syl{display:inline-flex;gap:0;flex-wrap:wrap;margin:12px 0;font-family:var(--mono);font-size:26px;align-items:center}
+.sylchunk{padding:4px 12px;border-radius:8px;border:1px solid var(--border);margin:3px;background:var(--panel)}
+.sylsep{color:var(--muted);font-size:24px;padding:0 2px}
+.verdict{display:inline-block;font-family:var(--mono);font-size:13px;padding:4px 12px;border-radius:8px;margin:8px 0}
+.ok{background:rgba(20,184,166,.12);color:var(--accent);border:1px solid var(--accent)}
+.bad{background:rgba(248,113,113,.12);color:var(--red);border:1px solid var(--red)}
+.scat{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Computational Psycholinguistics — "Safa"</h1>
+  <div class="sub">Technion course 096222 · repo <span class="mono">Safa_960222</span> · Do language-model probabilities predict how humans read? Surprisal theory, n-gram vs neural LMs, regex syllabification, and context-free grammars — five problem sets plus a research project on the OneStop eye-tracking corpus.</div>
+  <div>
+    <span class="tag">Surprisal theory</span>
+    <span class="tag">KenLM trigram</span>
+    <span class="tag">Pythia 70M–1.4B</span>
+    <span class="tag">OneStop eye-tracking</span>
+    <span class="tag">Entropy</span>
+    <span class="tag">Regex syllabifier</span>
+    <span class="tag">CFG parsing</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-v="overview">Overview</div>
+    <div class="tab" data-v="syll">Live · Syllabifier</div>
+    <div class="tab" data-v="cfg">Live · CFG parser</div>
+    <div class="tab" data-v="surprisal">Live · Surprisal &amp; RT</div>
+    <div class="tab" data-v="project">Project · Surprisal→RT</div>
+    <div class="tab" data-v="entropy">Project · Entropy</div>
+    <div class="tab" data-v="psets">Problem sets</div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="view active" id="overview">
+    <div class="panel">
+      <h2>The course in one page</h2>
+      <p class="muted"><b>Computational Psycholinguistics</b> combines human language processing with computational linguistics — grammar formalisms, language models, and the cognitive theory of how people understand sentences in real time. The running theme of this repo is <b>surprisal theory</b>: words that are less probable in context take longer to read.</p>
+      <div class="eq">surprisal(wᵢ) = −log₂ P(wᵢ | w₁ … wᵢ₋₁)&nbsp;&nbsp;&nbsp;⟶&nbsp;&nbsp;&nbsp;reading time</div>
+      <div class="grid2">
+        <div class="card"><h4>5 problem sets (HW1–HW5)</h4>
+          <p class="muted" style="font-size:13px">Linguistic-exposure estimation, n-gram tuning + reading-time/surprisal, logistic regression on the dative alternation, garden-path test suites, and a <b>regex syllabifier</b> + <b>CFG parser</b>. Two of these are live demos in this artifact.</p></div>
+        <div class="card"><h4>The project (Group 5)</h4>
+          <p class="muted" style="font-size:13px">"Surprisals &amp; RT's" — Gil Caplan &amp; Ido Beigelman. Compares a <b>KenLM trigram</b> and <b>Pythia</b> neural LM at predicting human reading times on the OneStop corpus, with spillover, GAMs, and an entropy study across model sizes.</p></div>
+      </div>
+      <h3>What you can do here</h3>
+      <ul class="muted" style="font-size:13.5px">
+        <li><b>Live · Syllabifier</b> — type any word; the real <code>syllabify()</code> rules from <span class="cite">Pset_5_regex.ipynb</span> split it into syllables in your browser.</li>
+        <li><b>Live · CFG parser</b> — pick or type a sentence; the real grammar from <span class="cite">Copy_of_Pset_5_cfg.ipynb</span> parses it (filler–gap dependencies) and draws the parse tree.</li>
+        <li><b>Live · Surprisal &amp; RT</b> — a tiny in-page n-gram scores each word's surprisal and drives a surprisal-vs-reading-time scatter.</li>
+        <li><b>Project tabs</b> — the actual result figures (<span class="cite">task1_*.png</span>, <span class="cite">entropy_*.png</span>) with the real numbers from the report.</li>
+      </ul>
+      <div class="note">Authentic-content note: the live demos port the user's real notebook code to JavaScript. The project figures shown are the exact PNGs the repo's Python produced; the numbers in the project tabs are quoted from the Group&nbsp;5 report (<span class="cite">safa_project (2).pdf</span>).</div>
+    </div>
+  </div>
+
+  <!-- SYLLABIFIER -->
+  <div class="view" id="syll">
+    <div class="panel">
+      <h2>Live · Regex syllabifier <span class="cite">(HW5 · Pset_5_regex.ipynb)</span></h2>
+      <p class="muted">HW5 asks for a <code>syllabify(word)</code> function that splits an English orthographic word — including made-up "nonce" words — into syllables using <b>general phonotactic rules</b>, not a dictionary. This is a faithful JS port of the notebook's algorithm. Type a word:</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">
+        <input id="syllInput" class="tin" type="text" placeholder="e.g. serendipity, capable, ideal, snoded…" value="serendipity">
+        <button class="pbtn" id="syllBtn">Syllabify</button>
+      </div>
+      <div class="syl" id="syllOut"></div>
+      <div class="legend" id="syllCount"></div>
+      <div class="btnrow" id="syllPresets"></div>
+      <h3>How the real algorithm works (ported verbatim)</h3>
+      <ol class="muted" style="font-size:13px">
+        <li><b>Find vowel nuclei.</b> Scan left→right; a vowel (<code>aeiouy</code>) is a nucleus, and a recognized <b>diphthong</b> (ai, ea, ou, oy, …) counts as one nucleus spanning two letters.</li>
+        <li><b>Place boundaries between nuclei.</b> Look at the consonant cluster between each pair of vowels. Empty or single consonant → the consonant joins the <i>following</i> syllable (CV preference). Multiple consonants → <b>onset maximization</b>: give the next syllable the longest legal onset cluster (<code>str</code>, <code>bl</code>, <code>th</code>…) while avoiding illegal onsets (<code>tl</code>, <code>nt</code>, <code>mb</code>…).</li>
+        <li><b>Post-process.</b> Any syllable with no vowel is merged into its neighbour.</li>
+      </ol>
+      <pre>vowels = 'aeiouy'
+diphthongs = ['ai','au','ay','ea','ee','ei','eu','ey','ie','oa','oi','oo','ou','oy','ue','ui','aw','ew','ow']
+legal_onsets = {'bl','br','cl','cr','dr','fl','fr','gl','gr','pl','pr','tr','tw',
+                'sc','sk','sl','sm','sn','sp','st','sw','sh','th','wh','ch','qu',
+                'scr','spl','spr','str','squ','thr','shr','chr', ...single consonants}
+# multi-consonant cluster → try longest legal onset for the next syllable
+for onset_len in range(min(3,len(cluster)), 0, -1):
+    if cluster[-onset_len:] in legal_onsets: split_point = v2_start - onset_len; break</pre>
+      <div class="note">The notebook scores this on test sets — clean CV words like <code>capable→ca·pa·ble</code> and nonce words like <code>snoded→sno·ded</code> work; the honest weak spots it documents are compounds (<code>playground</code>), silent letters (<code>castle</code>, <code>island</code>) and morphology, where pure phonotactics over-splits.</div>
+    </div>
+  </div>
+
+  <!-- CFG -->
+  <div class="view" id="cfg">
+    <div class="panel">
+      <h2>Live · CFG parser <span class="cite">(HW5 · Copy_of_Pset_5_cfg.ipynb)</span></h2>
+      <p class="muted">HW5's CFG task builds context-free grammars in NLTK and parses sentences with a bottom-up chart parser. The final grammar handles <b>filler–gap dependencies</b> (wh-questions and embedded clauses) using "slash" categories (<code>S_SLASH_NP</code> — a clause missing a noun phrase). Below is that exact grammar ported to a JS chart parser. Pick a sentence — accepted sentences should parse, the bad ones should be rejected:</p>
+      <div class="btnrow" id="cfgPresets"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">
+        <input id="cfgInput" class="tin" type="text" value="you know what I devoured">
+        <button class="pbtn" id="cfgBtn">Parse</button>
+      </div>
+      <div id="cfgVerdict"></div>
+      <canvas id="cfgCanvas" class="scat" height="300"></canvas>
+      <h3>The grammar (filler–gap / slash-categories, from the notebook)</h3>
+      <pre>S        -> NP VP
+NP       -> Det N | Pronoun
+VP       -> V_INTRANS | V_TRANS NP | V_SBAR SBAR
+SBAR     -> WHNP S | WHNP S_SLASH_NP | COMP S
+S_SLASH_NP   -> VP_SLASH_NP | NP VP_SLASH_NP
+VP_SLASH_NP  -> V_INTRANS | V_TRANS | V_TRANS NP
+             |  V_SBAR SBAR | V_SBAR SBAR_SLASH_NP
+SBAR_SLASH_NP-> WHNP S_SLASH_NP | S_SLASH_NP
+COMP -> 'that' | ε     WHNP -> 'who' | 'what'
+Det -> the|a|an|my|your|her|his|their     N -> joke|women|street|apple
+Pronoun -> I|you|she|he|they
+V_INTRANS -> 'slept'   V_TRANS -> 'devoured'   V_SBAR -> 'know'|'said'</pre>
+      <p class="muted" style="font-size:13px">The slash category <code>S_SLASH_NP</code> = "a sentence with a noun-phrase gap somewhere inside it". It lets <i>"you know <b>what</b> I devoured ___"</i> parse — the wh-word <code>what</code> is the filler and the gap is the missing object of <code>devoured</code> — while rejecting <i>"I slept that you said"</i> (an intransitive verb cannot take a clause).</p>
+      <div class="note">Implemented here as a CKY-style chart parser over the grammar above (ε-productions and unit rules expanded). The notebook uses NLTK's <code>BottomUpChartParser</code> and checks each <code>good_sentence</code> parses and each <code>bad_sentence</code> is rejected.</div>
+    </div>
+  </div>
+
+  <!-- SURPRISAL DEMO -->
+  <div class="view" id="surprisal">
+    <div class="panel">
+      <h2>Live · Surprisal, the central quantity</h2>
+      <p class="muted">Every word gets a surprisal = how unexpected it is given the previous words. Higher bars = more surprising = (predicted) slower reading. Pick a sentence; bar heights come from a small in-page n-gram — the same quantity <span class="cite">task_1.py</span> gets from KenLM.</p>
+      <div class="btnrow" id="sentBtns"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0 4px">
+        <input id="sentInput" class="tin" type="text" placeholder="…or type your own sentence and press Score">
+        <button class="pbtn" id="scoreBtn">Score</button>
+      </div>
+      <div class="sent" id="sentView"></div>
+      <div class="legend">Bar height ∝ surprisal in bits = −log₂ P(word | context), computed live from a small
+      in-page <b>bigram back-off</b> language model. Words the model has seen following the previous word are
+      low-surprisal; unseen / rare continuations back off to the unigram and score high.</div>
+
+      <h3>Surprisal → reading time (illustrative scatter)</h3>
+      <p class="muted" style="font-size:13px">The project's core claim is that higher surprisal → longer reading time, a roughly linear trend. Here a fixed mini-corpus of sentences is scored word-by-word; each dot is a word (its in-page surprisal vs a synthetic RT = baseline + slope·surprisal + noise). The fitted line and R² mirror the shape of the real <code>linregress</code> in <span class="cite">task_1.py</span> — clearly illustrative, not the trained model.</p>
+      <canvas id="rtScatter" class="scat" height="280"></canvas>
+      <div class="legend" id="rtStats"></div>
+      <h3>How the real code computes surprisal (Pythia path, <code>task_1.py</code>)</h3>
+      <pre>logits = self.model(input_ids).logits
+log_probs = torch.log_softmax(logits, dim=-1)
+# per token: surprisal = -log P(token | context) / log(10)
+surprisal_val = -token_log_prob.item() / math.log(10)
+# tokens are summed back up to whole words via offset mapping
+prob = 10 ** (-word_surprisal)</pre>
+    </div>
+  </div>
+
+  <!-- PROJECT TASK 1 -->
+  <div class="view" id="project">
+    <div class="panel">
+      <h2>Project · Predicting reading times <span class="cite">(Task 1/task_1.py, Task 2/safa_project_part2.ipynb)</span></h2>
+      <p class="muted">Two language models, the same human data (OneStop Eye-Movements, 360 participants, 2.6M tokens), seven regressions of surprisal against <code>IA_DWELL_TIME</code> (Total Fixation Duration).</p>
+      <div class="pipe">
+        <span class="stage"><b>OneStop</b><br><span class="muted">eye-tracking RTs</span></span><span class="arrow">+</span>
+        <span class="stage">KenLM trigram<br><span class="muted">on WikiText-2</span></span><span class="arrow">&amp;</span>
+        <span class="stage">Pythia-70M<br><span class="muted">neural LM</span></span><span class="arrow">→</span>
+        <span class="stage">per-word surprisal</span><span class="arrow">→</span>
+        <span class="stage"><b>linregress</b><br><span class="muted">R² vs reading time</span></span>
+      </div>
+
+      <h3>Result figures (the repo's own PNGs)</h3>
+      <img class="fig" src="img/task1_core_analysis.png" alt="Task 1 core analysis: 4 scatter plots">
+      <div class="figcap">Task 1 core analysis (<span class="cite">Task 1/task1_core_analysis.png</span>): trigram surprisal vs RT (R²=0.026), Pythia surprisal vs RT (R²=0.014), Pythia-vs-trigram surprisal (R²=0.424), and log-probability vs current RT.</div>
+      <img class="fig" src="img/task1_spillover_effects.png" alt="Task 1 spillover effects: 3 scatter plots">
+      <div class="figcap">Spillover effects (<span class="cite">Task 1/task1_spillover_effects.png</span>): a word's probability vs the <i>next</i> word's reading time, for both models.</div>
+
+      <h3>The real findings (from the Group 5 report)</h3>
+      <table>
+        <tr><th>Comparison</th><th>Result</th><th>Reading</th></tr>
+        <tr><td>Trigram surprisal → RT</td><td>R² = 0.026</td><td rowspan="2">The cheap <b>trigram beat the neural model</b> — ≈84% more explained variance. A surprising, honestly-reported result.</td></tr>
+        <tr><td>Pythia surprisal → RT</td><td>R² = 0.014</td></tr>
+        <tr><td>Pythia vs trigram surprisal</td><td>r = 0.651 (R² = 0.424)</td><td>Moderate agreement; the two models overlap but diverge on rare items.</td></tr>
+        <tr><td>Surprisal ranges</td><td>trigram 0–7.89, Pythia 0–60.6 bits</td><td>Neural subword tokenization blows up on rare technical words.</td></tr>
+        <tr><td>Spillover (current vs next RT)</td><td>trigram 0.026 → 0.004; Pythia 0.014 → 0.002</td><td>Spillover real but ≈6.5–7× weaker than the immediate effect.</td></tr>
+      </table>
+      <div class="note">Disagreement analysis (|Δsurprisal| &gt; 3 bits) flags chemical element names like <i>"ununseptium"</i> and <i>"flerovium"</i>: the trigram scores them ~5.4–5.6 bits while Pythia hits 19–20 bits — count-based vs subword neural strategies diverging on unfamiliar lexemes. Built by <code>find_disagreement_examples()</code> and <code>generate_all_task1_graphs()</code> in <span class="cite">task_1.py</span>.</div>
+
+      <h3>Task 2 · Non-linear GAM modelling <span class="cite">(safa_project_part2.ipynb)</span></h3>
+      <p class="muted" style="font-size:13px">Relaxes the straight-line assumption with <b>Generalized Additive Models</b> (<code>pygam</code>), fitting smooth splines of RT on current + lag-1 (spillover) surprisal while controlling for word length and log-frequency, across three reading-time measures.</p>
+      <pre>from pygam import LinearGAM, s
+rt_measures = ['IA_DWELL_TIME','IA_FIRST_RUN_DWELL_TIME','IA_REGRESSION_PATH_DURATION']
+df['surprisal_spill'] = df.groupby([...])['pythia_surprisal'].shift(1)  # lag-1 spillover
+gam = LinearGAM(s(0)+s(1)+s(2)+s(3)).gridsearch(X, y)   # surprisal, spillover, length, freq</pre>
+      <p class="muted" style="font-size:13px">Finding: RT rises with both current and spillover surprisal across all three measures, but the <b>current-word</b> effect is markedly larger, and for first-run / regression-path duration the spillover effect <b>attenuates at high surprisal</b> (diminishing returns).</p>
+    </div>
+  </div>
+
+  <!-- ENTROPY -->
+  <div class="view" id="entropy">
+    <div class="panel">
+      <h2>Project · Beyond surprisal — entropy &amp; model scaling <span class="cite">(unstructered/ido_main.py, utils.py)</span></h2>
+      <p class="muted">The open-ended part asks: does the model's <b>uncertainty about the upcoming word</b> (next-word entropy) predict reading difficulty <i>beyond</i> the unexpectedness of the current word (surprisal)? And how does this change as the model grows from 70M to 1.4B parameters?</p>
+      <div class="eq">H(i) = −Σ_w p(w) · log₂ p(w)&nbsp;&nbsp;&nbsp;(next-word entropy at position i)</div>
+      <p class="muted" style="font-size:13px"><code>compute_word_stats()</code> in <span class="cite">utils.py</span> computes both per-word surprisal and entropy from Pythia's softmax; <code>test_hypotheses_()</code> fits three nested linear models (surprisal-only, entropy-only, combined) and reports R² with an OLS F-test. Run across five Pythia sizes in <span class="cite">ido_main.py</span>.</p>
+
+      <h3>Result figures (the repo's own PNGs)</h3>
+      <img class="fig" src="img/entropy_analysis_results.png" alt="Entropy analysis results across model sizes">
+      <div class="figcap">Entropy analysis (<span class="cite">unstructered/entropy_analysis_results.png</span>): R² of surprisal-only, entropy-only and combined models, and how they scale with model size.</div>
+      <img class="fig" src="img/simple_entropy_analysis.png" alt="Simple entropy analysis scatter">
+      <div class="figcap">RT vs surprisal / entropy scatters (<span class="cite">unstructered/simple_entropy_analysis.png</span>).</div>
+
+      <h3>The three hypotheses and what they found</h3>
+      <table>
+        <tr><th>H</th><th>Test</th><th>Result (Pythia-70M)</th></tr>
+        <tr><td>H1</td><td>Surprisal vs entropy as a predictor</td><td>Surprisal wins: R²=0.0749 vs 0.0538 (≈39% better)</td></tr>
+        <tr><td>H2</td><td>Does entropy add information over surprisal?</td><td>Yes: combined R²=0.0775, ΔR²=+0.0026 (significant)</td></tr>
+        <tr><td>H3</td><td>Is combined model significantly better?</td><td>F-test p&lt;0.001 across all five model sizes</td></tr>
+      </table>
+      <div class="note">Headline finding: <b>next-word entropy carries predictive power beyond current-word surprisal</b> — uncertainty about what's coming, not just surprise at what arrived, contributes to reading effort. And a striking scaling result: psycholinguistic validity <i>decreases</i> as the model grows (surprisal R² drops 0.0749→0.0570, a 24% reduction from 70M→1.4B) — bigger models fit human reading <i>worse</i>, consistent with Oh &amp; Schuler (2023). Source: <span class="cite">safa_project (2).pdf</span>.</div>
+    </div>
+  </div>
+
+  <!-- PSETS -->
+  <div class="view" id="psets">
+    <div class="panel">
+      <h2>The five problem sets</h2>
+      <p class="muted">Each HW folder in the repo holds the instructions plus our solution (notebook + PDF write-up).</p>
+      <div class="grid2">
+        <div class="card"><h4>HW1 · Linguistic exposure &amp; possession</h4>
+          <p class="muted" style="font-size:13px">Estimate your lifetime Hebrew word exposure (tokens, with justification), then model <b>incremental inference about possessor animacy</b> — why "the queen's crown" (prenominal) vs "the cover of the book" (postnominal). <span class="cite">HW1/HW1_solution.pdf</span></p></div>
+        <div class="card"><h4>HW2 · n-gram tuning + reading-time &amp; surprisal</h4>
+          <p class="muted" style="font-size:13px">Tune an <b>n-gram language model</b> (smoothing / order), then connect model probabilities to human <b>reading time via surprisal</b> — the foundation the project builds on. <span class="cite">HW2/Pset_2_Tuning_ngram_model_3…pdf, Pset_2_RT_and_surprisal_4…pdf</span></p></div>
+        <div class="card"><h4>HW3 · Logistic regression · dative alternation</h4>
+          <p class="muted" style="font-size:13px">Fit <code>statsmodels</code> GLM (Binomial) models of the English <b>dative alternation</b> ("mailed me a gift" vs "mailed a gift to me") from pronominality and length of the recipient/theme; compare raw vs log lengths and relative length difference by test accuracy. <span class="cite">HW3/Pset_3._solutionipynb.ipynb</span></p></div>
+        <div class="card"><h4>HW4 · Targeted syntactic evaluation</h4>
+          <p class="muted" style="font-size:13px">Use a pre-trained RNN LM + test-suite methodology to probe <b>garden-path / reduced-relative</b> ambiguity ("The horse raced past the barn fell") — does the model's surprisal spike at the disambiguating region like humans? <span class="cite">HW4/Gil_Ido_Pset_4.pdf</span></p></div>
+        <div class="card"><h4>HW5 · Regex syllabifier &amp; CFG parsing</h4>
+          <p class="muted" style="font-size:13px">A phonotactic-rule <b>syllabifier</b> and a series of <b>context-free grammars</b> (ambiguity, agreement, filler–gap). Both are live above. <span class="cite">HW5/Pset_5_regex.ipynb, Copy_of_Pset_5_cfg.ipynb</span></p></div>
+        <div class="card"><h4>Project · Surprisals &amp; RT's (Group 5)</h4>
+          <p class="muted" style="font-size:13px">Trigram vs neural surprisal, spillover, GAMs, and an entropy / model-scaling study on OneStop. See the two project tabs. <span class="cite">Task 1/, Task 2/, unstructered/</span></p></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ===== tabs =====
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById(t.dataset.v).classList.add('active');
+    if(t.dataset.v==='cfg') drawCfg(lastCfgTree);
+    if(t.dataset.v==='surprisal') drawScatter();
+  };
+});
+
+// =====================================================================
+// LIVE 1 · SYLLABIFIER  (port of syllabify() in Pset_5_regex.ipynb)
+// =====================================================================
+const VOWELS='aeiouy';
+const DIPHTHONGS=['ai','au','ay','ea','ee','ei','eu','ey','ie','oa','oi','oo','ou','oy','ue','ui','aw','ew','ow'];
+const LEGAL_ONSETS=new Set([
+  'b','c','d','f','g','h','j','k','l','m','n','p','q','r','s','t','v','w','x','z',
+  'bl','br','cl','cr','dr','fl','fr','gl','gr','pl','pr','tr','tw',
+  'sc','sk','sl','sm','sn','sp','st','sw','sh','th','wh','ch',
+  'dw','gw','kw','pw','qu',
+  'scr','spl','spr','str','squ','thr','shr','chr']);
+const ILLEGAL_ONSETS=new Set([
+  'tl','dl','tn','dn','tm','dm','tp','dp','tk','dk','tb','db',
+  'gn','kn','pn','mn','ng','nk','nt','nd','mp','mb','lk','rk',
+  'ls','rs','ts','ds','ps','ks','fs','hs']);
+function hasVowel(s){for(const c of s)if(VOWELS.includes(c))return true;return false;}
+function syllabify(word){
+  if(!word) return [];
+  word=word.toLowerCase().trim();
+  if(word.length===1) return [word];
+  if(!hasVowel(word)) return [word];
+  // Step 1: vowel nuclei (single vowel or diphthong)
+  const vp=[]; let i=0;
+  while(i<word.length){
+    if(VOWELS.includes(word[i])){
+      if(i<word.length-1 && DIPHTHONGS.includes(word.slice(i,i+2))){ vp.push([i,i+1]); i+=2; }
+      else { vp.push([i,i]); i+=1; }
+    } else i+=1;
+  }
+  if(vp.length<=1) return [word];
+  // Step 2: boundaries
+  const bounds=[0];
+  for(let j=0;j<vp.length-1;j++){
+    const v1End=vp[j][1], v2Start=vp[j+1][0];
+    const cluster=word.slice(v1End+1, v2Start);
+    if(cluster.length===0){ bounds.push(v1End+1); }
+    else if(cluster.length===1){ bounds.push(v1End+1); }
+    else {
+      let split=v1End+cluster.length; // default: all consonants with first vowel
+      for(let onsetLen=Math.min(3,cluster.length); onsetLen>=1; onsetLen--){
+        const onset=cluster.slice(cluster.length-onsetLen);
+        if(LEGAL_ONSETS.has(onset) && !ILLEGAL_ONSETS.has(onset)){ split=v2Start-onsetLen; break; }
+      }
+      if(split===v1End+cluster.length && cluster.length>0){
+        const last=cluster[cluster.length-1];
+        if(!'xq'.includes(last)) split=v2Start-1;
+      }
+      bounds.push(split);
+    }
+  }
+  bounds.push(word.length);
+  // Step 3: extract
+  let syll=[];
+  for(let k=0;k<bounds.length-1;k++){
+    const s=word.slice(bounds[k],bounds[k+1]);
+    if(s) syll.push(s);
+  }
+  // Step 4: merge vowelless syllables
+  const fin=[];
+  for(let k=0;k<syll.length;k++){
+    const cur=syll[k];
+    if(!hasVowel(cur)){
+      if(k>0) fin[fin.length-1]+=cur;
+      else if(k<syll.length-1) syll[k+1]=cur+syll[k+1];
+      else fin.push(cur);
+    } else fin.push(cur);
+  }
+  return fin.length?fin:[word];
+}
+const SYLL_PRESETS=['serendipity','capable','ideal','quiet','enter','pandas','intake','snoded','ilskip','computer','playground','castle'];
+function renderSyll(){
+  const w=document.getElementById('syllInput').value;
+  const parts=syllabify(w);
+  const out=document.getElementById('syllOut');
+  if(!parts.length){out.innerHTML='<span class="muted" style="font-size:14px">type a word…</span>';document.getElementById('syllCount').textContent='';return;}
+  out.innerHTML=parts.map((p,i)=> (i>0?'<span class="sylsep">·</span>':'')+'<span class="sylchunk">'+p+'</span>').join('');
+  document.getElementById('syllCount').textContent=parts.length+' syllable'+(parts.length>1?'s':'')+'  →  '+parts.join(' · ');
+}
+document.getElementById('syllBtn').onclick=renderSyll;
+document.getElementById('syllInput').addEventListener('input',renderSyll);
+document.getElementById('syllInput').addEventListener('keydown',e=>{if(e.key==='Enter')renderSyll();});
+(function(){const w=document.getElementById('syllPresets');SYLL_PRESETS.forEach(s=>{const b=document.createElement('button');b.className='pbtn';b.textContent=s;b.onclick=()=>{document.getElementById('syllInput').value=s;renderSyll();};w.appendChild(b);});})();
+renderSyll();
+
+// =====================================================================
+// LIVE 2 · CFG PARSER  (port of final grammar in Copy_of_Pset_5_cfg.ipynb)
+// CKY chart parser over a grammar normalized to unary/binary rules.
+// =====================================================================
+// Terminals (lexicon) -> nonterminal preterminals
+const LEX={
+  'that':['COMP'], 'who':['WHNP'], 'what':['WHNP'],
+  'the':['Det'],'a':['Det'],'an':['Det'],'my':['Det'],'your':['Det'],'her':['Det'],'his':['Det'],'their':['Det'],
+  'joke':['N'],'women':['N'],'street':['N'],'apple':['N'],
+  'i':['Pronoun'],'you':['Pronoun'],'she':['Pronoun'],'he':['Pronoun'],'they':['Pronoun'],
+  'slept':['V_INTRANS'],'devoured':['V_TRANS'],'know':['V_SBAR'],'said':['V_SBAR']
+};
+// Binary productions  A -> B C
+const BIN=[
+  ['S','NP','VP'],
+  ['NP','Det','N'],
+  ['VP','V_TRANS','NP'],
+  ['VP','V_SBAR','SBAR'],
+  ['SBAR','WHNP','S'],
+  ['SBAR','WHNP','S_SLASH_NP'],
+  ['SBAR','COMP','S'],
+  ['S_SLASH_NP','NP','VP_SLASH_NP'],
+  ['VP_SLASH_NP','V_TRANS','NP'],
+  ['VP_SLASH_NP','V_SBAR','SBAR'],
+  ['VP_SLASH_NP','V_SBAR','SBAR_SLASH_NP'],
+  ['SBAR_SLASH_NP','WHNP','S_SLASH_NP']
+];
+// Unary productions  A -> B   (incl. ε-effects: COMP->ε means SBAR->S handled; NP->Pronoun; VP->V_INTRANS; gaps)
+const UNARY=[
+  ['NP','Pronoun'],
+  ['VP','V_INTRANS'],
+  ['S_SLASH_NP','VP_SLASH_NP'],     // subject-gap: S/NP -> VP/NP
+  ['VP_SLASH_NP','V_INTRANS'],
+  ['VP_SLASH_NP','V_TRANS'],        // object gap: transitive verb with missing object
+  ['SBAR_SLASH_NP','S_SLASH_NP'],
+  ['SBAR','S']                       // COMP -> ε  ⇒  SBAR -> S  (empty complementizer)
+];
+function closeUnary(set,backptr,i,j){
+  let changed=true;
+  while(changed){
+    changed=false;
+    for(const [A,B] of UNARY){
+      if(set.has(B)&&!set.has(A)){ set.add(A); backptr[A]={unary:B,i,j}; changed=true; }
+    }
+  }
+}
+function parseCFG(tokens){
+  const n=tokens.length;
+  if(n===0) return {ok:false,tree:null};
+  // chart[i][j] = map nonterminal -> backpointer, span tokens[i..j)
+  const chart={}, bp={};
+  const key=(i,j)=>i+'_'+j;
+  for(let i=0;i<n;i++){
+    const t=tokens[i].toLowerCase();
+    const set=new Set(), back={};
+    const cats=LEX[t]||[];
+    for(const c of cats){ set.add(c); back[c]={term:tokens[i],i,j:i+1}; }
+    closeUnary(set,back,i,i+1);
+    chart[key(i,i+1)]=set; bp[key(i,i+1)]=back;
+  }
+  for(let span=2;span<=n;span++){
+    for(let i=0;i+span<=n;i++){
+      const j=i+span;
+      const set=new Set(), back={};
+      for(let k=i+1;k<j;k++){
+        const left=chart[key(i,k)], right=chart[key(k,j)];
+        if(!left||!right) continue;
+        for(const [A,B,C] of BIN){
+          if(left.has(B)&&right.has(C)&&!set.has(A)){
+            set.add(A); back[A]={left:B,right:C,split:k,i,j};
+          }
+        }
+      }
+      closeUnary(set,back,i,j);
+      chart[key(i,j)]=set; bp[key(i,j)]=back;
+    }
+  }
+  const top=chart[key(0,n)];
+  const ok=top&&top.has('S');
+  if(!ok) return {ok:false,tree:null};
+  // rebuild a tree from backpointers
+  function build(sym,i,j){
+    const b=bp[key(i,j)][sym];
+    if(!b) return {label:sym,children:[]};
+    if('term' in b) return {label:sym,children:[{label:b.term,children:[],leaf:true}]};
+    if('unary' in b) return {label:sym,children:[build(b.unary,i,j)]};
+    return {label:sym,children:[build(b.left,i,b.split),build(b.right,b.split,j)]};
+  }
+  return {ok:true,tree:build('S',0,n)};
+}
+// ----- canvas tree rendering -----
+let lastCfgTree=null;
+function layout(node){ // assign x positions via in-order leaf counting
+  let leaf=0;
+  function rec(n,depth){
+    n.depth=depth;
+    if(!n.children.length){ n.x=leaf++; n.maxd=depth; return n; }
+    let md=depth;
+    n.children.forEach(c=>{const r=rec(c,depth+1); md=Math.max(md,r.maxd);});
+    n.x=(n.children[0].x+n.children[n.children.length-1].x)/2;
+    n.maxd=md; return n;
+  }
+  rec(node,0);
+  return leaf;
+}
+function drawCfg(tree){
+  const cv=document.getElementById('cfgCanvas'); if(!cv) return;
+  const ctx=cv.getContext('2d');
+  const W=cv.clientWidth||900; cv.width=W;
+  if(!tree){ cv.height=80; ctx.clearRect(0,0,cv.width,cv.height);
+    ctx.fillStyle='#94A3B8';ctx.font='14px monospace';ctx.fillText('no parse tree (sentence rejected)',16,44); return; }
+  const nLeaves=layout(tree);
+  let maxDepth=0; (function f(n){maxDepth=Math.max(maxDepth,n.depth);n.children.forEach(f);})(tree);
+  const padX=40, padY=28;
+  const colW=Math.max(70,(W-2*padX)/Math.max(1,nLeaves));
+  const rowH=Math.max(54,(220)/Math.max(1,maxDepth));
+  cv.height=padY*2+maxDepth*rowH+24;
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const px=n=>padX+colW*(n.x+0.5);
+  const py=n=>padY+n.depth*rowH;
+  // edges
+  ctx.strokeStyle='#334155';ctx.lineWidth=1.4;
+  (function edges(n){ n.children.forEach(c=>{ ctx.beginPath();ctx.moveTo(px(n),py(n)+6);ctx.lineTo(px(c),py(c)-14);ctx.stroke(); edges(c); }); })(tree);
+  // nodes
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  (function nodes(n){
+    const x=px(n),y=py(n);
+    if(n.leaf){ ctx.fillStyle='#FBBF24';ctx.font='bold 14px monospace';ctx.fillText(n.label,x,y); }
+    else { ctx.font='bold 13px monospace';ctx.fillStyle='#60A5FA';
+      const w=ctx.measureText(n.label).width+12;
+      ctx.fillStyle='#1E293B';ctx.strokeStyle='#334155';
+      ctx.fillRect(x-w/2,y-11,w,22);ctx.strokeRect(x-w/2,y-11,w,22);
+      ctx.fillStyle=n.label==='S'?'#14B8A6':'#60A5FA';ctx.fillText(n.label,x,y);
+    }
+    n.children.forEach(nodes);
+  })(tree);
+}
+const CFG_PRESETS=[
+  'I devoured the apple','I said you slept','you know what I devoured',
+  'you know who slept','the women know who I said devoured the apple',
+  'I slept that you said','the women devoured'
+];
+function runCfg(){
+  const txt=document.getElementById('cfgInput').value.trim();
+  const toks=txt.split(/\s+/).filter(Boolean);
+  const res=parseCFG(toks);
+  lastCfgTree=res.tree;
+  const v=document.getElementById('cfgVerdict');
+  v.innerHTML='<span class="verdict '+(res.ok?'ok':'bad')+'">'+(res.ok?'✓ ACCEPTED — parses as a sentence (S)':'✗ REJECTED — no valid parse')+'</span>';
+  drawCfg(res.tree);
+}
+document.getElementById('cfgBtn').onclick=runCfg;
+document.getElementById('cfgInput').addEventListener('keydown',e=>{if(e.key==='Enter')runCfg();});
+(function(){const w=document.getElementById('cfgPresets');CFG_PRESETS.forEach(s=>{const b=document.createElement('button');b.className='pbtn';b.textContent=s;b.onclick=()=>{document.getElementById('cfgInput').value=s;runCfg();};w.appendChild(b);});})();
+runCfg();
+
+// =====================================================================
+// LIVE 3 · SURPRISAL (bigram back-off LM) + RT scatter
+// =====================================================================
+const CORPUS=[
+  "the cat sat on the mat","the cat sat on the rug","the dog sat on the floor",
+  "the cat ran across the room","the cat sat quietly on the mat",
+  "she sat on the chair near the window","the horse raced past the barn",
+  "the boat sailed past the harbour","the man walked past the barn",
+  "i want to donate money to families in need","she wanted to give money to families today",
+  "the model gave a confident recommendation","the dog ran across the field",
+  "the cat sat on the warm mat by the fire","the children played in the park on saturday",
+  "the sun rose over the quiet city","the river flowed past the old mill",
+  "the the the on on on the cat the dog the mat"
+];
+const uni=Object.create(null), big=Object.create(null), follow=Object.create(null);
+let totalUni=0, V=0;
+function bump(o,k){o[k]=(o[k]||0)+1;}
+CORPUS.forEach(s=>{
+  const w=('<s> '+s.toLowerCase()).split(/\s+/);
+  for(let i=0;i<w.length;i++){
+    bump(uni,w[i]); totalUni++;
+    if(i>0){const bg=w[i-1]+' '+w[i]; bump(big,bg); bump(follow,w[i-1]);}
+  }
+});
+V=Object.keys(uni).length;
+function condProb(prev,word){
+  prev=prev.toLowerCase(); word=word.toLowerCase();
+  const bg=big[(prev+' '+word)]||0;
+  const fc=follow[prev]||0;
+  const k=0.4;
+  const pBigram=(bg+k)/((fc||0)+k*V);
+  const pUni=((uni[word]||0)+1)/(totalUni+V);
+  const lambda=fc>0 ? 0.75 : 0.0;
+  return lambda*pBigram + (1-lambda)*pUni;
+}
+function surprisalBits(prev,word){
+  const p=Math.min(1,Math.max(1e-9,condProb(prev,word)));
+  return -Math.log2(p);
+}
+const colors=v=>v<3?'#14B8A6':v<6?'#60A5FA':'#F87171';
+const presets=[
+  {label:'Predictable ending', text:'The cat sat on the mat .'},
+  {label:'Surprising ending',  text:'The cat sat on the volcano .'},
+  {label:'Garden-path',        text:'The horse raced past the barn fell .'}
+];
+function tokenize(txt){return txt.trim().split(/\s+/).filter(Boolean);}
+function renderText(txt){
+  const toks=tokenize(txt);
+  const v=document.getElementById('sentView');
+  if(toks.length===0){v.innerHTML='<span class="muted" style="font-size:13px">type a sentence…</span>';return;}
+  const vals=toks.map((w,i)=>surprisalBits(i===0?'<s>':toks[i-1], w));
+  const max=Math.max(6, ...vals);
+  v.innerHTML=toks.map((w,i)=>{
+    const s=vals[i], h=18+Math.min(s,max)/max*120;
+    return '<div class="word"><div class="cap">'+s.toFixed(1)+'</div>'+
+      '<div class="bar" style="height:'+h+'px;background:'+colors(s)+'"></div>'+
+      '<div class="wtxt">'+w+'</div></div>';
+  }).join('');
+}
+function selectPreset(i){
+  document.getElementById('sentInput').value=presets[i].text;
+  renderText(presets[i].text);
+  document.querySelectorAll('#sentBtns .pbtn').forEach((b,j)=>b.classList.toggle('on',j===i));
+}
+(function(){const bw=document.getElementById('sentBtns');presets.forEach((s,i)=>{const b=document.createElement('button');b.className='pbtn';b.textContent=s.label;b.onclick=()=>selectPreset(i);bw.appendChild(b);});})();
+const inp=document.getElementById('sentInput');
+function scoreInput(){ document.querySelectorAll('#sentBtns .pbtn').forEach(b=>b.classList.remove('on')); renderText(inp.value); }
+document.getElementById('scoreBtn').onclick=scoreInput;
+inp.addEventListener('keydown',e=>{if(e.key==='Enter')scoreInput();});
+inp.addEventListener('input',()=>{ if(inp.value.trim()) scoreInput(); });
+selectPreset(0);
+
+// ----- surprisal -> RT scatter (illustrative) -----
+let scatterPts=null, scatterFit=null;
+function buildScatter(){
+  // deterministic pseudo-random noise so the plot is stable
+  let seed=12345; const rnd=()=>{seed=(seed*1103515245+12345)&0x7fffffff; return seed/0x7fffffff;};
+  const pts=[];
+  CORPUS.forEach(s=>{
+    const toks=tokenize(s);
+    toks.forEach((w,i)=>{
+      const surp=surprisalBits(i===0?'<s>':toks[i-1],w);
+      const rt=180 + 22*surp + (rnd()-0.5)*80;  // baseline + slope*surprisal + noise
+      pts.push([surp,rt]);
+    });
+  });
+  // least-squares fit + R^2
+  const n=pts.length;let sx=0,sy=0,sxx=0,sxy=0,syy=0;
+  pts.forEach(([x,y])=>{sx+=x;sy+=y;sxx+=x*x;sxy+=x*y;syy+=y*y;});
+  const slope=(n*sxy-sx*sy)/(n*sxx-sx*sx);
+  const inter=(sy-slope*sx)/n;
+  const r=(n*sxy-sx*sy)/Math.sqrt((n*sxx-sx*sx)*(n*syy-sy*sy));
+  scatterPts=pts; scatterFit={slope,inter,r2:r*r};
+}
+function drawScatter(){
+  if(!scatterPts) buildScatter();
+  const cv=document.getElementById('rtScatter'); if(!cv) return;
+  const ctx=cv.getContext('2d'); const W=cv.clientWidth||900; cv.width=W; cv.height=280;
+  ctx.clearRect(0,0,W,280);
+  const padL=52,padB=36,padT=16,padR=16;
+  const xs=scatterPts.map(p=>p[0]), ys=scatterPts.map(p=>p[1]);
+  const xmin=0,xmax=Math.max(...xs)*1.05, ymin=Math.min(...ys)-20,ymax=Math.max(...ys)+20;
+  const X=x=>padL+(x-xmin)/(xmax-xmin)*(W-padL-padR);
+  const Y=y=>280-padB-(y-ymin)/(ymax-ymin)*(280-padT-padB);
+  // axes
+  ctx.strokeStyle='#334155';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(padL,padT);ctx.lineTo(padL,280-padB);ctx.lineTo(W-padR,280-padB);ctx.stroke();
+  ctx.fillStyle='#94A3B8';ctx.font='11px monospace';ctx.textAlign='center';
+  ctx.fillText('surprisal (bits)',(padL+W-padR)/2,274);
+  ctx.save();ctx.translate(14,140);ctx.rotate(-Math.PI/2);ctx.fillText('reading time (ms, illustrative)',0,0);ctx.restore();
+  // points
+  scatterPts.forEach(([x,y])=>{ctx.fillStyle='rgba(96,165,250,.55)';ctx.beginPath();ctx.arc(X(x),Y(y),2.6,0,7);ctx.fill();});
+  // fit line
+  ctx.strokeStyle='#F87171';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(X(xmin),Y(scatterFit.inter+scatterFit.slope*xmin));
+  ctx.lineTo(X(xmax),Y(scatterFit.inter+scatterFit.slope*xmax));ctx.stroke();
+  document.getElementById('rtStats').innerHTML='fit: RT ≈ '+scatterFit.inter.toFixed(0)+' + '+scatterFit.slope.toFixed(1)+'·surprisal  ·  R² = '+scatterFit.r2.toFixed(3)+' (illustrative in-page model; the real <code>task_1.py</code> gets trigram R²≈0.026 on OneStop)';
+}
+drawScatter();
+window.addEventListener('resize',()=>{ if(document.getElementById('surprisal').classList.contains('active')) drawScatter(); if(document.getElementById('cfg').classList.contains('active')) drawCfg(lastCfgTree); });
+</script>
+</body>
+</html>

@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Warset — Insights</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0c10;--panel:#111318;--border:#1e2230;--accent:#3ecf8e;
+  --gold:#f5a623;--blue:#4a9eff;--red:#e8453c;--purple:#a78bfa;
+  --text:#e8eaf0;--muted:#6b7280;--card:#161923;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column}
+
+/* ── Tab Bar ── */
+.tabs{display:flex;gap:4px;padding:14px 25px 0;background:var(--panel);border-bottom:1px solid var(--border)}
+.tab{padding:10px 20px;font-size:0.9rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;letter-spacing:0.02em}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ── Container ── */
+.container{max-width:1400px;width:100%;margin:0 auto;padding:25px;display:flex;flex-direction:column;gap:25px;flex:1}
+
+/* ── Analytics: Filters ── */
+.filter-bar{display:flex;align-items:center;gap:15px;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:15px 20px;flex-wrap:wrap}
+.filter-title{font-size:.85rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.filter-group{display:flex;align-items:center;gap:8px}
+.filter-group label{font-size:.78rem;color:var(--muted)}
+.filter-bar select{background:#161923;border:1px solid var(--border);color:var(--text);font-size:.78rem;border-radius:6px;padding:6px 12px;outline:none;cursor:pointer;transition:border-color .2s}
+.filter-bar select:focus{border-color:var(--accent)}
+.checklist{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.checklist label{display:inline-flex;align-items:center;gap:5px;font-size:.74rem;color:var(--text);background:#161923;border:1px solid var(--border);border-radius:14px;padding:4px 10px;cursor:pointer;transition:border-color .15s,background .15s;white-space:nowrap}
+.checklist label:has(input:checked){border-color:var(--accent);background:rgba(62,207,142,0.12);color:var(--accent)}
+.checklist input{accent-color:var(--accent);margin:0}
+
+/* ── Analytics: Metrics ── */
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px}
+.metric-card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s}
+.metric-card:hover{transform:translateY(-2px);border-color:var(--accent)}
+.metric-title{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.metric-value{font-size:1.8rem;font-weight:700;margin-top:8px;color:var(--text);font-variant-numeric:tabular-nums}
+.metric-detail{font-size:.7rem;color:var(--muted);margin-top:6px}
+.metric-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--accent)}
+.metric-card.red::before{background:var(--red)}
+.metric-card.blue::before{background:var(--blue)}
+.metric-card.gold::before{background:var(--gold)}
+.metric-card.purple::before{background:var(--purple)}
+
+/* ── Analytics: Charts Grid ── */
+.charts-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:25px}
+.chart-container{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:15px}
+.chart-header{display:flex;justify-content:space-between;align-items:center}
+.chart-header h3{font-size:.9rem;font-weight:600;letter-spacing:.02em;color:var(--text)}
+.chart-header .chart-desc{font-size:.72rem;color:var(--muted)}
+.chart-body{position:relative;flex:1;min-height:260px;display:flex;align-items:center;justify-content:center}
+.col-12{grid-column:span 12}
+.col-8{grid-column:span 8}
+.col-6{grid-column:span 6}
+.col-4{grid-column:span 4}
+@media (max-width:992px){.col-8,.col-6,.col-4{grid-column:span 12}}
+
+/* ── ML: Dashboard ── */
+.dashboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:24px}
+.panel.full-width{grid-column:1 / -1}
+.panel h2{font-size:1.2rem;margin-top:0;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:12px;color:var(--accent)}
+.ml-chart-container{position:relative;height:350px}
+.ml-controls{margin-bottom:16px}
+.ml-controls select{width:100%;padding:10px;background:#1a1f2e;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:1rem}
+.similar-wars-list{display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto}
+.similar-card{background:#1a1f2e;padding:12px;border-radius:6px;display:flex;justify-content:space-between;align-items:center}
+.similar-card .name{font-weight:600;font-size:0.9rem}
+.similar-card .score{font-family:monospace;color:var(--accent);background:rgba(62,207,142,0.1);padding:4px 8px;border-radius:4px;font-size:0.8rem}
+.impute-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;max-height:350px;overflow-y:auto}
+.impute-card{background:#1a1f2e;padding:16px;border-radius:6px;text-align:center}
+.impute-card .count{font-size:1.5rem;font-weight:700;color:#f5a623;margin:8px 0}
+.impute-card .name{font-size:0.85rem;color:var(--muted)}
+@media (max-width:992px){.dashboard-grid{grid-template-columns:1fr}}
+
+/* Error State */
+.error-msg{background:var(--card);border:1px solid var(--red);padding:20px;border-radius:8px;text-align:center;max-width:500px;margin:100px auto}
+.error-msg h2{color:var(--red);margin-bottom:10px}
+</style>
+</head>
+<body>
+
+<div class="tabs">
+  <div class="tab active" data-tab="analytics">📊 Analytics</div>
+  <div class="tab" data-tab="ml">🤖 ML Insights</div>
+</div>
+
+<!-- ── ANALYTICS TAB ────────────────────────────────────────────── -->
+<div class="tab-panel active" id="panel-analytics">
+<div class="container">
+  <div class="filter-bar">
+    <div class="filter-title">Filters <span style="font-weight:400;color:var(--muted);font-size:0.72rem">— check multiple to compare; the period chart splits by colour</span></div>
+    <div class="filter-group">
+      <label>Conflict Type</label>
+      <div class="checklist" id="filter-type"></div>
+    </div>
+    <div class="filter-group">
+      <label>Historical Period</label>
+      <div class="checklist" id="filter-period"></div>
+    </div>
+    <div class="filter-group">
+      <label>Geographic Scope</label>
+      <div class="checklist" id="filter-scope"></div>
+    </div>
+  </div>
+
+  <div class="metrics-grid">
+    <div class="metric-card"><div class="metric-title">Total Conflicts</div><div class="metric-value" id="metric-total">—</div><div class="metric-detail">Matched by filters</div></div>
+    <div class="metric-card red"><div class="metric-title">Est. Total Casualties</div><div class="metric-value" id="metric-cas">—</div><div class="metric-detail">Sum of midpoints</div></div>
+    <div class="metric-card gold"><div class="metric-title">Avg Conflict Duration</div><div class="metric-value" id="metric-duration">—</div><div class="metric-detail">Of conflicts with known end</div></div>
+    <div class="metric-card blue"><div class="metric-title">Proxy Wars</div><div class="metric-value" id="metric-proxy">—</div><div class="metric-detail">Percent of selected conflicts</div></div>
+    <div class="metric-card purple"><div class="metric-title">High Certainty Records</div><div class="metric-value" id="metric-certainty">—</div><div class="metric-detail">Of total matched</div></div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-container col-8"><div class="chart-header"><h3>Conflicts by Historical Period</h3><span class="chart-desc">Frequency of wars per era</span></div><div class="chart-body"><canvas id="chart-periods"></canvas></div></div>
+    <div class="chart-container col-4"><div class="chart-header"><h3>Conflict Types</h3><span class="chart-desc">Proportional distribution</span></div><div class="chart-body"><canvas id="chart-types"></canvas></div></div>
+    <div class="chart-container col-6"><div class="chart-header"><h3>Top 10 Most Lethal Conflicts</h3><span class="chart-desc">By midpoint casualty estimation</span></div><div class="chart-body"><canvas id="chart-lethal"></canvas></div></div>
+    <div class="chart-container col-6"><div class="chart-header"><h3>Primary Casus Belli Breakdown</h3><span class="chart-desc">Stated triggers of warfare</span></div><div class="chart-body"><canvas id="chart-casus"></canvas></div></div>
+  </div>
+</div>
+</div>
+
+<!-- ── ML INSIGHTS TAB ──────────────────────────────────────────── -->
+<div class="tab-panel" id="panel-ml">
+<div class="container">
+<div class="dashboard-grid">
+
+  <div class="panel">
+    <h2>🤖 NLP Similarity Engine</h2>
+    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:16px;">Search a conflict to find its closest historical matches based on contextual embedding vectors.</p>
+    <div class="ml-controls" style="position:relative">
+      <input id="war-search" type="text" placeholder="🔍 Search a conflict by name…" autocomplete="off" style="width:100%;padding:9px 11px;background:#0a0c10;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.9rem;box-sizing:border-box">
+      <div id="war-search-results" style="position:absolute;left:0;right:0;top:100%;z-index:30;background:#0d111a;border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;max-height:240px;overflow-y:auto;display:none"></div>
+    </div>
+    <div class="similar-wars-list" id="similarity-results" style="margin-top:12px"></div>
+  </div>
+
+  <div class="panel">
+    <h2>🔮 AI Casualty Imputation</h2>
+    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">These conflicts historically lack casualty data. The Regression model mathematically imputed these estimates.</p>
+    <input id="impute-search" type="text" placeholder="🔍 Filter conflicts by name…" autocomplete="off" style="width:100%;padding:8px 11px;margin-bottom:12px;background:#0a0c10;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.88rem;box-sizing:border-box">
+    <div class="impute-grid" id="impute-results"></div>
+    <div style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px">
+      <div style="font-size:0.8rem;color:var(--accent);font-weight:600;letter-spacing:0.05em;margin-bottom:4px">🧮 ESTIMATE CASUALTIES FROM FEATURES</div>
+      <p style="font-size:0.76rem;color:var(--muted);margin-bottom:10px">Enter a conflict profile to estimate casualties from the most structurally similar historical wars that do have recorded figures.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <select id="mp-type" class="mp-field"></select>
+        <select id="mp-period" class="mp-field"></select>
+        <select id="mp-scope" class="mp-field"></select>
+        <select id="mp-casus" class="mp-field"></select>
+      </div>
+      <input id="mp-duration" type="number" min="0" placeholder="Duration in years (optional)" style="width:100%;padding:8px 11px;margin-bottom:8px;background:#0a0c10;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.85rem;box-sizing:border-box">
+      <button onclick="predictCasualties()" style="width:100%;padding:10px;background:linear-gradient(90deg,#3ecf8e,#0dcaf0);color:#04130d;border:none;border-radius:6px;font-weight:700;font-size:0.9rem;cursor:pointer">⚡ Estimate Casualties</button>
+      <div id="mp-result" style="margin-top:12px;min-height:20px"></div>
+    </div>
+  </div>
+
+  <div class="panel full-width" id="insights-banner" style="background:linear-gradient(135deg,#0d1a14,#0a1220); border-color:#3ecf8e44;">
+    <h2 style="color:#3ecf8e;">💡 Key Model Insights</h2>
+    <div id="insights-content" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;"></div>
+  </div>
+
+  <div class="panel full-width">
+    <h2>📊 What Wins Wars? <span style="font-size:0.8rem; color:var(--muted); font-weight:400;">(XGBoost · 109 features · 68.4% accuracy)</span></h2>
+    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:16px;">Feature gain importance from the XGBoost outcome classifier, trained on all historical conflicts with certainty-weighted samples.</p>
+    <div class="ml-chart-container" style="height:420px;"><canvas id="featureChart"></canvas></div>
+  </div>
+
+  <div class="panel">
+    <h2>⚔️ What-If Conflict Simulator</h2>
+    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:16px;">Set troops and technology for each side. The model estimates the historical probability of each outcome.</p>
+    <div style="display:grid; grid-template-columns:1fr 4px 1fr; margin-bottom:14px;">
+      <div style="background:#180e14; border:1px solid rgba(232,62,140,0.3); border-radius:8px 0 0 8px; padding:14px;">
+        <div style="color:#e83e8c; font-weight:700; font-size:0.78rem; letter-spacing:0.1em; margin-bottom:12px;">🗡 AGGRESSOR</div>
+        <label style="font-size:0.73rem; color:var(--muted); display:block; margin-bottom:3px;">Peak Troops</label>
+        <input type="number" id="agg-troops" value="100000" style="width:100%; padding:7px 9px; margin-bottom:10px; background:#0d080d; color:#e83e8c; border:1px solid rgba(232,62,140,0.4); border-radius:4px; font-size:0.95rem; box-sizing:border-box;">
+        <label style="font-size:0.73rem; color:var(--muted); display:block; margin-bottom:3px;">Tech Generation</label>
+        <select id="agg-tech" style="width:100%; padding:7px 9px; background:#0d080d; color:#e83e8c; border:1px solid rgba(232,62,140,0.4); border-radius:4px; font-size:0.85rem; box-sizing:border-box;">
+          <option value="1">Shock &amp; Muscle</option><option value="2">Gunpowder &amp; Sail</option>
+          <option value="3" selected>Industrial &amp; Rifle</option><option value="4">Mechanized &amp; Air</option><option value="5">Information &amp; Drone</option>
+        </select>
+      </div>
+      <div style="background:linear-gradient(to bottom,transparent,rgba(245,166,35,0.5),transparent); display:flex; align-items:center; justify-content:center;">
+        <span style="color:#f5a623; font-size:0.7rem; font-weight:800; writing-mode:vertical-rl; letter-spacing:0.15em;">VS</span>
+      </div>
+      <div style="background:#0a0e18; border:1px solid rgba(13,202,240,0.3); border-radius:0 8px 8px 0; padding:14px;">
+        <div style="color:#0dcaf0; font-weight:700; font-size:0.78rem; letter-spacing:0.1em; margin-bottom:12px;">🛡 DEFENDER</div>
+        <label style="font-size:0.73rem; color:var(--muted); display:block; margin-bottom:3px;">Peak Troops</label>
+        <input type="number" id="def-troops" value="80000" style="width:100%; padding:7px 9px; margin-bottom:10px; background:#080d0d; color:#0dcaf0; border:1px solid rgba(13,202,240,0.4); border-radius:4px; font-size:0.95rem; box-sizing:border-box;">
+        <label style="font-size:0.73rem; color:var(--muted); display:block; margin-bottom:3px;">Tech Generation</label>
+        <select id="def-tech" style="width:100%; padding:7px 9px; background:#080d0d; color:#0dcaf0; border:1px solid rgba(13,202,240,0.4); border-radius:4px; font-size:0.85rem; box-sizing:border-box;">
+          <option value="1">Shock &amp; Muscle</option><option value="2">Gunpowder &amp; Sail</option>
+          <option value="3">Industrial &amp; Rifle</option><option value="4">Mechanized &amp; Air</option><option value="5">Information &amp; Drone</option>
+        </select>
+      </div>
+    </div>
+    <div style="background:#111318; border:1px solid var(--border); border-radius:8px; padding:14px; margin-bottom:14px;">
+      <div style="font-size:0.75rem; color:var(--muted); font-weight:600; letter-spacing:0.08em; margin-bottom:10px;">⚙️ CONFLICT CONTEXT</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+        <div><label style="font-size:0.73rem; color:var(--muted); display:block; margin-bottom:3px;">Approximate Year</label>
+          <input type="number" id="sim-year" value="1500" style="width:100%; padding:7px 9px; background:#0a0c10; color:var(--text); border:1px solid var(--border); border-radius:4px; font-size:0.9rem; box-sizing:border-box;"></div>
+        <div><label style="font-size:0.73rem; color:var(--muted); display:block; margin-bottom:3px;">Estimated Duration (days)</label>
+          <input type="number" id="sim-duration" value="500" style="width:100%; padding:7px 9px; background:#0a0c10; color:var(--text); border:1px solid var(--border); border-radius:4px; font-size:0.9rem; box-sizing:border-box;"></div>
+      </div>
+      <div style="display:flex; gap:20px; flex-wrap:wrap; font-size:0.82rem;">
+        <label style="display:flex; align-items:center; gap:6px; cursor:pointer; color:var(--text);"><input type="checkbox" id="sim-religious" style="accent-color:#f5a623;"> Religious Conflict</label>
+        <label style="display:flex; align-items:center; gap:6px; cursor:pointer; color:var(--text);"><input type="checkbox" id="sim-ethnic" style="accent-color:#f5a623;"> Ethnic Dimension</label>
+        <label style="display:flex; align-items:center; gap:6px; cursor:pointer; color:var(--text);"><input type="checkbox" id="sim-proxy" style="accent-color:#f5a623;"> Proxy War</label>
+      </div>
+    </div>
+    <p style="font-size:0.78rem; color:#f5a623; margin-bottom:10px; text-align:center;" id="tech-equiv-display"></p>
+    <button onclick="runSimulator()" style="width:100%; padding:11px; background:linear-gradient(90deg,#e83e8c,#9b59b6,#0dcaf0); color:white; border:none; border-radius:6px; font-weight:700; font-size:0.95rem; cursor:pointer; letter-spacing:0.04em;">⚡ Simulate Conflict</button>
+    <div id="sim-result" style="margin-top:14px; min-height:44px;"></div>
+  </div>
+
+  <div class="panel">
+    <h2>🔍 Hidden Causes of War (LDA)</h2>
+    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:16px;">Organic topics discovered by the algorithm reading the raw text of historical summaries.</p>
+    <div class="similar-wars-list" id="lda-results"></div>
+  </div>
+
+  <div class="panel full-width">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:12px;">
+      <h2 style="border-bottom:none; margin-bottom:0; padding-bottom:0;">🌌 Archetypes of War (Unified Vector Embeddings)</h2>
+      <select id="cluster-mode" style="padding:6px 12px; background:#1a1f2e; color:var(--text); border:1px solid var(--border); border-radius:4px; font-size:0.85rem;">
+        <option value="kmeans">K-Means Clustering</option>
+        <option value="hierarch">Hierarchical Clustering</option>
+      </select>
+    </div>
+    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:16px;">A mathematical mapping of human conflict combining textual embeddings and feature sets. Wars that are close together are historically and structurally identical.</p>
+    <div class="ml-chart-container" style="height: 450px;"><canvas id="archetypeChart"></canvas></div>
+  </div>
+</div>
+</div>
+</div>
+
+<script src="../wars.js?v=278add4e"></script>
+<script src="../ml_similarity.js"></script>
+<script src="../ml_outcome_features.js"></script>
+<script src="../ml_imputed_cas.js"></script>
+<script src="../ml_simulator.js"></script>
+<script src="../ml_archetypes.js"></script>
+<script src="../ml_lda_topics.js"></script>
+<script>
+// ── Tab switching ────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('panel-' + t.dataset.tab).classList.add('active');
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════
+// ANALYTICS TAB
+// ═════════════════════════════════════════════════════════════════
+const COLORS = {accent:"#3ecf8e",red:"#e8453c",blue:"#4a9eff",gold:"#f5a623",purple:"#a78bfa",text:"#e8eaf0",muted:"#6b7280",panel:"#111318",border:"#1e2230"};
+let allWars = [];
+let charts = {};
+Chart.defaults.color = COLORS.text;
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.borderColor = COLORS.border;
+
+const TYPE_COLORS={"Interstate":COLORS.red,"Intrastate (Civil)":COLORS.gold,"Extrastate":COLORS.blue,"Imperial Expansion":COLORS.purple,"Non-State":COLORS.accent};
+const FILTER_DIMS={
+  "filter-type":{field:"type",options:["Interstate","Intrastate (Civil)","Extrastate","Imperial Expansion","Non-State"]},
+  "filter-period":{field:"period",options:["Antiquity","Late Antiquity","Medieval","Early Modern","Industrial Age","World Wars Era","Cold War","Contemporary"]},
+  "filter-scope":{field:"scope",options:["Local","National","Regional","Continental","Intercontinental","Global"]},
+};
+
+try {
+  if (typeof warsData === 'undefined') throw new Error("warsData is not defined.");
+  allWars = warsData;
+  initFilters();
+  updateDashboard();
+} catch (err) {
+  document.querySelector('#panel-analytics .container').innerHTML = `<div class="error-msg"><h2>⚠ Data Load Error</h2><p>${err.message}</p></div>`;
+}
+
+function fmtNum(n){if(n==null)return"—";if(n>=1e9)return(n/1e9).toFixed(1)+"B";if(n>=1e6)return(n/1e6).toFixed(1)+"M";if(n>=1e3)return Math.round(n/1e3)+"K";return n.toLocaleString();}
+
+function initFilters(){
+  for(const id in FILTER_DIMS){
+    const box=document.getElementById(id);
+    box.innerHTML=FILTER_DIMS[id].options.map(o=>`<label><input type="checkbox" value="${o}">${o}</label>`).join("");
+    box.addEventListener("change",updateDashboard);
+  }
+}
+
+function getChecked(id){return new Set([...document.querySelectorAll(`#${id} input:checked`)].map(c=>c.value));}
+
+function getFilteredData(){
+  const sel={}; for(const id in FILTER_DIMS) sel[id]=getChecked(id);
+  return allWars.filter(w=>{
+    for(const id in FILTER_DIMS){const s=sel[id]; if(s.size && !s.has(w[FILTER_DIMS[id].field])) return false;}
+    return true;
+  });
+}
+
+function updateDashboard(){
+  const data = getFilteredData();
+  document.getElementById("metric-total").textContent = fmtNum(data.length);
+  document.getElementById("metric-cas").textContent = fmtNum(data.reduce((s,w)=>s+(w.cas||0),0));
+  const wd = data.filter(w=>w.end!==null&&w.start!==null);
+  document.getElementById("metric-duration").textContent = wd.length ? Math.round(wd.reduce((s,w)=>s+Math.max(0,w.end-w.start),0)/wd.length)+" yrs" : "—";
+  const px = data.filter(w=>w.is_proxy_war).length;
+  document.getElementById("metric-proxy").textContent = (data.length ? Math.round(px/data.length*100) : 0) + "%";
+  const hc = data.filter(w=>w.certainty==="High").length;
+  document.getElementById("metric-certainty").textContent = (data.length ? Math.round(hc/data.length*100) : 0) + "%";
+  renderPeriodsChart(data);
+  renderTypesChart(data);
+  renderLethalChart(data);
+  renderCasusChart(data);
+}
+
+function renderPeriodsChart(data){
+  const order=["Antiquity","Late Antiquity","Medieval","Early Modern","Industrial Age","World Wars Era","Cold War","Contemporary"];
+  // Split each era's bar by conflict type so the colours divide the composition.
+  const typesPresent=Object.keys(TYPE_COLORS).filter(t=>data.some(w=>w.type===t));
+  const others=[...new Set(data.map(w=>w.type).filter(t=>t&&!TYPE_COLORS[t]))];
+  const segments=[...typesPresent,...(others.length?["Other"]:[])];
+  const datasets=segments.map(seg=>({
+    label:seg,
+    backgroundColor:TYPE_COLORS[seg]||COLORS.muted,
+    borderRadius:3,
+    data:order.map(p=>data.filter(w=>w.period===p && (seg==="Other"?!TYPE_COLORS[w.type]:w.type===seg)).length),
+  }));
+  if(charts.periods)charts.periods.destroy();
+  charts.periods=new Chart(document.getElementById("chart-periods"),{type:"bar",data:{labels:order,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{boxWidth:11,font:{size:10}}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,grid:{color:COLORS.border}}}}});
+}
+
+function renderTypesChart(data){
+  const counts={}; data.forEach(w=>{if(w.type)counts[w.type]=(counts[w.type]||0)+1;});
+  const tc={"Interstate":COLORS.red,"Intrastate (Civil)":COLORS.gold,"Extrastate":COLORS.blue,"Imperial Expansion":COLORS.purple,"Non-State":COLORS.accent};
+  if(charts.types)charts.types.destroy();
+  const labels=Object.keys(counts); const colors=labels.map(l=>tc[l]||COLORS.muted);
+  charts.types=new Chart(document.getElementById("chart-types"),{type:"doughnut",data:{labels:labels,datasets:[{data:Object.values(counts),backgroundColor:colors,borderColor:COLORS.panel,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"right",labels:{boxWidth:12,font:{size:10}}}}}});
+}
+
+function renderLethalChart(data){
+  const sorted=[...data].filter(w=>w.cas).sort((a,b)=>b.cas-a.cas).slice(0,10);
+  const fullNames=sorted.map(w=>w.name);
+  if(charts.lethal)charts.lethal.destroy();
+  charts.lethal=new Chart(document.getElementById("chart-lethal"),{type:"bar",data:{labels:sorted.map(w=>w.name.length>20?w.name.slice(0,18)+"…":w.name),datasets:[{label:"Casualties",data:sorted.map(w=>w.cas),backgroundColor:COLORS.red,borderRadius:4}]},options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:items=>fullNames[items[0].dataIndex],label:c=>` ${c.raw.toLocaleString()} casualties`}}},scales:{x:{beginAtZero:true,grid:{color:COLORS.border}},y:{grid:{display:false}}}}});
+}
+
+function renderCasusChart(data){
+  const counts={}; data.forEach(w=>{if(w.casus)counts[w.casus]=(counts[w.casus]||0)+1;});
+  const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  if(charts.casus)charts.casus.destroy();
+  charts.casus=new Chart(document.getElementById("chart-casus"),{type:"polarArea",data:{labels:sorted.map(c=>c[0]),datasets:[{data:sorted.map(c=>c[1]),backgroundColor:["rgba(232,69,60,0.7)","rgba(245,166,35,0.7)","rgba(74,158,255,0.7)","rgba(167,139,250,0.7)","rgba(62,207,142,0.7)","rgba(232,69,60,0.4)","rgba(245,166,35,0.4)","rgba(74,158,255,0.4)"],borderColor:COLORS.panel,borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{grid:{color:COLORS.border},angleLines:{color:COLORS.border}}},plugins:{legend:{position:"right",labels:{boxWidth:10,font:{size:9}}}}}});
+}
+
+// ═════════════════════════════════════════════════════════════════
+// ML INSIGHTS TAB
+// ═════════════════════════════════════════════════════════════════
+const warMap = {};
+if (typeof warsData !== 'undefined') warsData.forEach(w => warMap[w.id] = w.name);
+
+// --- NLP Similarity (searchable) ---
+const searchInput = document.getElementById('war-search');
+const searchResults = document.getElementById('war-search-results');
+const resultsContainer = document.getElementById('similarity-results');
+if (typeof mlSimilarityData !== 'undefined') {
+  const simWars = warsData.filter(w => mlSimilarityData[w.id]).map(w => ({ id: w.id, name: w.name }));
+  function renderSimilarity(id) {
+    resultsContainer.innerHTML = '';
+    (mlSimilarityData[id] || []).forEach(item => {
+      const name = warMap[item.war_id] || item.war_id;
+      const pct = (item.score * 100).toFixed(1) + '% match';
+      const card = document.createElement('div');
+      card.className = 'similar-card';
+      card.innerHTML = `<span class="name">${name}</span> <span class="score">${pct}</span>`;
+      resultsContainer.appendChild(card);
+    });
+  }
+  function showSuggestions(q) {
+    q = q.trim().toLowerCase();
+    if (!q) { searchResults.style.display = 'none'; return; }
+    const matches = simWars.filter(w => w.name.toLowerCase().includes(q)).slice(0, 40);
+    searchResults.innerHTML = matches.length
+      ? matches.map(w => `<div class="war-opt" data-id="${w.id}" style="padding:8px 11px;cursor:pointer;font-size:0.85rem;border-bottom:1px solid var(--border)">${w.name}</div>`).join('')
+      : `<div style="padding:9px 11px;color:var(--muted);font-size:0.82rem">No matching conflict</div>`;
+    searchResults.style.display = 'block';
+  }
+  searchInput.addEventListener('input', e => showSuggestions(e.target.value));
+  searchInput.addEventListener('focus', e => { if (e.target.value) showSuggestions(e.target.value); });
+  searchResults.addEventListener('mouseover', e => { const o = e.target.closest('.war-opt'); if (o) o.style.background = '#1a2030'; });
+  searchResults.addEventListener('mouseout', e => { const o = e.target.closest('.war-opt'); if (o) o.style.background = ''; });
+  searchResults.addEventListener('click', e => {
+    const o = e.target.closest('.war-opt');
+    if (!o) return;
+    searchInput.value = warMap[o.dataset.id] || o.dataset.id;
+    searchResults.style.display = 'none';
+    renderSimilarity(o.dataset.id);
+  });
+  document.addEventListener('click', e => { if (!e.target.closest('.ml-controls')) searchResults.style.display = 'none'; });
+  if (simWars.length) { searchInput.value = simWars[0].name; renderSimilarity(simWars[0].id); }
+}
+
+// --- Imputation (searchable) ---
+const imputeContainer = document.getElementById('impute-results');
+if (typeof mlImputedCasualties !== 'undefined') {
+  const imputeEntries = Object.entries(mlImputedCasualties)
+    .map(([id, count]) => ({ id, count, name: warMap[id] || id }))
+    .sort((a, b) => b.count - a.count);
+  function renderImpute(q) {
+    q = (q || '').trim().toLowerCase();
+    const list = q ? imputeEntries.filter(e => e.name.toLowerCase().includes(q)) : imputeEntries;
+    imputeContainer.innerHTML = list.length
+      ? list.map(e => `<div class="impute-card"><div class="name">${e.name}</div><div class="count">~${e.count.toLocaleString()}</div><div class="name" style="font-size:0.7rem">Estimated Casualties</div></div>`).join('')
+      : `<div style="color:var(--muted);font-size:0.85rem;padding:8px">No matching conflict.</div>`;
+  }
+  renderImpute('');
+  document.getElementById('impute-search').addEventListener('input', e => renderImpute(e.target.value));
+}
+
+// --- Manual casualty estimator (k-NN over historical wars with known figures) ---
+(function setupCasualtyEstimator(){
+  if (typeof warsData === 'undefined') return;
+  const uniq = key => [...new Set(warsData.map(w => w[key]).filter(Boolean))].sort();
+  const fills = {
+    'mp-type':   ['Any Type',   uniq('type')],
+    'mp-period': ['Any Period', uniq('period')],
+    'mp-scope':  ['Any Scope',  uniq('scope')],
+    'mp-casus':  ['Any Casus Belli', uniq('casus')],
+  };
+  Object.entries(fills).forEach(([id, [placeholder, opts]]) => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sel.style.cssText = 'padding:7px 9px;background:#0a0c10;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.82rem';
+    sel.innerHTML = `<option value="">${placeholder}</option>` + opts.map(o => `<option>${o}</option>`).join('');
+  });
+  const ref = warsData.filter(w => w.cas > 0);
+  const durOf = w => (w.end != null && w.start != null) ? Math.max(0, w.end - w.start) : null;
+  const maxDur = Math.max(1, ...ref.map(durOf).filter(d => d != null));
+  window.predictCasualties = function(){
+    const f = {
+      type: document.getElementById('mp-type').value,
+      period: document.getElementById('mp-period').value,
+      scope: document.getElementById('mp-scope').value,
+      casus: document.getElementById('mp-casus').value,
+      duration: parseFloat(document.getElementById('mp-duration').value),
+    };
+    const scored = ref.map(w => {
+      let dist = 0;
+      if (f.type)   dist += w.type === f.type ? 0 : 1;
+      if (f.period) dist += w.period === f.period ? 0 : 1;
+      if (f.scope)  dist += w.scope === f.scope ? 0 : 1;
+      if (f.casus)  dist += w.casus === f.casus ? 0 : 1;
+      const d = durOf(w);
+      if (!isNaN(f.duration) && d != null) dist += Math.abs(d - f.duration) / maxDur;
+      return { w, dist };
+    }).sort((a, b) => a.dist - b.dist);
+    const K = 15;
+    const nearest = scored.slice(0, K);
+    const cas = nearest.map(n => n.w.cas).sort((a, b) => a - b);
+    const q = p => cas[Math.min(cas.length - 1, Math.floor(cas.length * p))];
+    const median = q(0.5), lo = q(0.25), hi = q(0.75);
+    const fmt = n => n >= 1e6 ? (n/1e6).toFixed(2)+'M' : n >= 1e3 ? Math.round(n/1e3)+'K' : n.toLocaleString();
+    const analogues = nearest.slice(0, 5).map(n => `<div class="similar-card" style="padding:8px 10px"><span class="name" style="font-size:0.82rem">${n.w.name}</span><span class="score">${fmt(n.w.cas)}</span></div>`).join('');
+    document.getElementById('mp-result').innerHTML =
+      `<div style="background:#0d1a14;border:1px solid #3ecf8e44;border-radius:8px;padding:14px;text-align:center;margin-bottom:10px">
+         <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em">Estimated Casualties</div>
+         <div style="font-size:1.8rem;font-weight:800;color:#3ecf8e;margin:4px 0">~${fmt(median)}</div>
+         <div style="font-size:0.78rem;color:var(--muted)">likely range ${fmt(lo)} – ${fmt(hi)} · from ${K} closest historical analogues</div>
+       </div>
+       <div style="font-size:0.74rem;color:var(--muted);margin-bottom:6px">Nearest analogues:</div>
+       <div class="similar-wars-list">${analogues}</div>`;
+  };
+})();
+
+// --- Feature importance ---
+const xgbFeats = (typeof mlSimulatorData !== 'undefined' && mlSimulatorData.top_features) ? mlSimulatorData.top_features : [];
+function cleanLabel(n){return n.replace('primary_casus_belli_','Casus: ').replace('ideological_driver_','Ideology: ').replace('conflict_type_','Type: ').replace('geographic_scope_','Scope: ').replace('historical_period_','Era: ');}
+if (xgbFeats.length) {
+  const barColors = xgbFeats.map(f => {
+    if (f.name.startsWith('primary_casus_belli')) return 'rgba(245,166,35,0.75)';
+    if (f.name.startsWith('ideological_driver')) return 'rgba(232,62,140,0.75)';
+    if (f.name.startsWith('conflict_type')) return 'rgba(111,66,193,0.75)';
+    if (f.name.startsWith('historical_period')) return 'rgba(13,202,240,0.75)';
+    if (f.name.startsWith('geographic_scope')) return 'rgba(62,207,142,0.75)';
+    return 'rgba(100,116,139,0.65)';
+  });
+  new Chart(document.getElementById('featureChart'), {
+    type: 'bar',
+    data: { labels: xgbFeats.map(f=>cleanLabel(f.name)), datasets: [{label:'Importance',data:xgbFeats.map(f=>f.importance),backgroundColor:barColors,borderRadius:4}] },
+    options: { responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` Importance: ${(c.raw*100).toFixed(2)}%`}}}, scales:{x:{grid:{color:'#1e2230'},ticks:{color:'#6b7280'}},y:{grid:{display:false},ticks:{color:'#e8eaf0',font:{size:11}}}} }
+  });
+
+  const insights = [
+    {icon:'🏅', title:'Top Predictor of Victory', value:cleanLabel(xgbFeats[0].name), detail:`Importance score: ${(xgbFeats[0].importance*100).toFixed(1)}% — the single strongest historical signal.`, color:'#f5a623'},
+    {icon:'⚔️', title:'Aggressor Base Win Rate', value:`${((mlSimulatorData.base_win_rate||0.39)*100).toFixed(1)}% historically`, detail:'Defenders win the majority of conflicts in the dataset — attacking is inherently risky.', color:'#e83e8c'},
+    (() => {
+      const techPP  = mlSimulatorData.tech_slope_pp_per_tier;
+      const troopPP = mlSimulatorData.troop_slope_pp_per_logratio;
+      const share   = mlSimulatorData.tech_gap_share;
+      if (techPP == null || troopPP == null) {
+        return {icon:'🔬', title:'Tech vs Troops', value:'Inconclusive', detail:'Not enough wars with tech-tier data.', color:'#3ecf8e'};
+      }
+      const value = `+${techPP.toFixed(1)} pp / tech tier`;
+      const detail = `When tech tiers differ (${(share*100).toFixed(0)}% of wars), each tier of aggressor advantage shifts the win rate by ~${techPP.toFixed(1)} points. Raw numerical advantage shifts it ~${troopPP.toFixed(1)} pp per e-fold troop ratio — i.e. rifles beat spears far more than 10× more spears do.`;
+      return {icon:'🔬', title:'Tech vs Troops', value, detail, color:'#3ecf8e'};
+    })()
+  ];
+  const container = document.getElementById('insights-content');
+  insights.forEach(ins => {
+    const el = document.createElement('div');
+    el.style.cssText = `background:#111318; border:1px solid ${ins.color}44; border-radius:8px; padding:16px;`;
+    el.innerHTML = `<div style="font-size:1.4rem; margin-bottom:6px;">${ins.icon}</div><div style="font-size:0.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px;">${ins.title}</div><div style="font-size:1rem; font-weight:700; color:${ins.color}; margin-bottom:6px;">${ins.value}</div><div style="font-size:0.78rem; color:var(--muted); line-height:1.5;">${ins.detail}</div>`;
+    container.appendChild(el);
+  });
+}
+
+// --- Simulator ---
+const simData = typeof mlSimulatorData !== 'undefined' ? mlSimulatorData : null;
+if (simData && !simData.error) {
+  const acc = simData.accuracy ? `(CV accuracy: ${(simData.accuracy*100).toFixed(1)}%)` : '';
+  const techPP = simData.tech_slope_pp_per_tier;
+  const equiv = (techPP != null)
+    ? `💡 When tech tiers differ, each tier of advantage = <strong>${techPP > 0 ? '+' : ''}${techPP.toFixed(1)} pp</strong> aggressor win rate`
+    : `💡 Tech-tier data too sparse to measure`;
+  document.getElementById('tech-equiv-display').innerHTML = `🤖 <strong>XGBoost</strong> ${acc} &nbsp;|&nbsp; ${equiv}`;
+}
+function runSimulator() {
+  if (!simData || simData.error) { document.getElementById('sim-result').innerHTML = `<span style="color:var(--muted)">Model not ready yet.</span>`; return; }
+  const aggTroops=parseFloat(document.getElementById('agg-troops').value)||50000;
+  const defTroops=parseFloat(document.getElementById('def-troops').value)||50000;
+  const aggTech=parseInt(document.getElementById('agg-tech').value);
+  const defTech=parseInt(document.getElementById('def-tech').value);
+  const year=parseFloat(document.getElementById('sim-year').value)||1500;
+  const duration=parseFloat(document.getElementById('sim-duration').value)||500;
+  const religious=document.getElementById('sim-religious').checked?1:0;
+  const ethnic=document.getElementById('sim-ethnic').checked?1:0;
+  const proxy=document.getElementById('sim-proxy').checked?1:0;
+  const techDiff=aggTech-defTech;
+  const troopRatio=Math.log1p(aggTroops)-Math.log1p(defTroops);
+  const yearNorm=(year-(simData.year_mean||1500))/(simData.year_std||400);
+  const techW=simData.tech_diff_weight||0.25;
+  const troopW=simData.troop_ratio_weight||0.20;
+  const yearW=simData.year_norm_weight||0.10;
+  const religiousW=simData.religious_weight||0.05;
+  const ethnicW=simData.ethnic_weight||0.05;
+  const proxyW=simData.proxy_weight||0.05;
+  const baseRate=simData.base_win_rate||0.40;
+  const signal = techW*(techDiff/4) + troopW*(troopRatio/3) + yearW*yearNorm + religiousW*(religious-0.22) + ethnicW*(ethnic-0.44) + proxyW*(proxy-0.07);
+  const z = signal*8;
+  let prob = baseRate + (1-baseRate)*(1/(1+Math.exp(-z))) - (1-baseRate)*0.5;
+  prob = Math.max(0.05, Math.min(0.95, prob));
+  const aggPct=(prob*100).toFixed(1); const defPct=((1-prob)*100).toFixed(1);
+  const mods=[]; if(religious)mods.push('⛪ Religious'); if(ethnic)mods.push('🏴 Ethnic'); if(proxy)mods.push('🎭 Proxy');
+  document.getElementById('sim-result').innerHTML = `<div style="display:flex; gap:4px; align-items:center; margin-bottom:8px;"><div style="flex:${aggPct}; background:linear-gradient(90deg,#e83e8c,#9b59b6); height:32px; border-radius:4px 0 0 4px; display:flex; align-items:center; padding:0 10px; font-size:0.85rem; font-weight:700; color:white; min-width:70px;">🗡 ${aggPct}%</div><div style="flex:${defPct}; background:linear-gradient(90deg,#2980b9,#0dcaf0); height:32px; border-radius:0 4px 4px 0; display:flex; align-items:center; justify-content:flex-end; padding:0 10px; font-size:0.85rem; font-weight:700; color:white; min-width:70px;">${defPct}% 🛡</div></div><div style="font-size:0.75rem; color:var(--muted); text-align:center; line-height:1.7;">${techDiff>0?`🔬 Aggressor <strong style="color:#3ecf8e">+${techDiff}</strong> tech tier`:techDiff<0?`🔬 Defender <strong style="color:#0dcaf0">+${Math.abs(techDiff)}</strong> tech tier`:'🔬 Equal technology'} &nbsp;|&nbsp; ⚖️ Troop log-ratio: <strong style="color:#f5a623">${troopRatio.toFixed(2)}</strong>${mods.length?`<br>Modifiers: ${mods.join(' · ')}`:''}</div>`;
+}
+
+// --- LDA Topics ---
+const ldaContainer = document.getElementById('lda-results');
+if (typeof mlLdaTopics !== 'undefined' && mlLdaTopics.length) {
+  mlLdaTopics.forEach(topic => {
+    const card = document.createElement('div');
+    card.className = 'similar-card'; card.style.display = 'block';
+    card.innerHTML = `<div style="font-size:0.75rem; color:var(--muted); margin-bottom:4px;">Archetype Theme ${topic.topic_id}</div><div style="font-weight:bold; color:var(--accent); font-size:1.1rem;">${topic.keywords.join(' • ')}</div>`;
+    ldaContainer.appendChild(card);
+  });
+}
+
+// --- Archetypes ---
+if (typeof mlArchetypeData !== 'undefined' && mlArchetypeData.length) {
+  let archChart = null;
+  const palette = ['#3ecf8e','#f5a623','#e83e8c','#6f42c1','#0dcaf0', '#e6194b', '#4363d8', '#f032e6'];
+  const modeSelect = document.getElementById('cluster-mode');
+
+  // Draws a translucent enclosing ellipse around each cluster's points. Enabled
+  // only in hierarchical mode (via options.plugins.clusterCircles.enabled).
+  const clusterCirclePlugin = {
+    id: 'clusterCircles',
+    beforeDatasetsDraw(chart, args, opts) {
+      if (!opts || !opts.enabled) return;
+      const { ctx, scales: { x, y } } = chart;
+      chart.data.datasets.forEach((ds, di) => {
+        const meta = chart.getDatasetMeta(di);
+        if (meta.hidden) return;
+        const pts = ds.data;
+        if (!pts || pts.length < 2) return;
+        const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
+        const cy = pts.reduce((s, p) => s + p.y, 0) / pts.length;
+        const dists = pts.map(p => Math.hypot(p.x - cx, p.y - cy)).sort((a, b) => a - b);
+        const rData = dists[Math.floor(dists.length * 0.85)] || dists[dists.length - 1] || 0.5;
+        const px = x.getPixelForValue(cx), py = y.getPixelForValue(cy);
+        const rPx = Math.abs(x.getPixelForValue(cx + rData) - px);
+        const rPy = Math.abs(y.getPixelForValue(cy + rData) - py);
+        const color = ds.backgroundColor;
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(px, py, rPx, rPy, 0, 0, 2 * Math.PI);
+        ctx.fillStyle = color + '14';
+        ctx.fill();
+        ctx.setLineDash([6, 4]);
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = color + '99';
+        ctx.stroke();
+        ctx.restore();
+      });
+    }
+  };
+  
+  function renderArchetypes(mode) {
+    const clusters = {};
+    mlArchetypeData.forEach(d => { 
+      const archKey = mode === 'hierarch' ? d.archetype_hierarch : d.archetype_kmeans;
+      if(!clusters[archKey]) clusters[archKey]=[]; 
+      
+      // Look up full war info from warsData
+      const warInfo = warsData.find(w => w.id === d.war_id) || { name: warMap[d.war_id] || d.war_id };
+      
+      clusters[archKey].push({
+        x:d.x, 
+        y:d.y, 
+        war_id: d.war_id,
+        war_name: warInfo.name,
+        outcome: warInfo.outcome || 'Unknown',
+        agg: warInfo.aggressors,
+        def: warInfo.defenders,
+        cas: warInfo.cas,
+        agg_cmd: warInfo.agg_commander,
+        def_cmd: warInfo.def_commander
+      }); 
+    });
+    
+    const datasets = Object.keys(clusters).map((name, idx) => ({
+      label: name,
+      data: clusters[name],
+      backgroundColor: palette[idx%palette.length],
+      pointRadius: 4,
+      pointHoverRadius: 6
+    }));
+    
+    if (archChart) archChart.destroy();
+    
+    archChart = new Chart(document.getElementById('archetypeChart'), {
+      type: 'scatter',
+      data: { datasets },
+      plugins: [clusterCirclePlugin],
+      options: {
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{
+          clusterCircles: { enabled: mode === 'hierarch' },
+          legend: { labels: { color:'#e8eaf0' } },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const w = ctx.raw;
+                let lines = [w.war_name, `ID: ${w.war_id}`];
+                if(w.agg) lines.push(`Factions: ${w.agg} vs ${w.def}`);
+                if(w.agg_cmd || w.def_cmd) lines.push(`Cmdrs: ${w.agg_cmd||'Unknown'} vs ${w.def_cmd||'Unknown'}`);
+                if(w.outcome) lines.push(`Outcome: ${w.outcome}`);
+                if(w.cas) lines.push(`Cas: ${w.cas.toLocaleString()}`);
+                return lines;
+              }
+            }
+          }
+        }, 
+        scales: {
+          x: { grid: { color:'#1e2230' }, ticks: { color:'#6b7280' } },
+          y: { grid: { color:'#1e2230' }, ticks: { color:'#6b7280' } }
+        } 
+      }
+    });
+  }
+  
+  modeSelect.addEventListener('change', e => renderArchetypes(e.target.value));
+  renderArchetypes('kmeans');
+}
+</script>
+</body>
+</html>

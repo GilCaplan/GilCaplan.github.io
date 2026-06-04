@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python_IntroToDS — Intro to Data Science</title>
+<style>
+  :root{
+    --bg:#0B1220; --surface:#0F172A; --panel:#1E293B; --border:#243044;
+    --text:#E2E8F0; --muted:#94A3B8; --accent:#14B8A6; --blue:#60A5FA; --red:#F87171;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.55;font-size:15px}
+  .wrap{max-width:1080px;margin:0 auto;padding:22px 20px 60px}
+  h1{font-size:24px;margin:0 0 4px}h2{font-size:18px;margin:22px 0 10px}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 16px}
+  code,pre,.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+  .pill{font-size:11px;color:var(--accent);border:1px solid #1d4d47;border-radius:6px;padding:1px 7px;margin-left:6px}
+  .tag{display:inline-block;background:var(--panel);border:1px solid var(--border);color:var(--muted);
+    border-radius:999px;padding:2px 10px;font-size:12px;margin:2px 4px 2px 0}
+  .tag.a{color:var(--accent);border-color:#1d4d47}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 14px;border-bottom:1px solid var(--border)}
+  .tab{background:none;border:none;color:var(--muted);padding:9px 14px;cursor:pointer;font-size:14px;
+    font-weight:600;border-bottom:2px solid transparent;border-radius:8px 8px 0 0}
+  .tab:hover{color:var(--text);background:var(--surface)}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .panel{display:none}.panel.active{display:block}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin:12px 0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  pre{background:#0a0f1a;border:1px solid var(--border);border-radius:10px;padding:14px;overflow:auto;
+    font-size:12.5px;line-height:1.5;margin:8px 0}
+  .kw{color:var(--blue)}.fn{color:var(--accent)}.str{color:#fca5a5}.cm{color:#5b6b82}
+  .muted{color:var(--muted)}
+  .note{background:#13202e;border-left:3px solid var(--blue);padding:8px 12px;border-radius:6px;font-size:13px;color:var(--muted);margin:10px 0}
+  a{color:var(--blue)}
+  .foot{color:var(--muted);font-size:12.5px;margin-top:26px;border-top:1px solid var(--border);padding-top:14px}
+  .ctrls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+  button.act{background:var(--accent);color:#04201c;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer;font-size:13px}
+  button.act:hover{filter:brightness(1.1)}
+  button.gh{background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 12px;cursor:pointer;font-size:13px}
+  button.gh:hover{border-color:var(--accent)}
+  select{background:#0a0f1a;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 10px;font-size:13px}
+  #kmSvg{width:100%;height:330px;background:#0a0f1a;border:1px solid var(--border);border-radius:10px;display:block}
+  .msg{font-size:13px;color:var(--muted);min-height:18px;margin-top:6px}
+  .hwcard{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+  .hwcard h4{margin:0 0 6px;color:var(--blue);font-size:14px;font-family:"JetBrains Mono",monospace}
+  .hwcard p{margin:0;font-size:13px;color:var(--muted)}
+  .step{display:flex;gap:10px;margin:6px 0;align-items:flex-start}
+  .num{flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#04201c;font-weight:700;
+    font-size:12px;display:flex;align-items:center;justify-content:center;margin-top:2px;font-family:monospace}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Python_IntroToDS <span class="pill">Technion · Intro to Data Science 094700</span></h1>
+  <p class="sub">Introductory data-science coursework in Python — from-scratch statistics, a hand-written
+  <b>k-means</b>, and a pandas/scikit-learn data-exploration notebook.</p>
+  <div>
+    <span class="tag a">pandas · numpy</span><span class="tag a">matplotlib</span>
+    <span class="tag a">k-means clustering</span><span class="tag a">KNN regression</span>
+    <span class="tag a">correlation &amp; covariance</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-t="ov">Overview</button>
+    <button class="tab" data-t="km">HW2 — Live k-means</button>
+    <button class="tab" data-t="stats">HW1 — Statistics</button>
+    <button class="tab" data-t="nb">HW3 — Notebook</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="panel active" id="ov">
+    <div class="card">
+      <p>Three assignments from the Technion <b>Intro to Data Science</b> course. The README lists the material:
+      <i>Python syntax, the pandas / matplotlib / numpy / scikit ecosystem, and clustering, classification &amp;
+      regression.</i></p>
+      <div class="grid">
+        <div class="hwcard"><h4>hw01</h4><p><b>London bike-sharing.</b> Custom <code>mean</code>, <code>stdv</code>,
+        <code>covariance</code>; filter the data by season / holiday and report statistics on <code>t1</code> (temp),
+        <code>hum</code> and <code>cnt</code> (bike count).</p></div>
+        <div class="hwcard"><h4>HW02</h4><p><b>k-means from scratch</b> (numpy only) on the London data — scale features,
+        add tiny noise, iterate assign/recompute until convergence; plus pandas feature-engineering &amp; a correlation report.</p></div>
+        <div class="hwcard"><h4>HW03</h4><p><b>California housing</b> notebook: missing-value handling, correlation
+        heatmap, and <b>KNN-regression imputation</b> of a high-missing feature with scikit-learn.</p></div>
+      </div>
+      <div class="note">The k-means tab runs a faithful JS port of the repo's <code>clustering.py</code>
+      (same assign / recompute loop). All formulas and code shown are copied from the repo.</div>
+    </div>
+  </div>
+
+  <!-- KMEANS -->
+  <div class="panel" id="km">
+    <div class="card">
+      <h2 style="margin-top:0">k-means — the repo's algorithm, live</h2>
+      <p class="muted" style="font-size:13.5px">HW02 clusters London-bike rows on <code>(cnt, hum)</code>. This demo
+      reimplements <code>kmeans()</code>: pick <code>k</code> random initial centroids, assign each point to its nearest
+      centroid (Euclidean), recompute centroids as the cluster mean, and repeat until centroids stop moving.</p>
+      <div class="ctrls">
+        <label class="muted">k =
+          <select id="kSel"><option>2</option><option selected>3</option><option>5</option></select>
+        </label>
+        <button class="act" id="stepBtn">Step</button>
+        <button class="gh" id="runBtn">Run to convergence</button>
+        <button class="gh" id="reseedBtn">New random points</button>
+      </div>
+      <div class="msg" id="kmMsg">Press <b>Step</b> to run one assign/recompute iteration.</div>
+      <svg id="kmSvg" viewBox="0 0 880 330" preserveAspectRatio="xMidYMid meet"></svg>
+      <p class="muted" style="font-size:12px">Points = synthetic 2-D blobs (so the page is self-contained); stars = centroids.
+      The <i>logic</i> — distance matrix, <code>argmin</code> assignment, mean recompute, convergence test — is exactly the repo's.</p>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">The real loop — <code>clustering.py</code></h2>
+<pre><span class="kw">def</span> <span class="fn">kmeans</span>(data, k):
+    prev_centroids = None
+    current_centroids = choose_initial_centroids(data, k)
+    <span class="kw">while</span> <span class="kw">not</span> np.array_equal(prev_centroids, current_centroids):
+        labels = assign_to_clusters(data, current_centroids)
+        prev_centroids = current_centroids
+        current_centroids = recompute_centroids(data, labels, k)
+    <span class="kw">return</span> labels, current_centroids
+
+<span class="kw">def</span> <span class="fn">assign_to_clusters</span>(data, centroids):
+    <span class="kw">return</span> np.argmin(distance_matrix(data, centroids), axis=1)
+
+<span class="kw">def</span> <span class="fn">dist</span>(x, y):                      <span class="cm"># Euclidean</span>
+    <span class="kw">return</span> np.sqrt(np.sum(np.power(x - y, 2)))</pre>
+      <div class="note"><code>transform_data</code> selects two features, min-max-style scales them
+      (<code>(x - min) / sum</code>) and adds <code>N(0, 0.001²)</code> noise before clustering. <code>main.py</code>
+      runs it for <code>k = 2, 3, 5</code> and saves a plot per k.</div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="panel" id="stats">
+    <div class="card">
+      <h2 style="margin-top:0">HW01 — statistics from first principles</h2>
+      <p class="muted">No <code>numpy</code> shortcuts: mean, sample standard deviation and covariance are written by hand
+      in <code>statistics.py</code>.</p>
+<pre><span class="kw">def</span> <span class="fn">calc_mean</span>(values):
+    <span class="kw">return</span> sum(values) / len(values)
+
+<span class="kw">def</span> <span class="fn">calc_stdv</span>(values):
+    <span class="kw">return</span> sqrt(sum(map(<span class="kw">lambda</span> x: (x - calc_mean(values))**2, values)) / (len(values) - 1))
+
+<span class="kw">def</span> <span class="fn">calc_covariance</span>(val1, val2):
+    <span class="kw">return</span> sum(map(<span class="kw">lambda</span> x: (x[0]-calc_mean(val1)) * (x[1]-calc_mean(val2)),
+                   list(zip(val1, val2)))) / (len(val1) - 1)</pre>
+      <p class="muted" style="font-size:13.5px">The driver (<code>main.py</code>) loads the London CSV, filters by
+      <code>season</code> and <code>is_holiday</code>, and reports mean/stdv of <code>hum, t1, cnt</code> plus
+      <code>Cov(t1, cnt)</code> for Summer / Holiday / All, then splits Winter records by a temperature threshold.</p>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">Findings (from the repo's <code>hw01_part2.txt</code>)</h2>
+      <div class="step"><div class="num">1</div><div class="muted">Prefer the <b>median</b> over the mean here — a few
+      records with very large <code>cnt</code> skew the mean/stdv, so the median is more representative.</div></div>
+      <div class="step"><div class="num">2</div><div class="muted">On holidays, when temperature is above 13°,
+      bike usage <b>more than doubles</b>; on weekdays there's no substantial temperature effect on count.</div></div>
+      <div class="step"><div class="num">3</div><div class="muted"><code>Cov(season, temp)</code> is misleading because
+      seasons are encoded as arbitrary cyclic integers (0–3); the relationship isn't linear, and the result is a small
+      negative number indicating little linear correlation.</div></div>
+      <p class="muted" style="font-size:12px">These conclusions are quoted/paraphrased from Gil's written answers in the repo.</p>
+    </div>
+  </div>
+
+  <!-- NOTEBOOK -->
+  <div class="panel" id="nb">
+    <div class="card">
+      <h2 style="margin-top:0">HW03 — data exploration &amp; KNN imputation</h2>
+      <p class="muted">A 51-cell Colab notebook (<code>HW03_intro_ds.ipynb</code>) on the <b>California housing</b>
+      dataset (<code>sklearn.datasets.fetch_california_housing</code>). The pipeline:</p>
+      <div class="step"><div class="num">1</div><div class="muted"><b>Explore</b> — load into a <code>pd.DataFrame</code>
+      (features <code>MedInc, HouseAge, AveRooms, AveBedrms, Population, …</code> + target), inspect feature types &amp;
+      distributions.</div></div>
+      <div class="step"><div class="num">2</div><div class="muted"><b>Correlations</b> — <code>df.corr()</code> rendered with the
+      seismic colormap; the written takeaway is that most feature pairs are only weakly correlated.</div></div>
+      <div class="step"><div class="num">3</div><div class="muted"><b>Missing data</b> — features missing
+      <code>0&lt;p&lt;1%</code> have their rows dropped; one feature <code>f*</code> with <code>p&gt;20%</code> is kept for imputation.</div></div>
+      <div class="step"><div class="num">4</div><div class="muted"><b>Impute</b> — scale with
+      <code>StandardScaler</code>, train a <code>KNeighborsRegressor</code> on complete rows, and predict the missing
+      values of <code>f*</code>.</div></div>
+<pre><span class="kw">from</span> sklearn.neighbors <span class="kw">import</span> KNeighborsRegressor
+<span class="cm"># train on records that are complete, predict the missing f* values</span>
+df.loc[df_with_na.index, target_feature] = y_pred</pre>
+      <div class="note">The notebook is the official course skeleton with Gil's code/text answers filled in. It is not
+      executed here; the steps above summarise its real cells.</div>
+    </div>
+  </div>
+
+  <div class="foot">Faithful artifact for <span class="mono">Python_IntroToDS</span> · the k-means demo reimplements
+  <code>HW02/clustering.py</code>; all formulas and findings are copied from the repository.</div>
+</div>
+
+<script>
+/* ---- faithful k-means (assign->recompute->converge) on synthetic blobs ---- */
+const svg=document.getElementById('kmSvg');
+const PALETTE=['#a78bfa','#fbbf24','#f87171','#60a5fa','#34d399','#94a3b8']; // repo: purple,yellow,red,blue,green,grey
+let pts=[], centroids=[], labels=[], converged=false;
+function rnd(a,b){return a+Math.random()*(b-a);}
+function gauss(mx,my,s){return [mx+(Math.random()+Math.random()+Math.random()-1.5)*s, my+(Math.random()+Math.random()+Math.random()-1.5)*s];}
+function makePts(){
+  pts=[]; const blobs=[[180,90],[640,100],[400,250],[200,260],[680,250]];
+  for(let b=0;b<5;b++) for(let i=0;i<28;i++) pts.push(gauss(blobs[b][0],blobs[b][1],55));
+}
+function dist(a,b){return Math.sqrt((a[0]-b[0])**2+(a[1]-b[1])**2);}
+function initCentroids(k){ // choose_initial_centroids: k random distinct points
+  const idx=new Set(); while(idx.size<k) idx.add(Math.floor(Math.random()*pts.length));
+  centroids=[...idx].map(i=>[...pts[i]]); labels=assign(); converged=false;
+}
+function assign(){ // argmin distance
+  return pts.map(p=>{let bi=0,bd=Infinity;centroids.forEach((c,j)=>{const d=dist(p,c);if(d<bd){bd=d;bi=j;}});return bi;});
+}
+function recompute(k){
+  const ncs=[];
+  for(let j=0;j<k;j++){const cl=pts.filter((_,i)=>labels[i]===j);
+    if(cl.length===0){ncs.push(centroids[j]);continue;}
+    ncs.push([cl.reduce((s,p)=>s+p[0],0)/cl.length, cl.reduce((s,p)=>s+p[1],0)/cl.length]);}
+  return ncs;
+}
+function step(){
+  if(converged) return false;
+  const k=centroids.length;
+  labels=assign();
+  const ncs=recompute(k);
+  const same=ncs.every((c,j)=>Math.abs(c[0]-centroids[j][0])<1e-6&&Math.abs(c[1]-centroids[j][1])<1e-6);
+  centroids=ncs;
+  if(same){converged=true;}
+  return !same;
+}
+function render(){
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+  pts.forEach((p,i)=>{const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',p[0]);c.setAttribute('cy',p[1]);c.setAttribute('r',4);
+    c.setAttribute('fill',PALETTE[labels[i]%PALETTE.length]||'#94a3b8');svg.appendChild(c);});
+  centroids.forEach(c=>{const s=document.createElementNS('http://www.w3.org/2000/svg','text');
+    s.setAttribute('x',c[0]);s.setAttribute('y',c[1]+6);s.setAttribute('text-anchor','middle');
+    s.setAttribute('font-size','22');s.setAttribute('fill','#fff');s.setAttribute('stroke','#000');
+    s.setAttribute('stroke-width','0.6');s.textContent='★';svg.appendChild(s);});
+}
+function reset(){const k=parseInt(document.getElementById('kSel').value);initCentroids(k);render();
+  document.getElementById('kmMsg').innerHTML='k = '+k+' · initial random centroids placed.';}
+document.getElementById('stepBtn').onclick=()=>{const moved=step();render();
+  document.getElementById('kmMsg').innerHTML=converged?'<b style="color:var(--accent)">Converged</b> — centroids stopped moving.':'Iteration done · centroids moved to cluster means.';};
+document.getElementById('runBtn').onclick=()=>{let g=0;while(step()&&g++<100){}render();
+  document.getElementById('kmMsg').innerHTML='Ran to <b style="color:var(--accent)">convergence</b> in '+g+' more iteration(s).';};
+document.getElementById('reseedBtn').onclick=()=>{makePts();reset();};
+document.getElementById('kSel').onchange=reset;
+makePts();reset();
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');document.getElementById(t.dataset.t).classList.add('active');
+  if(t.dataset.t==='km') render();
+}));
+</script>
+</body>
+</html>

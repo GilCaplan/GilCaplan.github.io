@@ -1,0 +1,1536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intro to AI (096210)</title>
+<style>
+  :root{
+    --bg:#0B1220;--surface:#0F172A;--panel:#1E293B;--border:#243044;
+    --text:#E2E8F0;--muted:#94A3B8;--accent:#14B8A6;--blue:#60A5FA;--red:#F87171;
+    --gold:#e0b44a;--purple:#a78bfa;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.55}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 20px 56px}
+  h1{font-size:1.6rem;margin:0 0 4px}
+  h2{font-size:1.15rem;margin:0 0 10px}
+  h3{font-size:1rem;margin:16px 0 8px;color:var(--blue)}
+  .sub{color:var(--muted);font-size:.95rem;margin:0 0 18px}
+  code,.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+  .tag{display:inline-block;font-size:.72rem;padding:2px 9px;border-radius:999px;
+    background:rgba(20,184,166,.12);color:var(--accent);border:1px solid rgba(20,184,166,.3);margin-right:6px}
+  .tag.blue{background:rgba(96,165,250,.12);color:var(--blue);border-color:rgba(96,165,250,.3)}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 16px;border-bottom:1px solid var(--border);padding-bottom:10px}
+  .tab{cursor:pointer;padding:7px 14px;border-radius:8px;color:var(--muted);font-size:.9rem;
+    border:1px solid transparent;background:transparent;transition:.15s;font-family:inherit}
+  .tab:hover{color:var(--text);background:var(--panel)}
+  .tab.active{color:var(--accent);background:rgba(20,184,166,.1);border-color:rgba(20,184,166,.3)}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px}
+  .panel.alt{background:var(--panel)}
+  .view{display:none}.view.active{display:block}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+  pre{background:#0a0f1a;border:1px solid var(--border);border-radius:10px;padding:14px;overflow:auto;
+    font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.78rem;color:#cbd5e1;margin:0}
+  .muted{color:var(--muted)}
+  .kw{color:var(--blue)}.fn{color:var(--accent)}.cm{color:#5b6b82;font-style:italic}.st{color:#f0b27a}
+  .filebar{font-size:.74rem;color:var(--muted);margin-top:10px;font-family:"JetBrains Mono",monospace}
+  .badge{font-size:.78rem;color:var(--muted)}
+  .pipe{display:flex;gap:0;flex-wrap:wrap;margin:6px 0}
+  .stage{flex:1;min-width:150px;background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    padding:11px 13px;margin:4px}
+  .stage b{color:var(--blue);font-size:.86rem}.stage p{font-size:.75rem;color:var(--muted);margin:6px 0 0}
+  .legend span{display:inline-flex;align-items:center;gap:6px;margin:3px 12px 3px 0;font-size:.78rem;color:var(--muted)}
+  .sw{width:13px;height:13px;border-radius:3px;display:inline-block;border:1px solid var(--border)}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 12px;align-items:center}
+  .stat{display:inline-block;background:var(--panel);border:1px solid var(--border);border-radius:9px;
+    padding:8px 13px;margin:3px 5px 3px 0;text-align:center}
+  .stat b{display:block;font-size:1.15rem;color:var(--accent);font-family:"JetBrains Mono",monospace}
+  .stat span{font-size:.72rem;color:var(--muted)}
+  ul.tight{font-size:.86rem;color:var(--muted);margin:6px 0;padding-left:18px}
+  table{border-collapse:collapse;width:100%;font-size:.82rem;font-family:"JetBrains Mono",monospace;margin-top:6px}
+  th,td{border:1px solid var(--border);padding:6px 9px;text-align:left}
+  th{color:var(--blue);background:var(--panel)}
+  a{color:var(--blue)}
+  select{background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:8px;
+    padding:6px 10px;font-family:inherit;font-size:.85rem}
+  label.fld{font-size:.78rem;color:var(--muted);margin-right:4px}
+  canvas{background:#070b14;border:1px solid var(--border);border-radius:10px;max-width:100%;touch-action:none}
+  .log{background:#0a0f1a;border:1px solid var(--border);border-radius:10px;padding:10px 12px;
+    font-family:"JetBrains Mono",monospace;font-size:.74rem;color:#cbd5e1;height:150px;overflow:auto;line-height:1.5}
+  .log .a{color:var(--gold)} .log .de{color:var(--red)} .log .ok{color:var(--accent)}
+  .kvs{font-family:"JetBrains Mono",monospace;font-size:.82rem}
+  .kvs b{font-weight:normal}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div><span class="tag">Technion 096210</span><span class="tag blue">Search · Logic · MDP / RL</span></div>
+  <h1>Introduction to Artificial Intelligence</h1>
+  <p class="sub">Coursework repo <code>intro_to_ai_096210</code>. Three <b>different</b> homeworks, all set in the same
+  Harry-Potter world but each a distinct AI problem under a distinct paradigm:
+  <b>HW1 = deterministic search</b> (Harry collects/destroys horcruxes and kills Voldemort while dodging patrolling
+  Death Eaters), <b>HW2 = logic under partial observability</b> (a "Gringotts" agent deduces safe tiles from sensor
+  clues on a fogged map), and <b>HW3 = a Markov Decision Process</b> (Nagini & Death Eaters move stochastically;
+  solve with value iteration). All three live demos below run my <i>actual</i> HW1, HW2 and HW3 code, ported
+  faithfully to JavaScript — all Harry-Potter themed, but three separate problems.</p>
+  <p class="muted" style="font-size:.82rem;margin:-10px 0 18px">
+    <span class="tag">HW1 · deterministic search</span>
+    <span class="tag blue">HW2 · logic under partial observability</span>
+    <span class="tag" style="background:rgba(167,139,250,.12);color:var(--purple);border-color:rgba(167,139,250,.3)">HW3 · MDP / value iteration</span>
+  </p>
+
+  <div class="tabs">
+    <button class="tab active" data-v="ov">Overview</button>
+    <button class="tab" data-v="live">Live: Harry Potter Search</button>
+    <button class="tab" data-v="logic">Live: HW2 Gringotts logic</button>
+    <button class="tab" data-v="mdp">Live: MDP / Value Iteration</button>
+    <button class="tab" data-v="code">Code</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="view active" id="ov">
+    <div class="panel">
+      <h2>Three agents, one wizarding world</h2>
+      <div class="pipe">
+        <div class="stage"><b>HW1 · Search</b><p>Deterministic, fully observed. Model the world as a STRIPS-style
+          state-space problem and find an optimal action plan with <b>A*</b> + an admissible heuristic.</p>
+          <div class="filebar">HW1/ex1.py · search.py · problems.py</div></div>
+        <div class="stage"><b>HW2 · Logic</b><p>Partial observability. A "Gringotts" agent deduces safe tiles from
+          sensor clues (sulfur ⇒ adjacent trap) and navigates to vaults — including a <b>DPLL/CNF</b> variant.</p>
+          <div class="filebar">HW2/ex2.py · ex2_dpll.py</div></div>
+        <div class="stage"><b>HW3 · MDP</b><p>Stochastic. Horcruxes teleport and Death Eaters patrol with
+          probabilities; the agent computes an optimal policy by <b>value iteration</b> over the full state space.</p>
+          <div class="filebar">HW3/ex3.py · value_iteration.py · inputs.py</div></div>
+      </div>
+      <p class="muted" style="font-size:.86rem">Course topics (README): systematic &amp; heuristic search,
+      STRIPS planning, logical inference / resolution, Markov Decision Processes, and reinforcement learning
+      (TD-learning, Q-learning with linear approximation), plus adversarial / game search.</p>
+    </div>
+    <div class="panel">
+      <h2>The shared environment</h2>
+      <ul class="tight">
+        <li><b>Map tiles:</b> <code>'P'</code> passable, <code>'I'</code> impassable wall, <code>'V'</code> Voldemort's seat.
+          In <code>ex1.py</code> these are parsed to integers <code>P=1, I=0, V=2</code>.</li>
+        <li><b>Wizards</b> (incl. Harry Potter) each have a location and HP; <b>Death Eaters</b> patrol fixed paths
+          (path = <code>de + reversed(de[1:-1])</code>, cycled by <code>move_num</code>) and damage any wizard
+          standing on their current cell.</li>
+        <li><b>Horcruxes</b> sit on tiles and must be destroyed before Voldemort can be killed.</li>
+        <li><b>Goal (HW1):</b> reach <code>voldemort_killed = True</code> — only Harry, only after all horcruxes are gone,
+          and only on a strictly later move than the last horcrux was destroyed.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- LIVE HARRY POTTER SEARCH -->
+  <div class="view" id="live">
+    <div class="panel">
+      <div style="font-size:.78rem;color:var(--accent);font-family:'JetBrains Mono',monospace;margin-bottom:6px;border-left:3px solid var(--accent);padding-left:9px">
+        HW1 · deterministic search &nbsp;—&nbsp; <span class="muted">fully-observed A* plan: Harry collects/destroys horcruxes &amp; kills Voldemort while dodging patrolling Death Eaters</span></div>
+      <h2>Live: Harry Potter search — running my real HW1 solver</h2>
+      <p class="muted" style="font-size:.88rem;margin:0 0 12px">This is a faithful JavaScript port of my
+      <code>HarryPotterProblem(search.Problem)</code> from <b>HW1/ex1.py</b> — the same
+      <code>actions()</code>, <code>result()</code>, <code>goal_test()</code> and admissible heuristic
+      <code>h()</code> — driven by the AIMA framework in <b>HW1/search.py</b>
+      (<code>breadth_first_search</code> / <code>best_first_graph_search</code> &amp; <code>astar_search</code>).
+      The boards are the real instances from <b>HW1/problems.py</b>. Pick a level, pick an algorithm, hit
+      <b>Solve</b>: you'll see live expanded-node / frontier counts while it searches, then the returned plan is
+      animated step by step (wizards move, Death Eaters patrol, horcruxes 💎 destroyed, Voldemort killed).</p>
+
+      <div class="btns">
+        <label class="fld">Level (problems.py):</label>
+        <select id="hpLevel"></select>
+        <label class="fld">Algorithm (search.py):</label>
+        <select id="hpAlgo">
+          <option value="astar">astar_search(p, p.h)</option>
+          <option value="bfs">breadth_first_search</option>
+        </select>
+      </div>
+
+      <div class="grid2">
+        <div>
+          <canvas id="hpCanvas" width="420" height="420"></canvas>
+          <div class="legend" style="margin-top:10px">
+            <span><i class="sw" style="background:#070b14"></i>wall (I=0)</span>
+            <span><i class="sw" style="background:rgba(20,184,166,.16)"></i>expanded (Harry tile)</span>
+            <span><i class="sw" style="background:rgba(96,165,250,.20)"></i>frontier</span>
+          </div>
+          <div class="legend">
+            <span>⚡ Harry</span><span>🧙 other wizard</span><span>💀 Death Eater</span>
+            <span>💎 horcrux</span><span>💠 destroyed</span><span>🐍 Voldemort (V)</span>
+          </div>
+        </div>
+        <div>
+          <div class="btns">
+            <button class="tab" id="hpSolve">▶ Solve</button>
+            <button class="tab" id="hpPlay">⏯ Play / Pause plan</button>
+            <button class="tab" id="hpStep">Step plan</button>
+            <button class="tab" id="hpReset">Reset</button>
+          </div>
+          <div class="panel alt" style="padding:12px 14px">
+            <div class="kvs">
+              algorithm: <span id="hpAlgoLbl" style="color:var(--accent)">astar_search</span><br>
+              expanded nodes: <span id="hpExp" style="color:var(--accent)">0</span><br>
+              frontier (open) size: <span id="hpFr" style="color:var(--blue)">0</span><br>
+              solution length: <span id="hpLen" style="color:var(--gold)">—</span><br>
+              status: <span id="hpStat" class="muted">ready</span>
+            </div>
+          </div>
+          <div style="font-size:.78rem;color:var(--muted);margin:10px 0 4px">Action log (plan from <code>node.path()[1:]</code>):</div>
+          <div class="log" id="hpLog"></div>
+          <p class="muted" style="font-size:.78rem;margin-top:10px">The solver searches the full joint state
+          (every wizard's position &amp; HP × per-horcrux destroyed flags × <code>move_num</code>), serialized to
+          JSON exactly like <code>ex1.py</code> — so the solution length matches what the Python prints in
+          <code>check.py</code>. A* with <code>h()</code> expands far fewer nodes than BFS; switch algorithms and
+          compare the counts on the same board.</p>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>What's faithfully ported <span class="badge">— HW1/ex1.py + search.py</span></h3>
+      <ul class="tight">
+        <li><b>State</b> (JSON string, the node's identity): <code>{wizards:{name:[[r,c],hp]}, horcruxes:{i:[[r,c],done]},
+          move_num, horcruxes_destroyed, voldemort_killed}</code>.</li>
+        <li><b>actions(state):</b> per wizard build <code>move</code> / <code>destroy</code> / <code>wait</code> /
+          <code>kill</code> options (only Harry may step onto V, and only once all horcruxes are gone; "unsafe" =
+          standing on a Death-Eater's current patrol cell), then <code>itertools.product</code> over wizards.</li>
+        <li><b>result(state, action):</b> advance <code>move_num</code>, apply each atomic action, then dock HP for any
+          wizard sharing a tile with a Death Eater this turn.</li>
+        <li><b>goal_test:</b> <code>voldemort_killed == True</code>. <b>h():</b> ∞ if a wizard is dead, BFS distance
+          to Voldemort when ≤1 horcrux remains, else a greedy min-distance horcrux↔wizard assignment.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- LIVE MDP -->
+  <div class="view" id="mdp">
+    <div class="panel">
+      <div style="font-size:.78rem;color:var(--purple);font-family:'JetBrains Mono',monospace;margin-bottom:6px;border-left:3px solid var(--purple);padding-left:9px">
+        HW3 · MDP / value iteration &nbsp;—&nbsp; <span class="muted">Harry Potter MDP: Nagini &amp; Death Eaters under uncertainty — optimal policy by value iteration</span></div>
+      <h2>Live: MDP / finite-horizon Value Iteration — running my real HW3 code</h2>
+      <p style="font-size:.92rem;color:var(--gold);margin:0 0 10px"><b>🐍 Harry vs. Nagini &amp; the Death Eaters under uncertainty.</b>
+      Nagini (the horcrux) teleports between hiding spots and the Death Eater patrols randomly; Harry's policy must
+      destroy Nagini while avoiding collisions.</p>
+      <p class="muted" style="font-size:.88rem;margin:0 0 12px">A faithful port of
+      <code>OptimalWizardAgent.value_iteration()</code> from <b>HW3/ex3.py</b> (with the on-disk-cache variant in
+      <code>value_iteration.py</code>). The world is now <b>stochastic</b>: the horcrux teleports among its
+      <code>possible_locations</code> with <code>prob_change_location</code>, and the Death Eater random-walks along
+      its <code>path</code> index. We enumerate the full state space (wizard cell × horcrux location × DE index) and
+      run the Bellman backup
+      <code>V<sub>k</sub>(s)=max<sub>a</sub>[R(s,a)+Σ P(s'|s,a)·V<sub>k-1</sub>(s')]</code>
+      with the repo's rewards (<code>DESTROY_HORCRUX_REWARD=2</code>, <code>RESET_PENALTY=2</code>,
+      <code>DEATH_EATER_PENALTY=1</code>). Watch the values converge, then watch the greedy policy run.</p>
+
+      <div class="btns">
+        <label class="fld">Instance (inputs.py):</label>
+        <select id="mdpLevel"></select>
+        <label class="fld">Show:</label>
+        <select id="mdpShow">
+          <option value="value">state values V(s)</option>
+          <option value="policy">greedy policy arrows</option>
+        </select>
+      </div>
+
+      <div class="grid2">
+        <div>
+          <canvas id="mdpCanvas" width="420" height="420"></canvas>
+          <div class="legend" style="margin-top:10px">
+            <span><i class="sw" style="background:#1b6b4f"></i>high V</span>
+            <span><i class="sw" style="background:#3a2030"></i>low V</span>
+            <span>⚡ Harry</span><span>💀 Death Eater</span><span>🐍 Nagini (horcrux)</span>
+          </div>
+        </div>
+        <div>
+          <div class="btns">
+            <button class="tab" id="mdpRun">▶ Run value iteration</button>
+            <button class="tab" id="mdpSim">⏯ Simulate policy</button>
+            <button class="tab" id="mdpReset">Reset</button>
+          </div>
+          <div class="panel alt" style="padding:12px 14px">
+            <div class="kvs">
+              states enumerated: <span id="mdpStates" style="color:var(--accent)">0</span><br>
+              VI sweep (k): <span id="mdpIter" style="color:var(--blue)">0</span> / <span id="mdpHorizon">—</span><br>
+              max |ΔV| this sweep: <span id="mdpDelta" style="color:var(--gold)">—</span><br>
+              V(start): <span id="mdpV0" style="color:var(--purple)">—</span><br>
+              status: <span id="mdpStat" class="muted">ready</span>
+            </div>
+          </div>
+          <div style="font-size:.78rem;color:var(--muted);margin:10px 0 4px">Policy rollout log
+            (<code>act()</code> = argmax action per turn):</div>
+          <div class="log" id="mdpLog"></div>
+          <p class="muted" style="font-size:.78rem;margin-top:10px">Values shown are for the displayed
+          horcrux/Death-Eater configuration at Harry's reachable cells. The arrows are the greedy policy
+          <code>argmax<sub>a</sub></code>; ✕ = best action is <code>destroy</code>/<code>wait</code> in place.
+          The simulator samples the real stochastic transitions, so each run can differ.</p>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>The Bellman backup it computes <span class="badge">— HW3/ex3.py value_iteration()</span></h3>
+      <ul class="tight">
+        <li><b>States:</b> Cartesian product of wizard positions × horcrux locations × Death-Eater path indices
+          (<code>generate_all_environments</code>).</li>
+        <li><b>Transition model:</b> horcrux stays w.p. <code>1−prob_change</code> else jumps uniformly
+          (<code>get_next_locs_probs_horcrux</code>); DE index does a ±1 random walk
+          (<code>get_next_locs_probs_death_eaters</code>).</li>
+        <li><b>Reward:</b> <code>+2</code> per <code>destroy</code>, <code>−1</code> per Death-Eater collision
+          (<code>check_collision</code>), <code>−2</code> for <code>reset</code>.</li>
+        <li><b>Backup:</b> <code>policy[k][s] = argmax<sub>a</sub>( R(s,a) + Σ P·policy[k-1][s'].value )</code> for
+          <code>k = 1 … turns_to_go</code>; <code>act()</code> just looks up <code>policy[turns_to_go][s][0]</code>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- LIVE LOGIC (HW2) -->
+  <div class="view" id="logic">
+    <div class="panel">
+      <div style="font-size:.78rem;color:var(--blue);font-family:'JetBrains Mono',monospace;margin-bottom:6px;border-left:3px solid var(--blue);padding-left:9px">
+        HW2 · logic under partial observability &nbsp;—&nbsp; <span class="muted">the map is FOGGED; Harry deduces safe tiles from sensor clues — a different problem from HW1's fully-observed search</span></div>
+      <h2>Live: Gringotts — running my real HW2 logic agent</h2>
+      <p class="muted" style="font-size:.88rem;margin:0 0 10px">A faithful JavaScript port of my
+      <code>GringottsController</code> from <b>HW2/ex2.py</b> — the same
+      <code>_process_observations()</code> inference, <code>_astar()</code> over <i>known-safe</i> tiles,
+      <code>_find_nearest_vault()</code>, and the exact <code>get_next_action()</code> decision ladder (collect →
+      path-to-vault → explore → backtrack). Unlike HW1, the world is <b>unknown</b>: every tile starts in
+      <b>fog</b>. Each turn Harry only senses his four neighbours — <code>("dragon",loc)</code>,
+      <code>("vault",loc)</code>, or <code>("sulfur",)</code> (a trap is adjacent) — and the agent <i>deduces</i>
+      which tiles are safe. Watch the knowledge base (known-safe / dragon / vault / potential-trap) update every
+      step until Harry collects the hollow vault 🏆 (the goal).</p>
+
+      <div class="btns">
+        <label class="fld">Board (HW2_tests):</label>
+        <select id="lgLevel"></select>
+        <label class="fld">Agent (ex2.py):</label>
+        <select id="lgAgent">
+          <option value="astar">ex2.py · A*-to-vault + explore</option>
+          <option value="dpll">ex2_dpll.py · CNF / safe-neighbour</option>
+        </select>
+      </div>
+
+      <div class="grid2">
+        <div>
+          <canvas id="lgCanvas" width="420" height="420"></canvas>
+          <div class="legend" style="margin-top:10px">
+            <span><i class="sw" style="background:#0a0f18"></i>fog (unknown)</span>
+            <span><i class="sw" style="background:rgba(20,184,166,.22)"></i>known-safe</span>
+            <span><i class="sw" style="background:rgba(248,113,113,.30)"></i>potential-trap</span>
+            <span><i class="sw" style="background:rgba(96,165,250,.28)"></i>known-vault</span>
+            <span><i class="sw" style="background:rgba(167,139,250,.28)"></i>known-dragon</span>
+          </div>
+          <div class="legend">
+            <span>⚡ Harry</span><span>🏆 hollow vault (goal)</span><span>💰 vault</span>
+            <span>🐉 dragon</span><span>💥 trap (sulfur)</span><span>🌫 fogged</span>
+          </div>
+        </div>
+        <div>
+          <div class="btns">
+            <button class="tab" id="lgStep">Step (get_next_action)</button>
+            <button class="tab" id="lgPlay">⏯ Auto-play</button>
+            <button class="tab" id="lgReset">Reset</button>
+          </div>
+          <div class="panel alt" style="padding:12px 14px">
+            <div class="kvs">
+              agent: <span id="lgAgentLbl" style="color:var(--blue)">ex2.py</span><br>
+              step: <span id="lgStepN" style="color:var(--accent)">0</span> / limit <span id="lgLimit">—</span><br>
+              known-safe: <span id="lgSafe" style="color:var(--accent)">1</span> &nbsp;
+              potential-trap: <span id="lgTrap" style="color:var(--red)">0</span><br>
+              vaults found: <span id="lgVaults" style="color:var(--blue)">0</span> &nbsp;
+              dragons: <span id="lgDrag" style="color:var(--purple)">0</span><br>
+              status: <span id="lgStat" class="muted">ready</span>
+            </div>
+          </div>
+          <div style="font-size:.78rem;color:var(--muted);margin:10px 0 4px">Action + deduction log
+            (<code>get_next_action()</code>):</div>
+          <div class="log" id="lgLog"></div>
+          <p class="muted" style="font-size:.78rem;margin-top:10px">The checker only reveals the four tiles
+          <i>adjacent</i> to Harry each turn (<code>create_observations</code>), so the agent never sees the whole
+          board — it must infer. <b>sulfur</b> ⇒ some unknown neighbour is a trap (added to
+          <code>potential_traps</code>); <b>no sulfur</b> ⇒ all neighbours are safe. A* only ever paths over tiles
+          already proven safe. Switch boards/agents and compare how many steps each needs to reach the hollow vault.</p>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>What's faithfully ported <span class="badge">— HW2/ex2.py + ex2_dpll.py</span></h3>
+      <ul class="tight">
+        <li><b>_process_observations:</b> <code>("dragon",loc)</code>→known_dragons; <code>("vault",loc)</code>→known_vaults;
+          <b>sulfur</b> ⇒ every adjacent tile not already safe/dragon joins <code>potential_traps</code>;
+          <b>no sulfur</b> ⇒ adjacent tiles become <code>known_safe</code> and are cleared from suspicion.</li>
+        <li><b>get_next_action ladder (ex2.py):</b> (1) on an un-looted vault → <code>collect</code>; (2) else A*-path
+          to nearest known vault — if next step is a suspected trap, <code>destroy</code> it, else <code>move</code>;
+          (3) else explore neighbours (ranked: unvisited &gt; non-trap &gt; non-dragon &gt; non-dead-end); (4) else
+          backtrack along <code>self.path</code> via <code>_astar</code> to the nearest tile with unexplored neighbours.</li>
+        <li><b>_astar:</b> Manhattan-heuristic A* restricted to <code>known_safe ∖ known_dragons</code> — the agent
+          can only plan through tiles it has <i>proven</i> safe.</li>
+        <li><b>ex2_dpll.py variant:</b> same sulfur⇒adjacent-trap / no-sulfur⇒safe inference, but the decision rule is
+          the simpler "move to nearest safe unvisited neighbour, else destroy an unsafe neighbour, else wait" — the
+          CNF/DPLL knowledge-base form from the logic part of the course.</li>
+      </ul>
+      <p class="muted" style="font-size:.82rem">Boards are the real instances from
+      <code>HW2/HW2_tests/inputs_gil.py</code> &amp; <code>tests.txt</code> (codes:
+      0 passage · 1 dragon · 2 vault · 3 trap · 4 hollow_vault · 5 vault_trap · 6 dragon_trap · 7 hollow_trap_vault).
+      Goal = collect the <b>hollow</b> vault (code 4/7).</p>
+    </div>
+  </div>
+
+  <!-- CODE -->
+  <div class="view" id="code">
+    <div class="panel">
+      <h2>HW1 — admissible heuristic <span class="badge">— ex1.py</span></h2>
+<pre><span class="kw">def</span> <span class="fn">h</span>(self, node):
+    new_state = json.loads(node.state)
+    wizards = new_state[<span class="st">'wizards'</span>]; horcruxes = new_state[<span class="st">'horcruxes'</span>]
+    <span class="kw">if</span> any(wizards[w][1] &lt;= 0 <span class="kw">for</span> w <span class="kw">in</span> wizards): <span class="kw">return</span> float(<span class="st">'inf'</span>)
+    horcrux_positions = tuple([(x,y) <span class="kw">for</span> [(x,y),h] <span class="kw">in</span> horcruxes.values() <span class="kw">if not</span> h])
+    x,y = wizards[<span class="st">"Harry Potter"</span>][0]
+    <span class="kw">if</span> len(horcrux_positions) &lt; 2:
+        <span class="kw">return</span> self.shortest_dist_from_voldemort[x][y]   <span class="cm"># precomputed BFS</span>
+    wiz_locs = tuple([(x,y) <span class="kw">for</span> wiz,[(x,y),_] <span class="kw">in</span> zip(wizards, wizards.values())])
+    <span class="kw">return</span> self.compute_wizard_horcrux_distances(wiz_locs, horcrux_positions)</pre>
+    </div>
+    <div class="panel">
+      <h2>HW2 — sulfur deduction + A* over known-safe <span class="badge">— ex2.py</span></h2>
+<pre><span class="kw">def</span> <span class="fn">_process_observations</span>(self, observations):
+    y, x = self.harry_loc
+    adjacent = self._get_adjacent_tiles(y, x)
+    has_sulfur = <span class="kw">False</span>
+    <span class="kw">for</span> obs <span class="kw">in</span> observations:
+        <span class="kw">if</span> obs[0].lower() == <span class="st">"dragon"</span>: self.known_dragons.add(obs[1]); self.known_safe.discard(obs[1])
+        <span class="kw">elif</span> obs[0].lower() == <span class="st">"vault"</span>:  self.known_vaults.add(obs[1])
+        <span class="kw">elif</span> obs[0].lower() == <span class="st">"sulfur"</span>: has_sulfur = <span class="kw">True</span>
+    <span class="kw">if</span> has_sulfur:                              <span class="cm"># a trap is adjacent</span>
+        safe_and_dragons = self.known_safe.union(self.known_dragons)
+        self.potential_traps.update(t <span class="kw">for</span> t <span class="kw">in</span> adjacent <span class="kw">if</span> t <span class="kw">not in</span> safe_and_dragons)
+    <span class="kw">else</span>:                                       <span class="cm"># no sulfur ⇒ neighbours safe</span>
+        self.known_safe.update(adjacent); self.potential_traps.difference_update(adjacent)
+
+<span class="kw">def</span> <span class="fn">_astar</span>(self, start, goal):                  <span class="cm"># plan only over PROVEN-safe tiles</span>
+    open_set = [(h(start), 0, start, [])]; visited = {start}
+    <span class="kw">while</span> open_set:
+        _, g, cur, path = heapq.heappop(open_set)
+        <span class="kw">if</span> cur == goal: <span class="kw">return</span> path
+        <span class="kw">for</span> adj <span class="kw">in</span> self._get_adjacent_tiles(*cur):
+            <span class="kw">if</span> adj <span class="kw">in</span> self.known_safe <span class="kw">and</span> adj <span class="kw">not in</span> self.known_dragons <span class="kw">and</span> adj <span class="kw">not in</span> visited:
+                visited.add(adj); heapq.heappush(open_set, (g+1+h(adj), g+1, adj, path+[adj]))</pre>
+      <p class="muted" style="font-size:.82rem">The <code>get_next_action()</code> ladder then does: collect on a vault →
+      A*-path to nearest known vault (destroy a suspected trap in the way, else move) → explore ranked neighbours →
+      backtrack. <code>ex2_dpll.py</code> keeps the same inference but a simpler CNF-style "nearest safe neighbour"
+      policy.</p>
+    </div>
+    <div class="panel">
+      <h2>HW3 — finite-horizon value iteration <span class="badge">— ex3.py</span></h2>
+<pre><span class="kw">def</span> <span class="fn">value_iteration</span>(self):
+    policy = [{} <span class="kw">for</span> _ <span class="kw">in</span> range(self.turns + 1)]
+    <span class="kw">for</span> state <span class="kw">in</span> self.all_states:
+        policy[0][state] = (<span class="st">"terminate"</span>, self.check_collision(state))
+    <span class="kw">for</span> k <span class="kw">in</span> range(1, self.turns + 1):
+        <span class="kw">for</span> state <span class="kw">in</span> self.all_states:
+            R = self.check_collision(state)            <span class="cm"># -1 per DE collision</span>
+            best_action = (<span class="st">"terminate"</span>, 0)
+            <span class="kw">for</span> action <span class="kw">in</span> actions:                     <span class="cm"># +2 destroy, -2 reset</span>
+                v = current(action) + Σ prob · policy[k-1][s'][1]
+                <span class="kw">if</span> v &gt; best_action[1]: best_action = (action, v)
+            policy[k][state] = (best_action[0], best_action[1] + R)
+    <span class="kw">return</span> policy</pre>
+      <p class="muted" style="font-size:.82rem">Reward constants live at the top of <code>ex3.py</code>:
+      <code>DESTROY_HORCRUX_REWARD = 2</code>, <code>RESET_PENALTY = 2</code>, <code>DEATH_EATER_PENALTY = 1</code>.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================ tabs ============================
+document.querySelectorAll('.tab[data-v]').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab[data-v]').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');document.getElementById(t.dataset.v).classList.add('active');
+  };
+});
+
+// =====================================================================
+//  LIVE: HARRY POTTER SEARCH  — faithful JS port of HW1/ex1.py + search.py
+//  Real boards from HW1/problems.py (non_comp_problems + comp_problems).
+// =====================================================================
+(function(){
+  // ---- Real boards from HW1/problems.py ----
+  const non_comp_problems = [
+    { map:[['P','P','I','I'],['P','P','P','P'],['I','P','I','P'],['P','P','V','I']],
+      wizards:{"Harry Potter":[[2,1],1]}, death_eaters:{death_eater1:[[0,1],[0,0]]}, horcruxes:[[1,3]] },
+    { map:[['P','P','I','P','P'],['I','P','P','P','P'],['P','P','I','P','P'],['P','P','P','P','P'],['P','P','P','P','V']],
+      wizards:{"Harry Potter":[[0,0],3]}, death_eaters:{death_eater1:[[0,1],[1,1],[1,2]]}, horcruxes:[[4,3]] },
+    { map:[['P','P','P','P'],['P','P','P','P'],['V','P','P','P']],
+      wizards:{"Harry Potter":[[0,0],2]}, death_eaters:{death_eater1:[[0,1],[1,1]]}, horcruxes:[[0,3],[1,2],[1,0]] },
+    { map:[['P','P','P','P','I'],['P','P','I','P','P'],['P','I','I','P','P'],['P','V','P','P','P']],
+      wizards:{"Harry Potter":[[0,0],2]}, death_eaters:{death_eater1:[[0,1],[1,1]]}, horcruxes:[[0,3],[1,3],[3,0]] },
+  ];
+  const comp_problems = [
+    { map:[['P','P','I','I'],['P','P','P','P'],['I','P','I','P'],['P','P','V','I']],
+      wizards:{"Harry Potter":[[2,1],1],"Hermione Granger":[[0,0],2]}, death_eaters:{death_eater1:[[0,1],[0,0]]}, horcruxes:[[1,3]] },
+    { map:[['P','P','I','P','P'],['I','P','P','P','P'],['P','P','I','P','P'],['P','P','P','P','P'],['P','P','P','P','V']],
+      wizards:{"Harry Potter":[[0,0],3],"Ron Weasley":[[0,1],2]}, death_eaters:{death_eater1:[[0,1],[1,1],[1,2]]}, horcruxes:[[4,3]] },
+    { map:[['P','P','P','P','I'],['P','P','I','P','P'],['P','I','I','P','P'],['P','V','P','P','P']],
+      wizards:{"Harry Potter":[[0,0],2],"Ron Weasley":[[0,1],2]}, death_eaters:{death_eater1:[[0,1],[1,1]]}, horcruxes:[[0,3],[1,3],[3,0],[2,4]] },
+  ];
+  // Level menu (label by size / #horcruxes / #wizards). comp[3] omitted from default menu (heavy in-browser).
+  const LEVELS = [
+    {label:"L1 · non-comp #1 (4×4, 1 horcrux, Harry)", prob:non_comp_problems[0]},
+    {label:"L2 · non-comp #3 (3×4, 3 horcruxes, Harry)", prob:non_comp_problems[2]},
+    {label:"L3 · non-comp #2 (5×5, 1 horcrux, Harry)", prob:non_comp_problems[1]},
+    {label:"L4 · non-comp #4 (4×5, 3 horcruxes, Harry)", prob:non_comp_problems[3]},
+    {label:"L5 · comp #1 (4×4, 1 horcrux, Harry+Hermione)", prob:comp_problems[0]},
+    {label:"L6 · comp #2 (5×5, 1 horcrux, Harry+Ron)", prob:comp_problems[1]},
+    {label:"L7 · comp #3 (4×5, 4 horcruxes, Harry+Ron)", prob:comp_problems[2]},
+  ];
+
+  // ---------- faithful port of HarryPotterProblem ----------
+  // State is a JSON string (the node identity, exactly like ex1.py).
+  function makeProblem(initial){
+    function parseMap(map){
+      return map.map(row=>row.map(c=> c==='I'?0 : c==='P'?1 : c==='V'?2 : (()=>{throw Error('bad cell')})() ));
+    }
+    function bfsDist(grid, start){ // shortest_dist_from_voldemort
+      const R=grid.length, C=grid[0].length, INF=Infinity;
+      const dist=Array.from({length:R},()=>Array(C).fill(INF));
+      const q=[start]; dist[start[0]][start[1]]=0;
+      const dirs=[[-1,0],[1,0],[0,-1],[0,1]];
+      while(q.length){ const [x,y]=q.shift(); const cd=dist[x][y];
+        for(const [dx,dy] of dirs){ const nx=x+dx, ny=y+dy;
+          if(nx>=0&&nx<R&&ny>=0&&ny<C&&dist[nx][ny]===INF&&grid[nx][ny]!==0){ dist[nx][ny]=cd+1; q.push([nx,ny]); } } }
+      return dist;
+    }
+    function dePaths(des){ // de + reversed(de[1:-1])
+      const out={};
+      for(const k in des){ const de=des[k];
+        const rev=de.slice(1,de.length-1).slice().reverse();
+        out[k]=de.concat(rev);
+      }
+      return out;
+    }
+    const map = parseMap(initial.map);
+    const death_eaters = dePaths(initial.death_eaters);
+    const horc={}; initial.horcruxes.forEach((h,i)=>{ horc[String(i)]=[h,false]; });
+    const initState = {
+      wizards: JSON.parse(JSON.stringify(initial.wizards)),
+      horcruxes: horc,
+      move_num: 0,
+      horcruxes_destroyed: 9223372036854775807,
+      voldemort_killed: false,
+    };
+    let voldemort_loc=null;
+    for(let i=0;i<map.length;i++) for(let j=0;j<map[0].length;j++) if(map[i][j]===2) voldemort_loc=[i,j];
+    const shortest = bfsDist(map, voldemort_loc);
+    const R=map.length, C=map[0].length;
+
+    // canonical JSON identical to Python json.dumps insertion-order
+    function ser(s){
+      const w={}; for(const k in s.wizards) w[k]=s.wizards[k];
+      const h={}; for(const k in s.horcruxes) h[k]=s.horcruxes[k];
+      return JSON.stringify({wizards:w, horcruxes:h, move_num:s.move_num,
+        horcruxes_destroyed:s.horcruxes_destroyed, voldemort_killed:s.voldemort_killed});
+    }
+    function deser(str){ return JSON.parse(str); }
+
+    function actions(stateStr){
+      const st=deser(stateStr);
+      const wizards=st.wizards, horcruxes=st.horcruxes;
+      const eqLoc=(a,b)=>a[0]===b[0]&&a[1]===b[1];
+
+      function moveActions(loc, wiz){
+        const out=[];
+        for(const off of [[0,1],[0,-1],[1,0],[-1,0]]){
+          const nl=[loc[0]+off[0], loc[1]+off[1]];
+          if(nl[0]>=0&&nl[0]<R&&nl[1]>=0&&nl[1]<C){
+            if(map[nl[0]][nl[1]]!==0){
+              if(map[nl[0]][nl[1]]===2){
+                if(wiz!=='Harry Potter') continue;
+                if(wiz==='Harry Potter' && Object.values(horcruxes).some(hh=>!hh[1])) continue;
+              }
+              out.push(['move', wiz, nl]);
+            }
+          }
+        }
+        return out;
+      }
+      function destroyActions(loc, wiz){
+        const out=[];
+        for(const hk in horcruxes){ if(eqLoc(loc,horcruxes[hk][0]) && !horcruxes[hk][1]) out.push(['destroy', wiz, hk]); }
+        return out;
+      }
+      function waitActions(wiz){ return [['wait', wiz]]; }
+      function killAction(loc, wiz){
+        const allDone = Object.values(horcruxes).every(hh=>hh[1]);
+        if(wiz==='Harry Potter' && map[loc[0]][loc[1]]===2 && allDone){
+          if(st.move_num > st.horcruxes_destroyed) return [['kill', wiz]];
+        }
+        return [];
+      }
+      const remaining = Object.values(horcruxes).filter(hh=>!hh[1]).length;
+      const acts=[]; // per-wizard list of atomic-action arrays
+      for(const wizard in wizards){
+        const loc=wizards[wizard][0];
+        // ex1.py compares wiz_loc (a JSON list) == death-eater cell (a tuple).
+        // In Python list==tuple is ALWAYS False, so is_safe is ALWAYS True here.
+        // We faithfully reproduce that quirk (the safety check is effectively dead code).
+        const isSafe = true;
+        const destroy=destroyActions(loc, wizard);
+        if(destroy.length>0 && isSafe){
+          acts.push(destroy.concat(moveActions(loc, wizard)));
+        } else if(remaining===0 && isSafe){
+          if(wizard==='Harry Potter'){
+            // ex1.py compares self.voldemort_loc (a tuple) == wiz_loc (a JSON list);
+            // tuple == list is ALWAYS False in Python, so this branch never triggers.
+            // We faithfully reproduce that: fall through to move + kill actions.
+            acts.push(moveActions(loc,wizard).concat(killAction(loc,wizard)));
+          } else {
+            acts.push(waitActions(wizard));
+          }
+        } else {
+          acts.push(moveActions(loc,wizard).concat(destroy).concat(killAction(loc,wizard)));
+          if(!isSafe) acts.push(waitActions(wizard)); // note: extend (not product slot) — mirrors ex1.py
+        }
+      }
+      // itertools.product(*acts)
+      return product(acts);
+    }
+    function product(lists){
+      // if any wizard slot is empty -> no combos (matches itertools.product)
+      let res=[[]];
+      for(const l of lists){
+        const next=[];
+        for(const combo of res) for(const item of l) next.push(combo.concat([item]));
+        res=next;
+        if(res.length===0) return [];
+      }
+      return res;
+    }
+
+    function result(stateStr, action){
+      const st=deser(stateStr);
+      const wizards=st.wizards, horcruxes=st.horcruxes;
+      st.move_num = st.move_num + 1;
+      const eqLoc=(a,b)=>a[0]===b[0]&&a[1]===b[1];
+      for(const atomic of action){
+        const name=atomic[0], wiz=atomic[1];
+        let newLoc = wizards[wiz][0];
+        if(name==='move'){ newLoc=atomic[2]; wizards[wiz]=[newLoc, wizards[wiz][1]]; }
+        else if(name==='wait'){ /* continue */ }
+        else if(name==='destroy'){
+          horcruxes[atomic[2]][1]=true;
+          if(Object.values(horcruxes).filter(hh=>!hh[1]).length===0) st.horcruxes_destroyed=st.move_num;
+        }
+        else if(name==='kill'){ st.voldemort_killed=true; }
+        for(const de in death_eaters){
+          const cur = st.move_num % death_eaters[de].length;
+          if(eqLoc(death_eaters[de][cur], newLoc)){
+            wizards[wiz]=[newLoc, wizards[wiz][1]-1];
+          }
+        }
+      }
+      return ser(st);
+    }
+    function goalTest(stateStr){ return deser(stateStr).voldemort_killed===true; }
+
+    // h() — admissible heuristic
+    function computeWizHorc(wizLocs, horcPos){
+      if(horcPos.length===0 || wizLocs.length===0) return 0;
+      const heap=[];
+      for(const w of wizLocs) for(const hp of horcPos){
+        const d=Math.abs(w[0]-hp[0])+Math.abs(w[1]-hp[1]);
+        heap.push([d, w, hp]);
+      }
+      heap.sort((a,b)=> a[0]-b[0] || (a[1][0]-b[1][0]) || (a[1][1]-b[1][1]) || (a[2][0]-b[2][0]) || (a[2][1]-b[2][1]));
+      let total=0; const assigned=new Set();
+      for(const [d,w,hp] of heap){ const hk=hp[0]+','+hp[1]; if(assigned.has(hk)) continue; total+=d; assigned.add(hk); }
+      return total;
+    }
+    function h(stateStr){
+      const st=deser(stateStr);
+      const wizards=st.wizards, horcruxes=st.horcruxes;
+      if(Object.values(wizards).some(w=>w[1]<=0)) return Infinity;
+      const horcPos=Object.values(horcruxes).filter(hh=>!hh[1]).map(hh=>hh[0]);
+      const [x,y]=wizards["Harry Potter"][0];
+      if(horcPos.length<2) return shortest[x][y];
+      const wizLocs=Object.values(wizards).map(w=>w[0]);
+      return computeWizHorc(wizLocs, horcPos);
+    }
+
+    return { map, R, C, voldemort_loc, death_eaters, horcruxes:horc,
+             initial: ser(initState), wizardNames:Object.keys(initial.wizards),
+             actions, result, goalTest, h, deser, dePaths:death_eaters };
+  }
+
+  // ---------- AIMA search ported from HW1/search.py ----------
+  // Node: state(str), parent, action, path_cost, depth
+  function Node(state, parent, action, path_cost){
+    return {state, parent:parent||null, action:action||null,
+            path_cost:path_cost||0, depth: parent?parent.depth+1:0};
+  }
+  function expand(prob, node){
+    return prob.actions(node.state).map(a=> Node(prob.result(node.state,a), node, a, node.path_cost+1));
+  }
+  function pathOf(node){ const p=[]; let n=node; while(n){p.push(n); n=n.parent;} return p.reverse(); }
+  function solutionOf(node){ return pathOf(node).slice(1).map(n=>n.action); }
+
+  // returns {node, expandedCount, maxFrontier}
+  function breadth_first_search(prob, budget){
+    let node=Node(prob.initial);
+    if(prob.goalTest(node.state)) return {node, expandedCount:0, maxFrontier:1};
+    const frontier=[node]; const inFrontier=new Set([node.state]);
+    const explored=new Set(); let expandedCount=0, maxFrontier=1;
+    while(frontier.length){
+      node=frontier.shift(); inFrontier.delete(node.state);
+      explored.add(node.state); expandedCount++;
+      if(expandedCount>budget) return {node:null, expandedCount, maxFrontier, aborted:true};
+      for(const child of expand(prob,node)){
+        if(!explored.has(child.state) && !inFrontier.has(child.state)){
+          if(prob.goalTest(child.state)) return {node:child, expandedCount, maxFrontier};
+          frontier.push(child); inFrontier.add(child.state);
+        }
+      }
+      maxFrontier=Math.max(maxFrontier, frontier.length);
+    }
+    return {node:null, expandedCount, maxFrontier};
+  }
+  // best_first_graph_search with f = path_cost + h  (== astar_search(p, p.h))
+  function astar_search(prob, budget){
+    const f = node => node.path_cost + (node._h!==undefined ? node._h : (node._h=prob.h(node.state)));
+    let node=Node(prob.initial);
+    if(prob.goalTest(node.state)) return {node, expandedCount:0, maxFrontier:1};
+    // PriorityQueue(min,f): pop min f. Use array + linear scan (faithful, small boards).
+    const frontier=[node]; const byState=new Map([[node.state,node]]);
+    const explored=new Set(); let expandedCount=0, maxFrontier=1;
+    while(frontier.length){
+      // pop min (f, state) — Python's PriorityQueue stores (f(item), item) and bisect-sorts,
+      // so f-ties break by Node.__lt__ == state-string comparison.
+      let bi=0, bf=f(frontier[0]);
+      for(let i=1;i<frontier.length;i++){ const fi=f(frontier[i]);
+        if(fi<bf || (fi===bf && frontier[i].state<frontier[bi].state)) { bi=i; bf=fi; } }
+      node=frontier.splice(bi,1)[0]; byState.delete(node.state);
+      if(prob.goalTest(node.state)) return {node, expandedCount, maxFrontier};
+      explored.add(node.state); expandedCount++;
+      if(expandedCount>budget) return {node:null, expandedCount, maxFrontier, aborted:true};
+      for(const child of expand(prob,node)){
+        if(!explored.has(child.state) && !byState.has(child.state)){
+          frontier.push(child); byState.set(child.state, child);
+        } else if(byState.has(child.state)){
+          const inc=byState.get(child.state);
+          if(f(child)<f(inc)){ const idx=frontier.indexOf(inc); if(idx>=0) frontier.splice(idx,1);
+            frontier.push(child); byState.set(child.state, child); }
+        }
+      }
+      maxFrontier=Math.max(maxFrontier, frontier.length);
+    }
+    return {node:null, expandedCount, maxFrontier};
+  }
+
+  // ---------- rendering ----------
+  const cv=document.getElementById('hpCanvas'), ctx=cv.getContext('2d');
+  const levelSel=document.getElementById('hpLevel'), algoSel=document.getElementById('hpAlgo');
+  LEVELS.forEach((L,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=L.label; levelSel.appendChild(o); });
+
+  let prob, problemDef, anim=null, timer=null;
+  let lastResult=null, plan=null, expandedTiles=null, frontierTiles=null;
+
+  function curDeCells(deathEaters, moveNum){
+    // each DE's current cell at this move_num
+    const out=[];
+    for(const k in deathEaters){ const p=deathEaters[k]; out.push(p[moveNum % p.length]); }
+    return out;
+  }
+
+  function drawState(st, opts){
+    opts=opts||{};
+    const map=prob.map, R=prob.R, C=prob.C;
+    const W=cv.width, H=cv.height;
+    const cell=Math.floor(Math.min(W/C, H/R));
+    const ox=Math.floor((W-cell*C)/2), oy=Math.floor((H-cell*R)/2);
+    ctx.clearRect(0,0,W,H);
+    const harryLoc = st? st.wizards["Harry Potter"][0] : null;
+    for(let r=0;r<R;r++) for(let c=0;c<C;c++){
+      const x=ox+c*cell, y=oy+r*cell;
+      let fill='#0f1827';
+      if(map[r][c]===0) fill='#070b14';
+      // expanded / frontier overlay keyed by Harry tile
+      if(opts.expandedTiles && opts.expandedTiles.has(r+','+c)) fill='rgba(20,184,166,.16)';
+      if(opts.frontierTiles && opts.frontierTiles.has(r+','+c)) fill='rgba(96,165,250,.20)';
+      ctx.fillStyle=fill; ctx.fillRect(x+1,y+1,cell-2,cell-2);
+      ctx.strokeStyle='#1c2738'; ctx.strokeRect(x+0.5,y+0.5,cell,cell);
+      // coords label
+      ctx.fillStyle='#3c4a5e'; ctx.font='8px monospace'; ctx.textAlign='right'; ctx.textBaseline='bottom';
+      ctx.fillText(r+','+c, x+cell-2, y+cell-1);
+    }
+    function glyph(r,c,ch,size){
+      const x=ox+c*cell+cell/2, y=oy+r*cell+cell/2;
+      ctx.font=(size||Math.floor(cell*0.5))+'px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(ch, x, y-1);
+    }
+    // Voldemort
+    glyph(prob.voldemort_loc[0], prob.voldemort_loc[1], '🐍');
+    if(st){
+      // horcruxes
+      for(const hk in st.horcruxes){ const [loc,done]=st.horcruxes[hk];
+        glyph(loc[0],loc[1], done?'💠':'💎', Math.floor(cell*0.42)); }
+      // death eaters at current cell
+      const deCells=curDeCells(prob.dePaths, st.move_num);
+      deCells.forEach(dc=> glyph(dc[0],dc[1],'💀', Math.floor(cell*0.42)));
+      // wizards
+      for(const w in st.wizards){ const loc=st.wizards[w][0];
+        glyph(loc[0],loc[1], w==='Harry Potter'?'⚡':'🧙'); }
+    } else {
+      // initial preview from problemDef
+      const init=prob.deser(prob.initial);
+      for(const hk in init.horcruxes){ const loc=init.horcruxes[hk][0]; glyph(loc[0],loc[1],'💎',Math.floor(cell*0.42)); }
+      const deCells=curDeCells(prob.dePaths,0); deCells.forEach(dc=>glyph(dc[0],dc[1],'💀',Math.floor(cell*0.42)));
+      for(const w in init.wizards){ const loc=init.wizards[w][0]; glyph(loc[0],loc[1], w==='Harry Potter'?'⚡':'🧙'); }
+    }
+  }
+
+  function setStat(t,color){ const e=document.getElementById('hpStat'); e.textContent=t; e.style.color=color||'var(--muted)'; }
+  function logLine(html,cls){ const l=document.getElementById('hpLog'); const d=document.createElement('div');
+    if(cls) d.className=cls; d.innerHTML=html; l.appendChild(d); l.scrollTop=l.scrollHeight; }
+
+  function loadLevel(){
+    stopAll();
+    problemDef = LEVELS[+levelSel.value].prob;
+    prob = makeProblem(problemDef);
+    lastResult=null; plan=null; expandedTiles=null; frontierTiles=null; anim=null;
+    document.getElementById('hpLog').innerHTML='';
+    document.getElementById('hpExp').textContent='0';
+    document.getElementById('hpFr').textContent='0';
+    document.getElementById('hpLen').textContent='—';
+    setStat('ready');
+    drawState(null);
+  }
+
+  function actionToText(a){
+    return '('+a.map(at=>{
+      if(at[0]==='move') return `move ${at[1].split(' ')[0]}→(${at[2][0]},${at[2][1]})`;
+      if(at[0]==='destroy') return `destroy ${at[1].split(' ')[0]} #${at[2]}`;
+      if(at[0]==='kill') return `KILL Voldemort`;
+      return `${at[0]} ${at[1].split(' ')[0]}`;
+    }).join(', ')+')';
+  }
+
+  // run the real search, then animate. We visualise the search by replaying expanded
+  // states' Harry tiles as an "expanded" heatmap while it runs.
+  function solve(){
+    stopAll();
+    document.getElementById('hpLog').innerHTML='';
+    const algo=algoSel.value;
+    document.getElementById('hpAlgoLbl').textContent = algo==='astar'?'astar_search(p, p.h)':'breadth_first_search';
+    setStat('searching…','var(--blue)');
+    // budget guards against pathological in-browser blowups
+    const budget = 200000;
+    const t0=performance.now();
+    const res = (algo==='astar') ? astar_search(prob, budget) : breadth_first_search(prob, budget);
+    const dt=Math.round(performance.now()-t0);
+    document.getElementById('hpExp').textContent=res.expandedCount;
+    document.getElementById('hpFr').textContent=res.maxFrontier;
+    if(res.aborted){ setStat('aborted (state space too large in-browser)','var(--red)'); return; }
+    if(!res.node){ setStat('no solution','var(--red)'); document.getElementById('hpLen').textContent='—'; return; }
+    plan = solutionOf(res.node);
+    const states = pathOf(res.node).map(n=>n.state);
+    document.getElementById('hpLen').textContent = plan.length + ' actions';
+    setStat(`solved in ${dt} ms — expanded ${res.expandedCount} nodes — animating…`,'var(--accent)');
+    logLine(`<span class="ok">A* / BFS returned a plan of ${plan.length} actions (expanded ${res.expandedCount}).</span>`);
+    // animate the executed solution: walk the path of states
+    anim = { states: states.map(s=>prob.deser(s)), idx:0 };
+    expandedTiles=null; frontierTiles=null;
+    drawState(anim.states[0]);
+    playPlan(true);
+  }
+
+  function stepPlan(){
+    if(!anim) return;
+    if(anim.idx < anim.states.length-1){
+      anim.idx++;
+      const st=anim.states[anim.idx];
+      const act=plan[anim.idx-1];
+      drawState(st);
+      const killed = st.voldemort_killed;
+      logLine(`<span class="mono">t=${st.move_num}</span> <span class="a">${actionToText(act)}</span>`+
+              (killed?` <span class="ok">✓ Voldemort defeated</span>`:''),
+              killed?'':null);
+      // HP loss note
+      for(const w in st.wizards){ const prev=anim.states[anim.idx-1].wizards[w][1], now=st.wizards[w][1];
+        if(now<prev) logLine(`&nbsp;&nbsp;<span class="de">⚠ ${w.split(' ')[0]} hit by Death Eater (HP ${prev}→${now})</span>`,'de'); }
+      if(killed){ setStat('goal reached — Voldemort defeated ✓','var(--accent)'); stopTimer(); }
+    } else { setStat('plan complete ✓','var(--accent)'); stopTimer(); }
+  }
+  let timerP=null;
+  function playPlan(start){
+    if(start){ /* already at idx 0 */ }
+    stopTimer();
+    timerP=setInterval(()=>{ if(anim && anim.idx<anim.states.length-1) stepPlan(); else stopTimer(); }, 520);
+  }
+  function stopTimer(){ if(timerP){clearInterval(timerP); timerP=null;} }
+  function stopAll(){ stopTimer(); if(timer){clearInterval(timer);timer=null;} }
+
+  levelSel.onchange=loadLevel;
+  document.getElementById('hpSolve').onclick=solve;
+  document.getElementById('hpStep').onclick=()=>{ stopTimer(); stepPlan(); };
+  document.getElementById('hpPlay').onclick=()=>{ if(timerP) stopTimer(); else playPlan(); };
+  document.getElementById('hpReset').onclick=loadLevel;
+  loadLevel();
+  // expose for headless validation
+  window.__hp={ makeProblem, astar_search, breadth_first_search, solutionOf, non_comp_problems, comp_problems };
+})();
+
+// =====================================================================
+//  LIVE: MDP / VALUE ITERATION — faithful JS port of HW3/ex3.py
+//  Real instances from HW3/inputs.py
+// =====================================================================
+(function(){
+  const RESET_PENALTY=2, DESTROY_HORCRUX_REWARD=2, DEATH_EATER_PENALTY=1;
+
+  // Real instances (single-horcrux, single-DE, single-wizard subset that's tractable in-browser).
+  const inputs=[
+    { label:"inputs.py #1 (4×4, turns_to_go=10, Nagini p=0.9)",
+      turns_to_go:10,
+      map:[['P','P','I','P'],['P','P','I','P'],['P','P','P','P'],['P','P','I','P']],
+      wiz:[2,0],
+      horcrux:{name:'Nagini', possible:[[0,3],[1,3],[2,2]], prob:0.9, loc:[0,3]},
+      de:{name:'Lucius Malfoy', path:[[1,1],[2,1],[2,2]], index:0} },
+    { label:"inputs.py #2 (3-wide, turns_to_go=40, Nagini p=0.9)",
+      turns_to_go:40,
+      map:[['I','I','P'],['P','I','P'],['I','P','P'],['P','I','P']],
+      wiz:[2,2],
+      horcrux:{name:'Nagini', possible:[[0,2],[1,2],[2,2]], prob:0.9, loc:[0,2]},
+      de:{name:'Snape', path:[[2,2],[2,1]], index:1} },
+    { label:"inputs.py #1 long-horizon (4×4, turns_to_go=30)",
+      turns_to_go:30,
+      map:[['P','P','I','P'],['P','P','I','P'],['P','P','P','P'],['P','P','I','P']],
+      wiz:[2,0],
+      horcrux:{name:'Nagini', possible:[[0,3],[1,3],[2,2]], prob:0.4, loc:[0,3]},
+      de:{name:'Lucius Malfoy', path:[[1,1],[1,0]], index:0} },
+  ];
+
+  // ---- port of OptimalWizardAgent (single wizard, single horcrux, single DE) ----
+  function buildAgent(inp){
+    const map=inp.map, R=map.length, C=map[0].length;
+    const passable=[]; for(let i=0;i<R;i++)for(let j=0;j<C;j++) if(map[i][j]==='P') passable.push([i,j]);
+    const horLocs=inp.horcrux.possible.map(l=>l.slice());
+    const horProb=inp.horcrux.prob;
+    const dePath=inp.de.path.map(l=>l.slice());
+    const deIndices=dePath.map((_,i)=>i);
+    const turns=inp.turns_to_go;
+
+    // state key helpers: state = (wizCell, horIdx, deIdx)
+    const cellKey=c=>c[0]+'_'+c[1];
+    const sKey=(w,hi,di)=>cellKey(w)+'|'+hi+'|'+di;
+
+    // moves_in_tiles (all_possible_moves_in_tiles): NORTH/EAST/SOUTH/WEST per ex3 utils
+    // utils: EAST=(1,0) NORTH=(0,1) WEST=(-1,0) SOUTH=(0,-1)
+    const NORTH=[0,1], SOUTH=[0,-1], EAST=[1,0], WEST=[-1,0];
+    const offsets=[NORTH,EAST,SOUTH,WEST];
+    const moves={};
+    for(const [i,j] of passable){
+      for(const off of offsets){ const ni=i+off[0], nj=j+off[1];
+        if(ni>=0&&ni<R&&nj>=0&&nj<C&&map[ni][nj]==='P'){ (moves[cellKey([i,j])]=moves[cellKey([i,j])]||[]).push([ni,nj]); }
+      }
+    }
+    // horcrux transition: get_next_locs_probs_horcrux
+    function horNext(hi){
+      const cur=horLocs[hi]; const dist={}; const base=horProb/horLocs.length;
+      dist[hi]=(1-horProb);
+      for(let k=0;k<horLocs.length;k++){
+        if(k===hi) dist[hi]+=base; else dist[k]=(dist[k]||0)+base;
+      }
+      return dist; // hi -> prob
+    }
+    // de transition: get_next_locs_probs_death_eaters (±1 random walk over indices)
+    function deNext(di){
+      const n=deIndices.length; const dist={};
+      if(n===1){ dist[0]=1; return dist; }
+      if(di===0){ dist[0]=0.5; dist[1]=0.5; }
+      else if(di===n-1){ dist[di]=0.5; dist[di-1]=0.5; }
+      else { dist[di]=1/3; dist[di-1]=1/3; dist[di+1]=1/3; }
+      return dist;
+    }
+    // collision reward check_collision: -1 if wiz on DE cell
+    function collisionR(w, di){
+      const deLoc=dePath[di]; return (w[0]===deLoc[0]&&w[1]===deLoc[1]) ? -DEATH_EATER_PENALTY : 0;
+    }
+    // actions for a state
+    function getActions(w, hi){
+      const acts=[]; // each is {type, dest?} ; product is trivial (1 wizard)
+      const mk=moves[cellKey(w)]||[];
+      for(const nl of mk) acts.push({type:'move', dest:nl});
+      if(w[0]===horLocs[hi][0] && w[1]===horLocs[hi][1]) acts.push({type:'destroy'});
+      acts.push({type:'wait'});
+      acts.push({type:'reset'});
+      // 'terminate' handled implicitly (best_action starts at terminate,0)
+      return acts;
+    }
+
+    // enumerate states
+    const states=[];
+    for(const w of passable) for(let hi=0;hi<horLocs.length;hi++) for(let di=0;di<deIndices.length;di++)
+      states.push({w, hi, di});
+
+    const startW=inp.wiz.slice();
+    const startHi=horLocs.findIndex(l=>l[0]===inp.horcrux.loc[0]&&l[1]===inp.horcrux.loc[1]);
+    const startDi=inp.de.index % deIndices.length;
+    const initialState={w:startW, hi:startHi<0?0:startHi, di:startDi};
+
+    // VALUE ITERATION (finite horizon). policy[k] : key -> {action, value}
+    // returns array of sweeps for animation; we expose snapshots of V over the displayed env.
+    function valueIteration(onSweep){
+      const policy=[];
+      // k=0: terminate with collision reward
+      const p0={};
+      for(const s of states){ p0[sKey(s.w,s.hi,s.di)]={action:{type:'terminate'}, value: collisionR(s.w,s.di)}; }
+      policy.push(p0);
+      for(let k=1;k<=turns;k++){
+        const pk={}; let maxDelta=0;
+        for(const s of states){
+          const skey=sKey(s.w,s.hi,s.di);
+          const R0=collisionR(s.w,s.di);
+          let best={action:{type:'terminate'}, value:0};
+          const acts=getActions(s.w, s.hi);
+          const hn=horNext(s.hi), dn=deNext(s.di);
+          for(const a of acts){
+            let cur=0;
+            if(a.type==='reset') cur-=RESET_PENALTY;
+            else if(a.type==='destroy') cur+=DESTROY_HORCRUX_REWARD;
+            let fut=0;
+            if(a.type==='reset'){
+              // next state = initial (append_action_to_env returns initial_state for reset)
+              fut = policy[k-1][sKey(initialState.w,initialState.hi,initialState.di)].value;
+            } else {
+              // wizard moves deterministically; env evolves stochastically
+              let nw=s.w;
+              if(a.type==='move') nw=a.dest;
+              for(const nhi in hn){ for(const ndi in dn){
+                const prob=hn[nhi]*dn[ndi];
+                fut += prob * policy[k-1][sKey(nw, +nhi, +ndi)].value;
+              }}
+            }
+            const v=cur+fut;
+            if(v>best.value) best={action:a, value:v};
+          }
+          const finalV=best.value+R0;
+          pk[skey]={action:best.action, value:finalV};
+          const prev=policy[k-1][skey].value;
+          maxDelta=Math.max(maxDelta, Math.abs(finalV-prev));
+        }
+        policy.push(pk);
+        if(onSweep) onSweep(k, maxDelta, pk);
+      }
+      return policy;
+    }
+
+    return { map,R,C,passable,horLocs,horProb,dePath,deIndices,turns,states,
+             initialState,sKey,collisionR,getActions,horNext,deNext,moves,
+             valueIteration, startW, cellKey };
+  }
+
+  // ---- rendering ----
+  const cv=document.getElementById('mdpCanvas'), ctx=cv.getContext('2d');
+  const levelSel=document.getElementById('mdpLevel'), showSel=document.getElementById('mdpShow');
+  inputs.forEach((inp,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=inp.label; levelSel.appendChild(o); });
+
+  let agent=null, policy=null, dispHi=0, dispDi=0, simState=null, simTimer=null;
+
+  function valColor(v, lo, hi){
+    if(hi<=lo) hi=lo+1;
+    const t=Math.max(0,Math.min(1,(v-lo)/(hi-lo)));
+    // blend dark-red (low) -> green (high)
+    const r=Math.round(58 + (27-58)*t), g=Math.round(32 + (107-32)*t), b=Math.round(48 + (79-48)*t);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  function draw(){
+    if(!agent){ ctx.clearRect(0,0,cv.width,cv.height); return; }
+    const {map,R,C,horLocs,dePath}=agent;
+    const W=cv.width,H=cv.height;
+    const cell=Math.floor(Math.min(W/C,H/R));
+    const ox=Math.floor((W-cell*C)/2), oy=Math.floor((H-cell*R)/2);
+    ctx.clearRect(0,0,W,H);
+    const k=agent.turns;
+    // value range over reachable cells for current display env
+    let lo=Infinity, hi=-Infinity;
+    if(policy){
+      for(const [i,j] of agent.passable){
+        const v=policy[k][agent.sKey([i,j],dispHi,dispDi)].value;
+        lo=Math.min(lo,v); hi=Math.max(hi,v);
+      }
+    }
+    for(let r=0;r<R;r++)for(let c=0;c<C;c++){
+      const x=ox+c*cell, y=oy+r*cell;
+      let fill='#070b14';
+      if(map[r][c]==='P'){
+        fill='#0f1827';
+        if(policy){ const v=policy[k][agent.sKey([r,c],dispHi,dispDi)].value; fill=valColor(v,lo,hi); }
+      }
+      ctx.fillStyle=fill; ctx.fillRect(x+1,y+1,cell-2,cell-2);
+      ctx.strokeStyle='#1c2738'; ctx.strokeRect(x+0.5,y+0.5,cell,cell);
+      if(map[r][c]==='P' && policy){
+        const entry=policy[k][agent.sKey([r,c],dispHi,dispDi)];
+        if(showSel.value==='value'){
+          ctx.fillStyle='#dfe8f2'; ctx.font=Math.floor(cell*0.24)+'px monospace';
+          ctx.textAlign='center'; ctx.textBaseline='middle';
+          ctx.fillText(entry.value.toFixed(1), x+cell/2, y+cell*0.30);
+        } else {
+          // policy arrow
+          const a=entry.action; let sym='·';
+          if(a.type==='move'){ const dr=a.dest[0]-r, dc=a.dest[1]-c;
+            sym = dr<0?'↑':dr>0?'↓':dc<0?'←':dc>0?'→':'·'; }
+          else if(a.type==='destroy') sym='✕';
+          else if(a.type==='wait') sym='·';
+          else if(a.type==='reset') sym='⟲';
+          else sym='■';
+          ctx.fillStyle='#a78bfa'; ctx.font=Math.floor(cell*0.42)+'px monospace';
+          ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(sym, x+cell/2, y+cell*0.62);
+        }
+      }
+    }
+    function glyph(r,c,ch,size,dy){ ctx.font=(size||Math.floor(cell*0.4))+'px serif';
+      ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(ch, ox+c*cell+cell/2, oy+r*cell+cell/2+(dy||0)); }
+    // Nagini (horcrux) at display loc, DE at display index, wizard
+    const hl=horLocs[dispHi]; glyph(hl[0],hl[1],'🐍',Math.floor(cell*0.34), -cell*0.22);
+    const dl=dePath[dispDi]; glyph(dl[0],dl[1],'💀',Math.floor(cell*0.34), cell*0.22);
+    const w = simState? simState.w : agent.startW;
+    glyph(w[0],w[1],'⚡',Math.floor(cell*0.42),0);
+  }
+
+  function setStat(t,c){ const e=document.getElementById('mdpStat'); e.textContent=t; e.style.color=c||'var(--muted)'; }
+  function mlog(html,cls){ const l=document.getElementById('mdpLog'); const d=document.createElement('div');
+    if(cls)d.className=cls; d.innerHTML=html; l.appendChild(d); l.scrollTop=l.scrollHeight; }
+
+  function load(){
+    if(simTimer){clearInterval(simTimer);simTimer=null;}
+    agent=buildAgent(inputs[+levelSel.value]);
+    policy=null; simState=null;
+    dispHi=agent.initialState.hi; dispDi=agent.initialState.di;
+    document.getElementById('mdpStates').textContent=agent.states.length;
+    document.getElementById('mdpHorizon').textContent=agent.turns;
+    document.getElementById('mdpIter').textContent='0';
+    document.getElementById('mdpDelta').textContent='—';
+    document.getElementById('mdpV0').textContent='—';
+    document.getElementById('mdpLog').innerHTML='';
+    setStat('ready');
+    draw();
+  }
+
+  function run(){
+    if(simTimer){clearInterval(simTimer);simTimer=null;}
+    setStat('running value iteration…','var(--blue)');
+    document.getElementById('mdpLog').innerHTML='';
+    // run synchronously but report sweeps; animate a few snapshots
+    const sweeps=[];
+    policy = agent.valueIteration((k,delta,pk)=>{ sweeps.push({k,delta}); });
+    // animate value display growing over sweeps
+    let i=0;
+    const total=sweeps.length;
+    const startKey=agent.sKey(agent.initialState.w,agent.initialState.hi,agent.initialState.di);
+    simTimer=setInterval(()=>{
+      if(i>=total){ clearInterval(simTimer); simTimer=null;
+        setStat('converged — policy ready ✓','var(--accent)'); draw(); return; }
+      const s=sweeps[i];
+      // temporarily display policy at sweep k for the value heatmap
+      const savedTurns=agent.turns; agent.turns=s.k;
+      document.getElementById('mdpIter').textContent=s.k;
+      document.getElementById('mdpDelta').textContent=s.delta.toFixed(3);
+      document.getElementById('mdpV0').textContent=policy[s.k][startKey].value.toFixed(2);
+      draw();
+      agent.turns=savedTurns;
+      i++;
+    }, 60);
+  }
+
+  // simulate the greedy policy with real stochastic transitions
+  function simulate(){
+    if(!policy){ run(); setTimeout(simulate, 600); return; }
+    if(simTimer){clearInterval(simTimer);simTimer=null;}
+    document.getElementById('mdpLog').innerHTML='';
+    simState={ w:agent.startW.slice(), hi:agent.initialState.hi, di:agent.initialState.di, t:agent.turns, score:0 };
+    dispHi=simState.hi; dispDi=simState.di;
+    setStat('simulating greedy policy (stochastic)…','var(--purple)');
+    draw();
+    simTimer=setInterval(()=>{
+      if(simState.t<=0){ clearInterval(simTimer); simTimer=null;
+        setStat('rollout done — total reward '+simState.score.toFixed(1)+' ✓','var(--accent)'); return; }
+      const entry=policy[simState.t][agent.sKey(simState.w,simState.hi,simState.di)];
+      const a=entry.action;
+      // immediate reward
+      let r=agent.collisionR(simState.w, simState.di);
+      let label='';
+      if(a.type==='move'){ label=`move → (${a.dest[0]},${a.dest[1]})`; simState.w=a.dest.slice(); }
+      else if(a.type==='destroy'){ r+=DESTROY_HORCRUX_REWARD; label='destroy horcrux (+2)'; }
+      else if(a.type==='wait'){ label='wait'; }
+      else if(a.type==='reset'){ r-=RESET_PENALTY; label='reset (−2)'; simState.w=agent.startW.slice(); simState.hi=agent.initialState.hi; simState.di=agent.initialState.di; }
+      else { label='terminate'; }
+      // sample env transitions
+      function sample(dist){ let x=Math.random(), acc=0; let last;
+        for(const k in dist){ last=+k; acc+=dist[k]; if(x<=acc) return +k; } return last; }
+      if(a.type!=='reset' && a.type!=='terminate'){
+        simState.hi = sample(agent.horNext(simState.hi));
+        simState.di = sample(agent.deNext(simState.di));
+      }
+      // collision after move?
+      const coll=agent.collisionR(simState.w, simState.di);
+      simState.score+=r;
+      dispHi=simState.hi; dispDi=simState.di;
+      simState.t--;
+      mlog(`<span class="mono">t=${agent.turns-simState.t}</span> <span class="a">${label}</span>`+
+           (r<0?` <span class="de">${r}</span>`:r>0?` <span class="ok">+${r}</span>`:''));
+      draw();
+      if(a.type==='terminate'){ clearInterval(simTimer); simTimer=null;
+        setStat('policy chose terminate — total reward '+simState.score.toFixed(1)+' ✓','var(--accent)'); }
+    }, 480);
+  }
+
+  levelSel.onchange=load;
+  showSel.onchange=()=>{ draw(); };
+  document.getElementById('mdpRun').onclick=run;
+  document.getElementById('mdpSim').onclick=simulate;
+  document.getElementById('mdpReset').onclick=load;
+  load();
+  window.__mdp={ buildAgent, inputs };
+})();
+
+// =====================================================================
+//  LIVE: HW2 GRINGOTTS — faithful JS port of HW2/ex2.py (+ ex2_dpll.py)
+//  Real boards from HW2/HW2_tests/inputs_gil.py + tests.txt.
+//  Partial observability: only the 4 tiles adjacent to Harry are sensed.
+// =====================================================================
+(function(){
+  // tile codes (CODES_NEW): 0 passage,1 dragon,2 vault,3 trap,4 hollow_vault,
+  //                         5 vault_trap,6 dragon_trap,7 hollow_trap_vault
+  const has = (code, what)=>{
+    const names={0:'passage',1:'dragon',2:'vault',3:'trap',4:'hollow_vault',
+                 5:'vault_trap',6:'dragon_trap',7:'hollow_trap_vault'};
+    return names[code].includes(what);
+  };
+
+  // ---- Real boards (HW2_tests/inputs_gil.py + tests.txt) ----
+  const BOARDS=[
+    {label:"inputs_gil #1 (3×3, clear path to hollow)", start:[0,0],
+      map:[[0,0,0],[0,0,0],[0,4,0]]},
+    {label:"inputs_gil #2 (3×3, dragon blocks center)", start:[0,0],
+      map:[[0,0,0],[0,1,0],[0,4,0]]},
+    {label:"inputs_gil #3 (3×3, trap before hollow)", start:[0,0],
+      map:[[0,0,0],[0,3,0],[0,4,0]]},
+    {label:"inputs_gil #5 (4×4, dragons/traps/vaults)", start:[0,0],
+      map:[[0,0,0,0],[0,0,1,3],[0,6,2,4],[0,0,5,0]]},
+    {label:"tests.txt #1 (3×4, hollow_trap_vault)", start:[0,0],
+      map:[[0,0,3,3],[7,0,3,1],[2,0,0,0]]},
+    {label:"tests.txt #3 (5×5, scattered traps)", start:[0,1],
+      map:[[3,0,0,0,0],[0,4,0,0,0],[0,0,0,0,1],[0,2,3,0,0],[0,0,0,3,0]]},
+    {label:"lv1 #1 (6×4, traps + vault_traps)", start:[0,0],
+      map:[[0,0,1,0],[0,4,0,0],[0,0,0,0],[0,5,0,0],[3,3,0,0],[0,5,0,3]]},
+  ];
+
+  const DIRS=[[0,1],[0,-1],[1,0],[-1,0]];
+  const key=l=>l[0]+','+l[1];
+
+  // ---------- Checker (faithful to HW2 checker.py) ----------
+  // Reveals only the 4 tiles adjacent to Harry; validates legality; goal = collect hollow.
+  function makeChecker(board){
+    const map=board.map.map(r=>r.slice());
+    const R=map.length, C=map[0].length;
+    let harry=board.start.slice();
+    let collectedHollow=false;
+    // turn_limit = 5 + 3*(n+m)  (checker.py)
+    const turnLimit = 5 + 3*(R+C);
+    function inb(y,x){ return y>=0&&y<R&&x>=0&&x<C; }
+    function closeLocs(){ return DIRS.map(d=>[harry[0]+d[0],harry[1]+d[1]]).filter(l=>inb(l[0],l[1])); }
+    function observations(){
+      // create_observations: for each adjacent tile emit dragon/vault/sulfur(trap)
+      const obs=[]; const seen=new Set();
+      for(const loc of closeLocs()){ const code=map[loc[0]][loc[1]];
+        if(has(code,'dragon')){ const k='d'+key(loc); if(!seen.has(k)){seen.add(k); obs.push(['dragon',[loc[0],loc[1]]]);} }
+        if(has(code,'vault')){ const k='v'+key(loc); if(!seen.has(k)){seen.add(k); obs.push(['vault',[loc[0],loc[1]]]);} }
+        if(has(code,'trap')){ if(!seen.has('s')){seen.add('s'); obs.push(['sulfur']);} }
+      }
+      return obs;
+    }
+    function isLegal(action){
+      if(!action || action.length===0 || action.length>=3) return false;
+      if(action.length===1){ return action[0]==='wait'||action[0]==='collect'; }
+      const close=closeLocs(); const t=action[1];
+      const inClose=close.some(l=>l[0]===t[0]&&l[1]===t[1]);
+      if(action[0]==='destroy') return inClose;
+      if(action[0]==='move'){
+        if(!inClose) return false;
+        if(has(map[t[0]][t[1]],'dragon')) return false;
+        if(has(map[t[0]][t[1]],'trap')) return false;
+        return true;
+      }
+      return false;
+    }
+    function apply(action){
+      if(action[0]==='move'){ harry=[action[1][0],action[1][1]]; }
+      else if(action[0]==='destroy'){
+        const [y,x]=action[1]; const code=map[y][x];
+        if(has(code,'trap')){
+          let ns='passage';
+          const name={3:'trap',5:'vault_trap',6:'dragon_trap',7:'hollow_trap_vault'}[code];
+          if(name==='trap') ns='passage'; else if(name==='vault_trap') ns='vault';
+          else if(name==='dragon_trap') ns='dragon'; else ns='hollow_vault';
+          map[y][x]={passage:0,vault:2,dragon:1,hollow_vault:4}[ns];
+        }
+      } else if(action[0]==='collect'){
+        if(has(map[harry[0]][harry[1]],'hollow')) collectedHollow=true;
+      }
+    }
+    return { map, R, C, get harry(){return harry;}, turnLimit,
+             observations, isLegal, apply, closeLocs,
+             atGoal:()=>collectedHollow };
+  }
+
+  // ---------- A* over known_safe (faithful to ex2.py _astar) ----------
+  function astarSafe(start, goal, knownSafe, knownDragons, R, C){
+    if(start[0]===goal[0]&&start[1]===goal[1]) return [];
+    const h=p=>Math.abs(p[0]-goal[0])+Math.abs(p[1]-goal[1]);
+    // open_set entries: [f, g, pos, path]; heap by f (then insertion — ties stable enough)
+    const open=[[h(start),0,start,[]]]; const visited=new Set([key(start)]);
+    function pop(){ let bi=0; for(let i=1;i<open.length;i++) if(open[i][0]<open[bi][0]) bi=i; return open.splice(bi,1)[0]; }
+    while(open.length){
+      const [,g,cur,path]=pop();
+      if(cur[0]===goal[0]&&cur[1]===goal[1]) return path;
+      for(const d of DIRS){ const adj=[cur[0]+d[0],cur[1]+d[1]];
+        if(adj[0]<0||adj[0]>=R||adj[1]<0||adj[1]>=C) continue;
+        const ak=key(adj);
+        if(!visited.has(ak) && knownSafe.has(ak) && !knownDragons.has(ak)){
+          visited.add(ak); open.push([g+1+h(adj), g+1, adj, path.concat([adj])]);
+        }
+      }
+    }
+    return [];
+  }
+
+  // ---------- GringottsController : faithful port of ex2.py ----------
+  function makeController(mapShape, harryLoc, initialObs, variant){
+    const R=mapShape[0], C=mapShape[1];
+    const S=new Set, // known_safe
+          D=new Set, // known_dragons
+          V=new Set, // known_vaults
+          PT=new Set, // potential_traps
+          VIS=new Set, // visited
+          CV=new Set, // checked_vaults
+          DE=new Set; // dead_ends
+    let harry=[harryLoc[0],harryLoc[1]];
+    const path=[ [harryLoc[0],harryLoc[1]] ];
+    const vaultLoc={}; // key -> [y,x] for known vaults (so we can reconstruct goal tile)
+    S.add(key(harry)); VIS.add(key(harry));
+
+    function adj(y,x){ return DIRS.map(d=>[y+d[0],x+d[1]]).filter(l=>l[0]>=0&&l[0]<R&&l[1]>=0&&l[1]<C); }
+
+    let lastDeduction='';
+    function processObs(observations){
+      const [y,x]=harry; const adjacent=adj(y,x);
+      let sulfur=false; const notes=[];
+      for(const obs of observations){
+        const t=obs[0].toLowerCase();
+        if(t==='dragon'){ const k=key(obs[1]); D.add(k); S.delete(k); VIS.delete(k);
+          vaultLoc['drag:'+k]=obs[1]; notes.push('dragon@'+k); }
+        else if(t==='vault'){ const k=key(obs[1]); V.add(k); vaultLoc[k]=obs[1]; notes.push('vault@'+k); }
+        else if(t==='sulfur') sulfur=true;
+      }
+      if(sulfur){
+        const before=PT.size;
+        for(const tile of adjacent){ const k=key(tile);
+          if(!S.has(k) && !D.has(k)) PT.add(k); }
+        notes.push('sulfur ⇒ '+(PT.size-before)+' new potential-trap(s)');
+      } else {
+        for(const tile of adjacent){ const k=key(tile); S.add(k); PT.delete(k); }
+        notes.push('no sulfur ⇒ '+adjacent.length+' neighbour(s) proven safe');
+      }
+      lastDeduction=notes.join('; ');
+    }
+
+    function findNearestVault(){
+      const unvisited=[...V].filter(k=>!CV.has(k));
+      if(!unvisited.length) return null;
+      let best=null, minLen=Infinity;
+      for(const vk of unvisited){ const vloc=vaultLoc[vk]||vk.split(',').map(Number);
+        if(Math.abs(vloc[0]-harry[0])+Math.abs(vloc[1]-harry[1])<minLen){
+          const p=astarSafe(harry, vloc, S, D, R, C);
+          if(p.length && p.length<minLen){ minLen=p.length; best=p; }
+        }
+      }
+      return best;
+    }
+
+    // ex2_dpll.py decision: move to nearest safe unvisited neighbour, else destroy unsafe neighbour, else wait
+    function nextActionDPLL(observations){
+      processObs(observations);
+      if(V.has(key(harry)) && !CV.has(key(harry))){ CV.add(key(harry)); return ['collect']; }
+      const adjacent=adj(...harry);
+      for(const tile of adjacent){ const k=key(tile);
+        if(!VIS.has(k) && S.has(k) && !D.has(k)){ VIS.add(k); harry=[tile[0],tile[1]]; path.push(harry); return ['move',tile]; } }
+      for(const tile of adjacent){ const k=key(tile);
+        if(PT.has(k)){ PT.delete(k); S.add(k); return ['destroy',tile]; } }
+      return ['wait'];
+    }
+
+    // ex2.py get_next_action (full decision ladder)
+    function nextAction(observations){
+      processObs(observations);
+      if(V.has(key(harry)) && !CV.has(key(harry))){ CV.add(key(harry)); return ['collect']; }
+
+      const vaultPath=findNearestVault();
+      if(vaultPath && vaultPath.length){
+        const nm=vaultPath[0]; const nk=key(nm);
+        if(PT.has(nk)){ PT.delete(nk); S.add(nk); return ['destroy',nm]; }
+        if(!D.has(nk)){ harry=[nm[0],nm[1]]; VIS.add(nk); path.push(harry); return ['move',nm]; }
+      }
+
+      // rank adjacent (mirrors ex2.py sort key, reverse=True)
+      const adjacent=adj(...harry).slice().sort((a,b)=>{
+        const f=loc=>[ (V.has(key(loc))&&!CV.has(key(loc)))?1:0,
+                       !VIS.has(key(loc))?1:0,
+                       PT.has(key(loc))?1:0,
+                       !D.has(key(loc))?1:0,
+                       !DE.has(key(loc))?1:0 ];
+        const fa=f(a), fb=f(b);
+        for(let i=0;i<fa.length;i++){ if(fa[i]!==fb[i]) return fb[i]-fa[i]; } return 0;
+      });
+      for(const a of adjacent){ const ak=key(a);
+        if(PT.has(ak)){
+          const neigh=adj(...a);
+          if(neigh.some(n=>!VIS.has(key(n)))){ PT.delete(ak); S.add(ak); return ['destroy',a]; }
+        }
+        if(!VIS.has(ak) && !D.has(ak)){ harry=[a[0],a[1]]; VIS.add(ak); path.push(harry); return ['move',a]; }
+      }
+
+      // backtrack along recorded path toward a tile with unexplored neighbours
+      for(let i=path.length-1;i>=0;i--){ const pos=path[i];
+        if(DE.has(key(pos))) continue;
+        const unexpl=adj(...pos).filter(a=>!VIS.has(key(a)) && !D.has(key(a)));
+        if(unexpl.length){
+          const p=astarSafe(harry, pos, S, D, R, C);
+          if(p.length){ const nm=p[0]; harry=[nm[0],nm[1]]; path.push(harry); return ['move',nm]; }
+        }
+      }
+      return ['wait'];
+    }
+
+    return {
+      getNextAction: variant==='dpll'?nextActionDPLL:nextAction,
+      get harry(){return harry;},
+      kb:()=>({S,D,V,PT,VIS,CV}), lastDeduction:()=>lastDeduction
+    };
+  }
+
+  // ---------- rendering ----------
+  const cv=document.getElementById('lgCanvas'), ctx=cv.getContext('2d');
+  const levelSel=document.getElementById('lgLevel'), agentSel=document.getElementById('lgAgent');
+  BOARDS.forEach((b,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=b.label; levelSel.appendChild(o); });
+
+  let checker=null, controller=null, stepN=0, timer=null, done=false;
+
+  function setStat(t,c){ const e=document.getElementById('lgStat'); e.textContent=t; e.style.color=c||'var(--muted)'; }
+  function llog(html,cls){ const l=document.getElementById('lgLog'); const d=document.createElement('div');
+    if(cls)d.className=cls; d.innerHTML=html; l.appendChild(d); l.scrollTop=l.scrollHeight; }
+
+  function draw(){
+    const map=checker.map, R=checker.R, C=checker.C;
+    const W=cv.width,H=cv.height;
+    const cell=Math.floor(Math.min(W/C,H/R));
+    const ox=Math.floor((W-cell*C)/2), oy=Math.floor((H-cell*R)/2);
+    ctx.clearRect(0,0,W,H);
+    const kb=controller?controller.kb():{S:new Set,D:new Set,V:new Set,PT:new Set,VIS:new Set,CV:new Set};
+    const harry=checker.harry;
+    for(let r=0;r<R;r++)for(let c=0;c<C;c++){
+      const x=ox+c*cell, y=oy+r*cell; const k=r+','+c;
+      // default = fog (unknown)
+      let fill='#0a0f18'; let known=false;
+      if(kb.S.has(k)){ fill='rgba(20,184,166,.22)'; known=true; }
+      if(kb.V.has(k)){ fill='rgba(96,165,250,.28)'; known=true; }
+      if(kb.PT.has(k)){ fill='rgba(248,113,113,.30)'; known=true; }
+      if(kb.D.has(k)){ fill='rgba(167,139,250,.28)'; known=true; }
+      ctx.fillStyle=fill; ctx.fillRect(x+1,y+1,cell-2,cell-2);
+      ctx.strokeStyle='#1c2738'; ctx.strokeRect(x+0.5,y+0.5,cell,cell);
+      // glyphs: reveal true contents only for tiles the agent KNOWS something about,
+      // or that Harry has visited/sensed. Fogged unknown tiles show 🌫.
+      const code=map[r][c]; let g='';
+      if(kb.D.has(k)) g='🐉';
+      else if(kb.V.has(k)) g = has(code,'hollow')?'🏆':'💰';
+      else if(kb.PT.has(k)) g='💥';
+      else if(kb.S.has(k)){ g = has(code,'hollow')?'🏆': has(code,'vault')?'💰':''; }
+      else g='🌫';
+      if(g){ ctx.font=Math.floor(cell*0.42)+'px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillStyle = g==='🌫'?'rgba(150,170,200,.35)':'#fff';
+        if(g==='🌫'){ ctx.fillText(g, x+cell/2, y+cell/2); ctx.fillStyle='#fff'; }
+        else ctx.fillText(g, x+cell/2, y+cell/2); }
+      ctx.fillStyle='#3c4a5e'; ctx.font='8px monospace'; ctx.textAlign='right'; ctx.textBaseline='bottom';
+      ctx.fillText(r+','+c, x+cell-2, y+cell-1);
+    }
+    // Harry on top
+    ctx.font=Math.floor(cell*0.5)+'px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('⚡', ox+harry[1]*cell+cell/2, oy+harry[0]*cell+cell/2);
+  }
+
+  function refreshKB(){
+    const kb=controller.kb();
+    document.getElementById('lgStepN').textContent=stepN;
+    document.getElementById('lgSafe').textContent=kb.S.size;
+    document.getElementById('lgTrap').textContent=kb.PT.size;
+    document.getElementById('lgVaults').textContent=kb.V.size;
+    document.getElementById('lgDrag').textContent=kb.D.size;
+  }
+
+  function actText(a){
+    if(a[0]==='move') return `move → (${a[1][0]},${a[1][1]})`;
+    if(a[0]==='destroy') return `destroy trap (${a[1][0]},${a[1][1]})`;
+    if(a[0]==='collect') return 'collect 🏆';
+    return a[0];
+  }
+
+  function stepOnce(){
+    if(done) return;
+    const obs=checker.observations();
+    // feed observations to controller, get action
+    const action=controller.getNextAction(obs);
+    stepN++;
+    if(!checker.isLegal(action)){
+      setStat('illegal action '+JSON.stringify(action)+' — stopping','var(--red)');
+      llog(`<span class="de">✗ illegal: ${JSON.stringify(action)}</span>`,'de'); stopTimer(); done=true; return;
+    }
+    // deduction note from this turn's processObs
+    const ded=controller.lastDeduction();
+    checker.apply(action);
+    refreshKB(); draw();
+    llog(`<span class="mono">#${stepN}</span> <span class="a">${actText(action)}</span>`+
+         (ded?` <span class="muted">— ${ded}</span>`:''));
+    if(checker.atGoal()){ setStat(`goal! hollow vault collected in ${stepN} steps ✓`,'var(--accent)');
+      llog(`<span class="ok">🏆 hollow vault collected — goal achieved in ${stepN} steps</span>`,'ok'); stopTimer(); done=true; return; }
+    if(stepN>checker.turnLimit){ setStat('turn limit exceeded','var(--red)'); stopTimer(); done=true; return; }
+    setStat('exploring under fog…','var(--blue)');
+  }
+
+  function stopTimer(){ if(timer){clearInterval(timer);timer=null;} }
+  function play(){ stopTimer(); timer=setInterval(()=>{ if(done) stopTimer(); else stepOnce(); }, 420); }
+
+  function load(){
+    stopTimer(); done=false; stepN=0;
+    const board=BOARDS[+levelSel.value];
+    checker=makeChecker(board);
+    const variant=agentSel.value;
+    document.getElementById('lgAgentLbl').textContent = variant==='dpll'?'ex2_dpll.py':'ex2.py';
+    // initial observations (constructor input)
+    const initObs=checker.observations();
+    controller=makeController([checker.R,checker.C], checker.harry, initObs, variant);
+    document.getElementById('lgLimit').textContent=checker.turnLimit;
+    document.getElementById('lgLog').innerHTML='';
+    refreshKB(); setStat('ready — press Step or Auto-play'); draw();
+    llog(`<span class="muted">init @ (${checker.harry[0]},${checker.harry[1]}) — ${initObs.length} initial observation(s); ${controller.lastDeduction()}</span>`);
+  }
+
+  levelSel.onchange=load;
+  agentSel.onchange=load;
+  document.getElementById('lgStep').onclick=()=>{ stopTimer(); stepOnce(); };
+  document.getElementById('lgPlay').onclick=()=>{ if(timer) stopTimer(); else play(); };
+  document.getElementById('lgReset').onclick=load;
+  load();
+  window.__lg={ makeChecker, makeController, astarSafe, BOARDS };
+})();
+</script>
+</body>
+</html>

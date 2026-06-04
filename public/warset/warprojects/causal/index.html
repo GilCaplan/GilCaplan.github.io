@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Warset — Causal Inference</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0c10;--panel:#111318;--border:#1e2230;--accent:#f5a623;--text:#e8eaf0;--muted:#6b7280;--treat:#f5a623;--ctrl:#4a9eff;--ok:#3ecf8e;--amber:#f5a623;--no:#e8453c}
+.answerbox{border-radius:10px;padding:12px 14px;margin:12px 0;border:1px solid var(--border);border-left-width:4px}
+.answerbox.robust{border-left-color:var(--ok);background:rgba(62,207,142,.07)}
+.answerbox.fragile{border-left-color:var(--amber);background:rgba(245,166,35,.07)}
+.answerbox.none{border-left-color:var(--no);background:rgba(232,69,60,.06)}
+.answerbox .alabel{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+.answerbox.robust .alabel{color:var(--ok)} .answerbox.fragile .alabel{color:var(--amber)} .answerbox.none .alabel{color:var(--no)}
+.answerbox .atext{font-size:0.9rem}
+.vlabel{font-weight:700}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;padding:26px 30px;line-height:1.5}
+h1{font-family:'Playfair Display',serif;font-size:1.7rem;margin-bottom:4px}
+.sub{color:var(--muted);font-size:0.85rem;margin-bottom:20px;max-width:880px}
+.qgrid{margin-bottom:26px}
+.fam{margin-bottom:16px}
+.famhdr{font-size:0.76rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:4px 0 8px}
+.famgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.qcard{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:border-color .15s,transform .15s}
+.qcard:hover{transform:translateY(-2px)}
+.qcard.active{border-color:var(--accent);box-shadow:0 0 0 1px rgba(245,166,35,.3)}
+.qcard .qt{font-size:0.86rem;font-weight:600;margin-bottom:6px}
+.qcard .qh{font-size:0.76rem;color:var(--muted)}
+.sigdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:18px}
+.panel h2{font-size:1.1rem;margin-bottom:10px;color:var(--accent)}
+.row{display:flex;gap:24px;flex-wrap:wrap}
+.col{flex:1;min-width:320px}
+.kv{font-size:0.82rem;color:var(--muted);margin:2px 0}
+.kv b{color:var(--text);font-weight:600}
+canvas{width:100%;display:block}
+.chip{display:inline-block;background:#161923;border:1px solid var(--border);border-radius:12px;padding:3px 10px;font-size:0.72rem;color:var(--muted);margin:3px 4px 0 0}
+.caveat{background:#1a140a;border:1px solid rgba(245,166,35,.3);border-radius:8px;padding:10px 12px;font-size:0.8rem;color:#d8c08a;margin-top:12px}
+.legend{font-size:0.74rem;color:var(--muted);margin-top:6px}
+.legend span{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 12px;vertical-align:middle}
+.note{font-size:0.74rem;color:var(--muted);margin-top:8px}
+code{background:#0a0c10;border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:0.78rem}
+</style>
+</head>
+<body>
+<h1>⚖ Causal Inference</h1>
+<div class="sub">Warset is observational data, so a raw correlation mixes the effect of a "treatment" with the reasons it occurred. Each question below is estimated three ways — <b>naive</b> (unadjusted), <b>regression / g-computation</b>, and <b>IPW</b> (propensity weighting) — with bootstrap 95% confidence intervals. Where the adjusted estimate moves away from the naive one, confounding was at work. Click a question.</div>
+
+<div class="qgrid" id="qgrid"></div>
+
+<div class="panel" id="detail"></div>
+
+<div class="panel">
+  <h2>How to read this</h2>
+  <div class="kv">• <b>Answer box:</b> <span style="color:var(--ok)">Clear effect</span> = all three estimates agree and the adjusted CI excludes zero; <span style="color:var(--amber)">Suggestive but fragile</span> = regression-significant but IPW disagrees or is inconclusive (usually thin overlap); <span style="color:var(--no)">No clear effect</span> = the adjusted CI includes zero.</div>
+  <div class="kv">• <b>Forest plot:</b> the dot is the estimated effect; the bar is its 95% CI. If the bar crosses the dashed <b>0</b> line, the effect is not statistically distinguishable from none.</div>
+  <div class="kv">• <b>Agreement across methods</b> is reassuring; disagreement (e.g. IPW vs. g-computation) flags fragility — usually thin overlap or model dependence.</div>
+  <div class="kv">• <b>Overlap:</b> the propensity histogram shows whether treated and control units occupy comparable contexts. Little overlap ⇒ the positivity assumption is strained and weights blow up.</div>
+  <div class="note">Every estimate assumes no unmeasured confounding given the listed adjustment set — an assumption, not a fact. See <code>questions.md</code> for DAGs, literature, and limitations; <code>analyze.py</code> for the code.</div>
+</div>
+
+<script src="results.js?v=1"></script>
+<script>
+const Q = causalResults.questions;
+const ORDER = causalResults.order;
+const dpr = window.devicePixelRatio || 1;
+
+function isSig(m){ return m && ((m.ci[0]>0 && m.ci[1]>0) || (m.ci[0]<0 && m.ci[1]<0)); }
+const VCOLOR = {robust:'var(--ok)', fragile:'var(--amber)', none:'var(--no)'};
+function vColor(q){ return q.insufficient ? 'var(--muted)' : VCOLOR[q.verdict.status]; }
+function vLabel(q){ return q.insufficient ? 'Not enough data' : q.verdict.label; }
+
+function buildCards(){
+  const g = document.getElementById('qgrid');
+  // group by family, preserving spec order
+  const fams = [];
+  ORDER.forEach(k=>{ const f=Q[k].family; if(!fams.includes(f)) fams.push(f); });
+  g.innerHTML = fams.map(f=>{
+    const cards = ORDER.filter(k=>Q[k].family===f).map(k=>{
+      const q=Q[k]; const color=vColor(q);
+      return `<div class="qcard" data-k="${k}">
+        <div class="qt">${q.title}</div>
+        <div class="qh"><span class="sigdot" style="background:${color}"></span><span class="vlabel" style="color:${color}">${vLabel(q)}</span></div>
+      </div>`;
+    }).join('');
+    return `<div class="fam"><div class="famhdr">${f}</div><div class="famgrid">${cards}</div></div>`;
+  }).join('');
+  g.querySelectorAll('.qcard').forEach(c=>c.onclick=()=>select(c.dataset.k));
+}
+
+function select(k){
+  document.querySelectorAll('.qcard').forEach(c=>c.classList.toggle('active', c.dataset.k===k));
+  const q=Q[k];
+  if(q.insufficient){
+    document.getElementById('detail').innerHTML = `
+      <h2>${q.title}</h2>
+      <div class="kv"><b>Treatment:</b> ${q.treatment}</div>
+      <div class="kv"><b>Outcome:</b> ${q.outcome_noun}</div>
+      <div class="kv"><b>Sample:</b> ${q.n} wars — ${q.n_treated} treated, ${q.n_control} control</div>
+      <div class="caveat">${q.headline} This question is defined and coded, but the dataset doesn't yet have enough comparable wars (with the needed fields recorded) to estimate it stably. More research on the relevant rows would unlock it.</div>
+      <div style="margin-top:12px"><b style="font-size:0.82rem">Adjusted for:</b> ${q.confounders.map(c=>`<span class="chip">${c}</span>`).join('')}</div>`;
+    return;
+  }
+  document.getElementById('detail').innerHTML = `
+    <h2>${q.title}</h2>
+    <div class="kv"><b>Treatment:</b> ${q.treatment}</div>
+    <div class="kv"><b>Outcome:</b> ${q.outcome_noun}</div>
+    <div class="kv"><b>Sample:</b> ${q.n} wars — ${q.n_treated} treated, ${q.n_control} control</div>
+    <div class="answerbox ${q.verdict.status}">
+      <div class="alabel">Answer — ${q.verdict.label}</div>
+      <div class="atext">${q.verdict.answer}</div>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <div class="col">
+        <div class="kv"><b>Estimated effect</b> on ${q.outcome_noun} ${q.scale==='pct'?'(log scale — dot is the log effect)':q.scale==='pp_share'?'(civilian share, 0–1)':'(probability difference)'}</div>
+        <canvas id="forest" height="150"></canvas>
+        <div class="legend"><span style="background:var(--accent)"></span>estimate &nbsp; — &nbsp;bar = 95% CI &nbsp; — &nbsp;dashed = no effect</div>
+      </div>
+      <div class="col">
+        <div class="kv"><b>Covariate overlap</b> (propensity score by group)</div>
+        <canvas id="overlap" height="150"></canvas>
+        <div class="legend"><span style="background:var(--treat)"></span>treated <span style="background:var(--ctrl)"></span>control</div>
+      </div>
+    </div>
+    <div style="margin-top:14px"><b style="font-size:0.82rem">Adjusted for:</b> ${q.confounders.map(c=>`<span class="chip">${c}</span>`).join('')}</div>
+    <div class="caveat">⚠ ${q.caveat}</div>`;
+  requestAnimationFrame(()=>{ drawForest(q); drawOverlap(q); });
+}
+
+function fit(c){ const w=c.clientWidth; c.width=w*dpr; c.height=c.height*dpr; const x=c.getContext('2d'); x.scale(dpr,dpr); return [x, w, c.height/dpr]; }
+
+function drawForest(q){
+  const c=document.getElementById('forest'); const [x,W,H]=fit(c);
+  const ms=q.methods;
+  let lo=Math.min(0,...ms.map(m=>m.ci[0])), hi=Math.max(0,...ms.map(m=>m.ci[1]));
+  const pad=(hi-lo)*0.12||1; lo-=pad; hi+=pad;
+  const L=150, R=W-16, sx=v=>L+(v-lo)/(hi-lo)*(R-L);
+  x.clearRect(0,0,W,H);
+  // zero line
+  x.strokeStyle='#3a3f4b'; x.setLineDash([4,4]); x.beginPath(); x.moveTo(sx(0),8); x.lineTo(sx(0),H-8); x.stroke(); x.setLineDash([]);
+  const rowH=(H-16)/ms.length;
+  ms.forEach((m,i)=>{
+    const y=16+i*rowH+rowH/2-4;
+    const sig=isSig(m);
+    x.fillStyle='#cfd3dc'; x.font='12px Inter'; x.textAlign='left'; x.textBaseline='middle';
+    x.fillText(m.name.replace(' (propensity)','').replace(' (g-computation)','').replace(' (unadjusted)',''), 6, y);
+    x.strokeStyle=sig?'#f5a623':'#6b7280'; x.lineWidth=2;
+    x.beginPath(); x.moveTo(sx(m.ci[0]),y); x.lineTo(sx(m.ci[1]),y); x.stroke();
+    [m.ci[0],m.ci[1]].forEach(v=>{x.beginPath();x.moveTo(sx(v),y-4);x.lineTo(sx(v),y+4);x.stroke();});
+    x.fillStyle=sig?'#f5a623':'#9aa0ac'; x.beginPath(); x.arc(sx(m.estimate),y,4,0,7); x.fill();
+    x.fillStyle='#9aa0ac'; x.font='11px Inter'; x.textAlign='right';
+    x.fillText(`${m.estimate>=0?'+':''}${m.estimate} [${m.ci[0]}, ${m.ci[1]}]`, R, y+rowH/2-4);
+  });
+}
+
+function drawOverlap(q){
+  const c=document.getElementById('overlap'); const [x,W,H]=fit(c);
+  const o=q.overlap; const n=o.treated.length;
+  const tT=o.treated.reduce((a,b)=>a+b,0)||1, tC=o.control.reduce((a,b)=>a+b,0)||1;
+  const tr=o.treated.map(v=>v/tT), ct=o.control.map(v=>v/tC);
+  const mx=Math.max(...tr,...ct)||1;
+  const L=28,Bot=H-18,Top=8,R=W-8, bw=(R-L)/n;
+  x.clearRect(0,0,W,H);
+  x.strokeStyle='#2a2f3a'; x.beginPath(); x.moveTo(L,Bot); x.lineTo(R,Bot); x.stroke();
+  for(let i=0;i<n;i++){
+    const x0=L+i*bw;
+    const ht=tr[i]/mx*(Bot-Top), hc=ct[i]/mx*(Bot-Top);
+    x.fillStyle='rgba(245,166,35,.85)'; x.fillRect(x0+bw*0.12, Bot-ht, bw*0.36, ht);
+    x.fillStyle='rgba(74,158,255,.8)'; x.fillRect(x0+bw*0.5, Bot-hc, bw*0.36, hc);
+  }
+  x.fillStyle='#6b7280'; x.font='10px Inter'; x.textAlign='center'; x.textBaseline='top';
+  x.fillText('P(treated) →  0', L+bw, Bot+4); x.fillText('1', R-6, Bot+4);
+}
+
+buildCards();
+select("q1");
+window.addEventListener('resize', ()=>{ const k=document.querySelector('.qcard.active')?.dataset.k||"q1"; const q=Q[k]; if(document.getElementById('forest')){drawForest(q);drawOverlap(q);} });
+</script>
+</body>
+</html>

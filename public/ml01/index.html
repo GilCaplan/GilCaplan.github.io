@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ML01 — Intro to Machine Learning (096411)</title>
+<style>
+  :root{
+    --bg:#0B1220; --surface:#0F172A; --panel:#1E293B; --border:#243044;
+    --text:#E2E8F0; --muted:#94A3B8; --accent:#14B8A6; --blue:#60A5FA; --red:#F87171;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.55}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 20px 56px}
+  h1{font-size:1.6rem;margin:0 0 4px}
+  h2{font-size:1.15rem;margin:0 0 10px}
+  .sub{color:var(--muted);font-size:.95rem;margin:0 0 18px}
+  code,.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+  .tag{display:inline-block;font-size:.72rem;padding:2px 9px;border-radius:999px;
+    background:rgba(20,184,166,.12);color:var(--accent);border:1px solid rgba(20,184,166,.3);margin-right:6px}
+  .tag.blue{background:rgba(96,165,250,.12);color:var(--blue);border-color:rgba(96,165,250,.3)}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 16px;border-bottom:1px solid var(--border);padding-bottom:10px}
+  .tab{cursor:pointer;padding:7px 14px;border-radius:8px;color:var(--muted);font-size:.9rem;
+    border:1px solid transparent;background:transparent;transition:.15s}
+  .tab:hover{color:var(--text);background:var(--panel)}
+  .tab.active{color:var(--accent);background:rgba(20,184,166,.1);border-color:rgba(20,184,166,.3)}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px}
+  .panel.alt{background:var(--panel)}
+  .view{display:none}
+  .view.active{display:block}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+  pre{background:#0a0f1a;border:1px solid var(--border);border-radius:10px;padding:14px;overflow:auto;
+    font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.8rem;color:#cbd5e1;margin:0}
+  .muted{color:var(--muted)}
+  .kw{color:var(--blue)} .fn{color:var(--accent)} .cm{color:#5b6b82;font-style:italic} .st{color:#f0b27a}
+  label{font-size:.82rem;color:var(--muted);display:block;margin-bottom:4px}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  .ctl{margin-bottom:14px}
+  .pill{display:inline-block;padding:3px 10px;border-radius:7px;font-size:.8rem;
+    background:var(--panel);border:1px solid var(--border);margin:2px}
+  .badge{font-size:.78rem;color:var(--muted)}
+  canvas{display:block;width:100%;border-radius:10px;background:#0a0f1a;border:1px solid var(--border);touch-action:none}
+  .legend span{display:inline-flex;align-items:center;gap:5px;margin-right:14px;font-size:.8rem}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+  .res{font-family:"JetBrains Mono",monospace;font-size:.85rem}
+  ul.mat{columns:2;gap:24px;font-size:.85rem;color:var(--muted);margin:6px 0 0;padding-left:18px}
+  @media(max-width:600px){ul.mat{columns:1}}
+  .hint{font-size:.78rem;color:var(--muted);margin-top:8px}
+  .filebar{font-size:.75rem;color:var(--muted);margin-top:10px;font-family:"JetBrains Mono",monospace}
+  a{color:var(--blue)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div><span class="tag">Technion 096411</span><span class="tag blue">Python · NumPy</span></div>
+  <h1>Intro to Machine Learning</h1>
+  <p class="sub">Coursework repo <code>ML01_096411</code> — classical ML implemented from scratch in NumPy.
+  Two assignments ship runnable code: a <b>k-NN classifier</b> (HW1) and a <b>multiclass Perceptron</b> (HW2).
+  Both demos below run the <i>actual repo algorithms</i>, ported faithfully to JS.</p>
+
+  <div class="tabs">
+    <button class="tab active" data-v="overview">Overview</button>
+    <button class="tab" data-v="knn">k-NN demo</button>
+    <button class="tab" data-v="boundary">Live: Decision boundary</button>
+    <button class="tab" data-v="perc">Perceptron demo</button>
+    <button class="tab" data-v="code">Real code</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="view active" id="overview">
+    <div class="panel">
+      <h2>What's in the repo</h2>
+      <p class="muted" style="font-size:.92rem">The course covers a broad classical-ML syllabus (theory + practice). Two
+      homeworks contain working Python implementations; the rest are written/PDF solutions.</p>
+      <div class="grid2" style="margin-top:6px">
+        <div class="panel alt">
+          <span class="tag">HW01</span><b> k-NN Classifier</b>
+          <p class="muted" style="font-size:.86rem;margin:8px 0 0">
+          <code>KnnClassifier(k, p)</code> using <b>Minkowski distance</b> with parameter <code>p</code>.
+          Predicts a point by majority vote over its <code>k</code> nearest neighbours, with a deterministic
+          tie-break: ties on vote count are broken by <i>label</i>, then by <i>distance</i>
+          (via <code>np.lexsort</code>).</p>
+          <div class="filebar">HW01_KNN/HW1_KNN.py</div>
+        </div>
+        <div class="panel alt">
+          <span class="tag blue">HW02</span><b> Multiclass Perceptron</b>
+          <p class="muted" style="font-size:.86rem;margin:8px 0 0">
+          One weight vector <code>w_k</code> per class. Predicts <code>argmax_k ⟨w_k, x⟩</code>; on a mistake,
+          subtracts <code>x</code> from the wrongly-chosen class and adds it to the true class. Loops over the
+          data until a full pass makes no update (convergence on separable data).</p>
+          <div class="filebar">HW02/HW2_wet_answers.py</div>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Full syllabus (from README)</h2>
+      <ul class="mat">
+        <li>KNN</li><li>Logistic regression</li><li>Perceptron</li><li>SVM</li><li>SGD</li>
+        <li>RLM (regularized loss min.)</li><li>Stability</li><li>Cross-validation</li><li>PAC learning</li>
+        <li>Boosting — AdaBoost, gradient boosting</li><li>Decision trees</li><li>Bagging</li>
+        <li>Random forest</li><li>Unsupervised learning</li><li>EM</li><li>K-Means</li><li>Spectral clustering</li>
+      </ul>
+      <p class="hint">References: Shalev-Shwartz &amp; Ben-David, <i>Understanding Machine Learning</i>;
+      Hastie, Tibshirani &amp; Friedman, <i>The Elements of Statistical Learning</i>.</p>
+    </div>
+    <div class="panel">
+      <h2>Other homeworks (written)</h2>
+      <p class="muted" style="font-size:.88rem;margin:0">
+        HW03 — cross-validation &amp; gradient descent (PDF solution) ·
+        HW04 — boosting / further theory (PDF solution).
+        These ship as PDF answers only; the interactive demos here focus on the two coded assignments.</p>
+    </div>
+  </div>
+
+  <!-- KNN DEMO -->
+  <div class="view" id="knn">
+    <div class="panel">
+      <h2>k-NN — drag to classify</h2>
+      <p class="muted" style="font-size:.88rem;margin:0 0 14px">
+      Two classes of points in 2-D. Move the <b>query point</b> (the ring) by dragging on the plot.
+      The demo runs the repo's exact rule: Minkowski distance, pick the <code>k</code> nearest (lexsort by
+      distance then label), majority vote, deterministic tie-break.</p>
+      <div class="grid2">
+        <div>
+          <canvas id="knnCanvas" width="440" height="440"></canvas>
+          <div class="legend" style="margin-top:8px">
+            <span><i class="dot" style="background:#60A5FA"></i>class 0</span>
+            <span><i class="dot" style="background:#F87171"></i>class 1</span>
+            <span><i class="dot" style="background:#14B8A6"></i>query / neighbours</span>
+          </div>
+        </div>
+        <div>
+          <div class="ctl">
+            <label>k (neighbours) = <span id="kVal" class="res">5</span></label>
+            <input type="range" id="kSlider" min="1" max="15" value="5" step="2">
+          </div>
+          <div class="ctl">
+            <label>p (Minkowski) = <span id="pVal" class="res">2.0</span>
+              <span class="muted" id="pName">— Euclidean</span></label>
+            <input type="range" id="pSlider" min="1" max="4" value="2" step="0.5">
+          </div>
+          <div class="panel alt" style="padding:12px 14px">
+            <div class="res">prediction → <span id="predOut" style="color:var(--accent);font-weight:600">—</span></div>
+            <div class="res muted" style="margin-top:6px;font-size:.8rem" id="voteOut">votes: —</div>
+            <div class="res muted" style="margin-top:6px;font-size:.8rem" id="tieOut"></div>
+          </div>
+          <p class="hint">p=1 Manhattan · p=2 Euclidean · larger p → Chebyshev-like.
+          k forced odd here for clarity; the repo handles any k incl. ties.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DECISION BOUNDARY DEMO -->
+  <div class="view" id="boundary">
+    <div class="panel">
+      <h2>k-NN decision boundary — slide k, watch it bend</h2>
+      <p class="muted" style="font-size:.88rem;margin:0 0 14px">
+      The full <b>decision regions</b> of the repo's <code>KnnClassifier</code> over a non-linearly-separable
+      two-class dataset. Every background pixel is classified by majority vote of its <code>k</code> nearest
+      training points (Minkowski-p distance, lexsort tie-break — same rule as the code). Small <code>k</code>
+      gives a jagged, high-variance boundary that overfits; large <code>k</code> smooths it toward the global
+      majority (high bias). This is the bias–variance trade-off the course frames around k-NN.</p>
+      <div class="grid2">
+        <div>
+          <canvas id="dbCanvas" width="440" height="440"></canvas>
+          <div class="legend" style="margin-top:8px">
+            <span><i class="dot" style="background:#60A5FA"></i>class 0</span>
+            <span><i class="dot" style="background:#F87171"></i>class 1</span>
+          </div>
+        </div>
+        <div>
+          <div class="ctl">
+            <label>k (neighbours) = <span id="dbKVal" class="res">7</span></label>
+            <input type="range" id="dbK" min="1" max="35" value="7" step="1">
+          </div>
+          <div class="ctl">
+            <label>p (Minkowski) = <span id="dbPVal" class="res">2.0</span>
+              <span class="muted" id="dbPName">— Euclidean</span></label>
+            <input type="range" id="dbP" min="1" max="4" value="2" step="0.5">
+          </div>
+          <div class="ctl">
+            <label>dataset shape</label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="tab active" id="dbDsBlobs" data-ds="blobs">two blobs</button>
+              <button class="tab" id="dbDsMoons" data-ds="moons">two moons</button>
+              <button class="tab" id="dbDsXor" data-ds="xor">xor</button>
+            </div>
+          </div>
+          <div class="panel alt" style="padding:12px 14px">
+            <div class="res">train accuracy → <span id="dbAcc" style="color:var(--accent);font-weight:600">—</span></div>
+            <div class="res muted" style="margin-top:6px;font-size:.8rem" id="dbNote"></div>
+          </div>
+          <p class="hint">Resolution is downsampled for live recompute. Try k=1 (memorizes every point,
+          jagged islands) vs k=35 (over-smoothed). On <b>xor</b> / <b>moons</b> a linear model would fail —
+          k-NN bends to the data.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PERCEPTRON DEMO -->
+  <div class="view" id="perc">
+    <div class="panel">
+      <h2>Multiclass Perceptron — watch it converge</h2>
+      <p class="muted" style="font-size:.88rem;margin:0 0 14px">
+      Three linearly-separable classes. Step through the repo's update loop:
+      predict <code>argmax_k ⟨w_k, x⟩</code>; on a mistake, push <code>w</code> of the true class toward
+      <code>x</code> and the wrong class away. Decision regions update live; training stops when a full
+      pass makes no mistake.</p>
+      <div class="grid2">
+        <div>
+          <canvas id="percCanvas" width="440" height="440"></canvas>
+          <div class="legend" style="margin-top:8px">
+            <span><i class="dot" style="background:#60A5FA"></i>class 0</span>
+            <span><i class="dot" style="background:#14B8A6"></i>class 1</span>
+            <span><i class="dot" style="background:#F87171"></i>class 2</span>
+          </div>
+        </div>
+        <div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+            <button class="tab active" id="stepBtn">Step (one sample)</button>
+            <button class="tab" id="epochBtn">Run epoch</button>
+            <button class="tab" id="resetBtn">Reset</button>
+          </div>
+          <div class="panel alt" style="padding:12px 14px">
+            <div class="res">epoch <span id="epochOut" style="color:var(--blue)">0</span>
+              · updates this pass: <span id="updOut" style="color:var(--red)">0</span></div>
+            <div class="res muted" style="margin-top:6px;font-size:.8rem">train accuracy:
+              <span id="accOut" style="color:var(--accent)">—</span></div>
+            <div class="res muted" style="margin-top:6px;font-size:.8rem" id="statusOut">not converged</div>
+          </div>
+          <p class="hint">Bias is folded by an appended constant feature. On separable data the loop
+          provably terminates — the repo runs <code>while True</code> until a no-update pass.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CODE -->
+  <div class="view" id="code">
+    <div class="panel">
+      <h2>k-NN core <span class="badge">— HW01_KNN/HW1_KNN.py</span></h2>
+<pre><span class="kw">def</span> <span class="fn">minkowski_distance</span>(self, x, y):
+    <span class="kw">return</span> np.sum(np.abs(x - y) ** self.p, axis=1) ** (1 / self.p)
+
+<span class="kw">def</span> <span class="fn">predict_point</span>(self, x):
+    distances = self.minkowski_distance(self.X_train, x)
+    <span class="cm"># sort by distance, then by label (deterministic tie-break)</span>
+    kni = np.lexsort((self.y_train, distances))[:self.k]
+    knn = self.y_train[kni]
+    counter = np.bincount(knn).astype(<span class="st">'uint8'</span>)
+    max_labels = np.where(counter == np.max(counter))[0]
+    <span class="kw">if</span> len(max_labels) == 1:
+        <span class="kw">return</span> max_labels[0]
+    <span class="cm"># tie: keep only top-vote labels, return the nearest one</span>
+    kni_filtered = kni[np.isin(knn, max_labels)]
+    <span class="kw">return</span> self.y_train[kni_filtered[0]]</pre>
+    </div>
+    <div class="panel">
+      <h2>Perceptron training loop <span class="badge">— HW02/HW2_wet_answers.py</span></h2>
+<pre><span class="kw">def</span> <span class="fn">fit</span>(self, X, y):
+    K = np.unique(y).shape[0]
+    w = np.array([np.zeros(X.shape[1]) <span class="kw">for</span> _ <span class="kw">in</span> range(K)])
+    <span class="kw">while</span> True:
+        prev = np.array([w_i <span class="kw">for</span> w_i <span class="kw">in</span> w])
+        <span class="kw">for</span> t <span class="kw">in</span> range(X.shape[0]):
+            y_t = np.argmax(np.dot(w, X[t]))
+            <span class="kw">if</span> y[t] != y_t:
+                w[y_t]   = w[y_t]   - X[t]   <span class="cm"># push wrong class away</span>
+                w[y[t]]  = w[y[t]]  + X[t]   <span class="cm"># pull true class toward x</span>
+        <span class="kw">if</span> np.array_equal(prev, w):     <span class="cm"># no update this pass → converged</span>
+            self.w = w; <span class="kw">break</span></pre>
+      <p class="hint muted">Both files also include a <code>main()</code> that loads a CSV, fits on it, and prints train accuracy.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------- tabs ----------
+document.querySelectorAll('.tab[data-v]').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab[data-v]').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById(t.dataset.v).classList.add('active');
+  };
+});
+
+// ============ KNN DEMO ============
+(function(){
+  const cv=document.getElementById('knnCanvas'), ctx=cv.getContext('2d');
+  const W=cv.width, H=cv.height, pad=24;
+  function rnd(a,b){return a+Math.random()*(b-a)}
+  // two gaussian-ish blobs in [0,1]^2
+  const pts=[];
+  for(let i=0;i<22;i++) pts.push({x:rnd(.08,.45),y:rnd(.08,.55),c:0});
+  for(let i=0;i<22;i++) pts.push({x:rnd(.55,.92),y:rnd(.45,.92),c:1});
+  // add a couple of overlap points to make ties visible
+  pts.push({x:.50,y:.50,c:0}); pts.push({x:.52,y:.48,c:1});
+  let q={x:.5,y:.5};
+  const kS=document.getElementById('kSlider'), pS=document.getElementById('pSlider');
+  const toPx=p=>({x:pad+p.x*(W-2*pad), y:H-pad-p.y*(H-2*pad)});
+  const fromPx=(px,py)=>({x:(px-pad)/(W-2*pad), y:(H-pad-py)/(H-2*pad)});
+
+  function minkowski(a,b,p){return Math.pow(Math.pow(Math.abs(a.x-b.x),p)+Math.pow(Math.abs(a.y-b.y),p),1/p);}
+
+  function classify(){
+    const k=+kS.value, p=+pS.value;
+    // lexsort: primary distance, secondary label  (mirror np.lexsort((y,dist)))
+    const arr=pts.map(pt=>({d:minkowski(pt,q,p),c:pt.c}));
+    arr.sort((a,b)=> a.d-b.d || a.c-b.c);
+    const knn=arr.slice(0,k);
+    const cnt=[0,0]; knn.forEach(n=>cnt[n.c]++);
+    const mx=Math.max(cnt[0],cnt[1]);
+    const maxLabels=[0,1].filter(l=>cnt[l]===mx);
+    let pred, tie='';
+    if(maxLabels.length===1){pred=maxLabels[0];}
+    else{ // tie: nearest among top-vote labels (knn already sorted by dist then label)
+      pred=knn.find(n=>maxLabels.includes(n.c)).c;
+      tie='tie on votes → broken by distance/label';
+    }
+    return {pred,cnt,knn,p,k,tie};
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    // grid
+    ctx.strokeStyle='#1b2536'; ctx.lineWidth=1;
+    for(let i=0;i<=4;i++){const g=pad+i*(W-2*pad)/4;
+      ctx.beginPath();ctx.moveTo(g,pad);ctx.lineTo(g,H-pad);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(pad,g);ctx.lineTo(W-pad,g);ctx.stroke();}
+    const r=classify();
+    const knnSet=new Set(r.knn.map(n=>n.d));
+    // neighbour highlight rings
+    const qpx=toPx(q);
+    r.knn.forEach(n=>{}); // (data only)
+    // points
+    pts.forEach(pt=>{
+      const pp=toPx(pt);
+      const isN = r.knn.some(n=>Math.abs(n.d-minkowski(pt,q,r.p))<1e-9 && n.c===pt.c);
+      ctx.beginPath();ctx.arc(pp.x,pp.y,isN?7:5,0,7);
+      ctx.fillStyle= pt.c===0?'#60A5FA':'#F87171';
+      ctx.globalAlpha=isN?1:.82; ctx.fill(); ctx.globalAlpha=1;
+      if(isN){ctx.strokeStyle='#14B8A6';ctx.lineWidth=2.5;ctx.stroke();}
+    });
+    // query
+    ctx.beginPath();ctx.arc(qpx.x,qpx.y,9,0,7);
+    ctx.fillStyle=r.pred===0?'rgba(96,165,250,.25)':'rgba(248,113,113,.25)';ctx.fill();
+    ctx.strokeStyle='#14B8A6';ctx.lineWidth=3;ctx.stroke();
+    // readout
+    document.getElementById('kVal').textContent=r.k;
+    document.getElementById('pVal').textContent=(+pS.value).toFixed(1);
+    document.getElementById('pName').textContent =
+      r.p===1?'— Manhattan':r.p===2?'— Euclidean':'— Minkowski';
+    document.getElementById('predOut').textContent='class '+r.pred;
+    document.getElementById('voteOut').textContent=`votes: class0=${r.cnt[0]}  class1=${r.cnt[1]}  (k=${r.k})`;
+    document.getElementById('tieOut').textContent=r.tie;
+  }
+  // drag
+  let drag=false;
+  function setQ(e){
+    const rect=cv.getBoundingClientRect();
+    const cx=(e.touches?e.touches[0].clientX:e.clientX)-rect.left;
+    const cy=(e.touches?e.touches[0].clientY:e.clientY)-rect.top;
+    const sx=cv.width/rect.width, sy=cv.height/rect.height;
+    const f=fromPx(cx*sx,cy*sy);
+    q.x=Math.max(0,Math.min(1,f.x)); q.y=Math.max(0,Math.min(1,f.y)); draw();
+  }
+  cv.addEventListener('mousedown',e=>{drag=true;setQ(e)});
+  window.addEventListener('mousemove',e=>{if(drag)setQ(e)});
+  window.addEventListener('mouseup',()=>drag=false);
+  cv.addEventListener('touchstart',e=>{drag=true;setQ(e);e.preventDefault()},{passive:false});
+  cv.addEventListener('touchmove',e=>{if(drag){setQ(e);e.preventDefault()}},{passive:false});
+  cv.addEventListener('touchend',()=>drag=false);
+  kS.oninput=draw; pS.oninput=draw;
+  draw();
+})();
+
+// ============ PERCEPTRON DEMO ============
+(function(){
+  const cv=document.getElementById('percCanvas'), ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height,pad=10;
+  const colors=['#60A5FA','#14B8A6','#F87171'];
+  let pts=[], w=[], t=0, epoch=0, upds=0, lastPassUpds=Infinity, converged=false;
+
+  function gen(){
+    pts=[];
+    // 3 clusters arranged around the plane, clearly separable
+    const centers=[[.25,.30],[.72,.30],[.5,.78]];
+    centers.forEach((c,ci)=>{
+      for(let i=0;i<16;i++){
+        let x=c[0]+(Math.random()-.5)*.22, y=c[1]+(Math.random()-.5)*.22;
+        pts.push({x:Math.max(.03,Math.min(.97,x)),y:Math.max(.03,Math.min(.97,y)),c:ci});
+      }
+    });
+    w=[[0,0,0],[0,0,0],[0,0,0]]; // [wx,wy,bias] per class
+    t=0;epoch=0;upds=0;lastPassUpds=Infinity;converged=false;
+  }
+  const feat=p=>[p.x,p.y,1];
+  function predict(p){
+    const f=feat(p); let best=0,bv=-1e9;
+    for(let k=0;k<3;k++){const s=w[k][0]*f[0]+w[k][1]*f[1]+w[k][2]*f[2];
+      if(s>bv){bv=s;best=k;}}
+    return best;
+  }
+  function stepOne(){
+    if(converged) return;
+    const p=pts[t];
+    const yt=predict(p), f=feat(p);
+    if(yt!==p.c){
+      for(let j=0;j<3;j++){w[yt][j]-=f[j]; w[p.c][j]+=f[j];}
+      upds++;
+    }
+    t++;
+    if(t>=pts.length){ // end of pass
+      epoch++;
+      if(upds===0){converged=true;}
+      lastPassUpds=upds; upds=0; t=0;
+    }
+    draw();
+  }
+  function runEpoch(){ if(converged)return; const start=epoch; let guard=0;
+    while(epoch===start && !converged && guard++<2000) stepOne(); }
+
+  function acc(){let c=0;pts.forEach(p=>{if(predict(p)===p.c)c++});return (100*c/pts.length).toFixed(1);}
+
+  function draw(){
+    // decision regions (coarse raster)
+    const N=44, cw=W/N, ch=H/N;
+    for(let i=0;i<N;i++)for(let j=0;j<N;j++){
+      const p={x:(i+.5)/N,y:1-(j+.5)/N};
+      const k=predict(p);
+      ctx.fillStyle=colors[k]; ctx.globalAlpha=.10;
+      ctx.fillRect(i*cw,j*ch,cw+1,ch+1);
+    }
+    ctx.globalAlpha=1;
+    // points
+    pts.forEach(p=>{
+      const px=pad+p.x*(W-2*pad), py=H-pad-p.y*(H-2*pad);
+      ctx.beginPath();ctx.arc(px,py,5,0,7);
+      ctx.fillStyle=colors[p.c];ctx.fill();
+      ctx.strokeStyle='#0B1220';ctx.lineWidth=1.5;ctx.stroke();
+    });
+    // current sample marker
+    if(!converged){const p=pts[t];const px=pad+p.x*(W-2*pad),py=H-pad-p.y*(H-2*pad);
+      ctx.beginPath();ctx.arc(px,py,9,0,7);ctx.strokeStyle='#E2E8F0';ctx.lineWidth=2;ctx.stroke();}
+    document.getElementById('epochOut').textContent=epoch;
+    document.getElementById('updOut').textContent=converged?lastPassUpds:upds;
+    document.getElementById('accOut').textContent=acc()+'%';
+    document.getElementById('statusOut').textContent=
+      converged?'converged — full pass with no update ✓':'training…';
+    document.getElementById('statusOut').style.color=converged?'#14B8A6':'#94A3B8';
+  }
+  document.getElementById('stepBtn').onclick=stepOne;
+  document.getElementById('epochBtn').onclick=runEpoch;
+  document.getElementById('resetBtn').onclick=()=>{gen();draw();};
+  gen();draw();
+})();
+
+// ============ DECISION BOUNDARY DEMO (k-NN regions) ============
+(function(){
+  const cv=document.getElementById('dbCanvas'), ctx=cv.getContext('2d');
+  const W=cv.width, H=cv.height, pad=14;
+  const kS=document.getElementById('dbK'), pS=document.getElementById('dbP');
+  let ds='blobs', train=[];
+
+  function rnd(a,b){return a+Math.random()*(b-a);}
+  function gen(kind){
+    train=[];
+    if(kind==='blobs'){
+      for(let i=0;i<30;i++) train.push({x:rnd(.08,.5),y:rnd(.12,.6),c:0});
+      for(let i=0;i<30;i++) train.push({x:rnd(.5,.92),y:rnd(.4,.88),c:1});
+    }else if(kind==='moons'){
+      for(let i=0;i<35;i++){const t=Math.PI*i/34; train.push({x:.30+.32*Math.cos(t)+rnd(-.04,.04), y:.62-.30*Math.sin(t)+rnd(-.04,.04), c:0});}
+      for(let i=0;i<35;i++){const t=Math.PI*i/34; train.push({x:.58+.32*Math.cos(t)+rnd(-.04,.04), y:.38+.30*Math.sin(t)+rnd(-.04,.04), c:1});}
+    }else{ // xor
+      const quads=[[.27,.27,0],[.73,.73,0],[.27,.73,1],[.73,.27,1]];
+      quads.forEach(q=>{for(let i=0;i<16;i++)train.push({x:q[0]+rnd(-.15,.15),y:q[1]+rnd(-.15,.15),c:q[2]});});
+    }
+    train.forEach(p=>{p.x=Math.max(.02,Math.min(.98,p.x));p.y=Math.max(.02,Math.min(.98,p.y));});
+  }
+
+  function mink(ax,ay,bx,by,p){return Math.pow(Math.pow(Math.abs(ax-bx),p)+Math.pow(Math.abs(ay-by),p),1/p);}
+  function predict(x,y,k,p){
+    // mirror repo: sort by distance then label, take k, majority, tie -> nearest among tied
+    const arr=train.map(t=>({d:mink(x,y,t.x,t.y,p),c:t.c}));
+    arr.sort((a,b)=>a.d-b.d||a.c-b.c);
+    const kk=Math.min(k,arr.length), knn=arr.slice(0,kk);
+    let c0=0,c1=0; knn.forEach(n=>n.c===0?c0++:c1++);
+    if(c0===c1) return knn[0].c; // tie: nearest (already sorted)
+    return c0>c1?0:1;
+  }
+
+  function toPx(x,y){return {x:pad+x*(W-2*pad), y:H-pad-y*(H-2*pad)};}
+
+  function draw(){
+    const k=+kS.value, p=+pS.value;
+    // region raster (coarse for speed)
+    const N=56, cw=(W)/N, ch=(H)/N;
+    for(let i=0;i<N;i++)for(let j=0;j<N;j++){
+      const x=(i+.5)/N, y=1-(j+.5)/N;
+      const c=predict(x,y,k,p);
+      ctx.fillStyle=c===0?'#60A5FA':'#F87171'; ctx.globalAlpha=.16;
+      ctx.fillRect(i*cw,j*ch,cw+1,ch+1);
+    }
+    ctx.globalAlpha=1;
+    // grid lines
+    ctx.strokeStyle='#1b2536'; ctx.lineWidth=1;
+    for(let i=0;i<=4;i++){const g=pad+i*(W-2*pad)/4;
+      ctx.beginPath();ctx.moveTo(g,pad);ctx.lineTo(g,H-pad);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(pad,g);ctx.lineTo(W-pad,g);ctx.stroke();}
+    // training points
+    train.forEach(t=>{const pp=toPx(t.x,t.y);
+      ctx.beginPath();ctx.arc(pp.x,pp.y,5,0,7);
+      ctx.fillStyle=t.c===0?'#60A5FA':'#F87171';ctx.fill();
+      ctx.strokeStyle='#0B1220';ctx.lineWidth=1.5;ctx.stroke();});
+    // accuracy
+    let correct=0; train.forEach(t=>{if(predict(t.x,t.y,k,p)===t.c)correct++;});
+    const acc=(100*correct/train.length).toFixed(1);
+    document.getElementById('dbKVal').textContent=k;
+    document.getElementById('dbPVal').textContent=p.toFixed(1);
+    document.getElementById('dbPName').textContent=p===1?'— Manhattan':p===2?'— Euclidean':'— Minkowski';
+    document.getElementById('dbAcc').textContent=acc+'%';
+    document.getElementById('dbNote').textContent=
+      k<=3?'small k → jagged, high-variance boundary (risk of overfitting)':
+      k>=25?'large k → smooth, high-bias boundary (under-fits structure)':
+      'moderate k → balanced boundary';
+  }
+
+  kS.oninput=draw; pS.oninput=draw;
+  document.querySelectorAll('[data-ds]').forEach(b=>{
+    b.onclick=()=>{
+      document.querySelectorAll('[data-ds]').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active'); ds=b.dataset.ds; gen(ds); draw();
+    };
+  });
+  gen('blobs'); draw();
+})();
+</script>
+</body>
+</html>

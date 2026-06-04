@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Steer to Feel — Visual Activation Steering in VLMs</title>
+<style>
+  :root{
+    --bg:#0B1220; --surface:#0F172A; --panel:#1E293B; --border:#243044;
+    --text:#E2E8F0; --muted:#94A3B8; --accent:#14B8A6; --blue:#60A5FA; --red:#F87171;
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    line-height:1.55;font-size:15px;}
+  .wrap{max-width:1040px;margin:0 auto;padding:24px 20px 56px;}
+  h1{font-size:26px;margin:0 0 4px;letter-spacing:-.3px}
+  h2{font-size:19px;margin:0 0 12px;letter-spacing:-.2px}
+  h3{font-size:15px;margin:18px 0 8px;color:var(--text)}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 18px}
+  .authors{font-family:var(--mono);font-size:12px;color:var(--accent);margin-bottom:18px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 22px;border-bottom:1px solid var(--border);padding-bottom:0}
+  .tab{background:transparent;border:none;color:var(--muted);padding:9px 14px;cursor:pointer;
+    font-size:14px;font-weight:500;border-bottom:2px solid transparent;border-radius:6px 6px 0 0}
+  .tab:hover{color:var(--text);background:var(--panel)}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .panel{display:none;animation:fade .25s ease}
+  .panel.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:14px 0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:720px){.grid2{grid-template-columns:1fr}}
+  code,.mono{font-family:var(--mono);font-size:12.5px}
+  .pill{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:20px;
+    background:var(--panel);border:1px solid var(--border);color:var(--muted);margin:0 4px 4px 0}
+  .pill.accent{color:var(--accent);border-color:var(--accent)}
+  .pill.blue{color:var(--blue);border-color:var(--blue)}
+  /* pipeline */
+  .pipe{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;margin:12px 0}
+  .stage{flex:1 1 150px;min-width:150px;background:var(--panel);border:1px solid var(--border);
+    border-radius:10px;padding:12px;cursor:pointer;transition:.15s;position:relative}
+  .stage:hover{border-color:var(--accent);transform:translateY(-2px)}
+  .stage.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+  .stage .n{font-family:var(--mono);font-size:11px;color:var(--accent)}
+  .stage .t{font-weight:600;font-size:13px;margin-top:3px}
+  .stage .d{font-size:11.5px;color:var(--muted);margin-top:4px}
+  .arrow{align-self:center;color:var(--border);font-size:18px}
+  #stageDetail{margin-top:10px;font-size:13.5px;color:var(--muted);min-height:20px}
+  #stageDetail b{color:var(--text)}
+  /* example viewer */
+  .seg{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+  .seg button{background:var(--panel);border:1px solid var(--border);color:var(--muted);
+    padding:6px 11px;border-radius:7px;cursor:pointer;font-size:12.5px;font-family:var(--mono)}
+  .seg button.active{color:var(--bg);background:var(--accent);border-color:var(--accent);font-weight:600}
+  .io{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+  @media(max-width:720px){.io{grid-template-columns:1fr}}
+  .io .box{background:#0a0f1a;border:1px solid var(--border);border-radius:9px;padding:12px}
+  .io .lbl{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+  .io .base .lbl{color:var(--muted)}
+  .io .steer .lbl{color:var(--accent)}
+  .io .box p{margin:0;font-size:13px;color:var(--text)}
+  .meta{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:8px}
+  .meta b{color:var(--blue)}
+  figure{margin:14px 0}
+  figure img{width:100%;border:1px solid var(--border);border-radius:10px;background:#fff}
+  figcaption{font-size:12px;color:var(--muted);margin-top:6px}
+  ul{margin:8px 0;padding-left:20px}
+  li{margin:5px 0}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .kvs{font-family:var(--mono);font-size:12.5px}
+  .kvs div{padding:4px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;gap:14px}
+  .kvs div:last-child{border:none}
+  .kvs span:first-child{color:var(--muted)}
+  pre{background:#0a0f1a;border:1px solid var(--border);border-radius:9px;padding:12px;overflow:auto;
+    font-family:var(--mono);font-size:12px;color:var(--text)}
+  .note{font-size:12px;color:var(--muted);border-left:2px solid var(--border);padding-left:12px;margin:10px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Steer to Feel</h1>
+  <p class="sub">Steering abstract concepts into Vision-Language Models &mdash; do images act as steering signals?</p>
+  <div class="authors">Gil Caplan &amp; Anis Barhoum &nbsp;·&nbsp; Adversarial ML 02360207</div>
+
+  <div>
+    <span class="pill accent">Qwen2-VL 2B / 7B</span>
+    <span class="pill accent">Llama-3.2-Vision 11B</span>
+    <span class="pill blue">activation steering</span>
+    <span class="pill blue">emotion + weather concepts</span>
+    <span class="pill">inference-time, no fine-tuning</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-p="overview">Abstract</button>
+    <button class="tab" data-p="method">Method</button>
+    <button class="tab" data-p="examples">Live Examples</button>
+    <button class="tab" data-p="results">Results</button>
+    <button class="tab" data-p="code">Code</button>
+  </div>
+
+  <!-- ABSTRACT -->
+  <div class="panel active" id="overview">
+    <div class="card">
+      <h2>The question</h2>
+      <p>Activation steering is well known for text LLMs: add a direction vector to the hidden
+      states and push the model toward a concept. This project asks whether the same works for the
+      <b>visual / multimodal</b> pathway of a Vision-Language Model &mdash; can an
+      <b>image-derived</b> steering vector inject an abstract concept (an emotion or a weather mood)
+      into the model's output <i>without changing the input pixels or the model weights</i>?</p>
+      <p>The method computes a batch-averaged steering vector as
+      <span class="mono">mean(activations on concept images) − mean(activations on neutral images)</span>,
+      then injects it at a chosen transformer layer during generation, scaled by a strength
+      <span class="mono">α</span>. Two model components are probed independently: the
+      <b>LLM (language) layers</b> and the <b>Vision encoder layers</b>.</p>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h3>Two concept domains</h3>
+        <ul>
+          <li><b>Emotion</b> &mdash; FER faces dataset: <span class="mono">happy, sad, neutral, angry</span></li>
+          <li><b>Weather</b> &mdash; multiclass weather dataset: <span class="mono">cloudy, rain, shine, sunrise</span></li>
+        </ul>
+        <p class="note">Both datasets are pulled automatically via <span class="mono">kagglehub</span> on first run (see <span class="mono">Load_dataset.py</span>).</p>
+      </div>
+      <div class="card">
+        <h3>Two experiments</h3>
+        <ul>
+          <li><b>Controlled Hallucination</b> &mdash; inject a concept while the model looks at a
+          <i>blank noise image</i>; does the concept appear in the description from nothing?</li>
+          <li><b>Semantic Transfer</b> &mdash; show a real image of concept A, steer toward concept B
+          (e.g. <span class="mono">happy→sad</span>, <span class="mono">shine→rain</span>); does the
+          description flip?</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Configuration (from VLM_experiments.py)</h3>
+      <div class="kvs">
+        <div><span>Images per concept for steering vector (N)</span><span>10</span></div>
+        <div><span>Steering strengths α swept (hallucination)</span><span>1, 3, 5, 10</span></div>
+        <div><span>Transfer experiment fixed α</span><span>1.0</span></div>
+        <div><span>Layers sampled (hallucination)</span><span>every 4th from L1</span></div>
+        <div><span>Layers sampled (transfer)</span><span>every 5th from L5</span></div>
+        <div><span>Components probed</span><span>LLM layers + Vision layers</span></div>
+        <div><span>Generation</span><span>max_new_tokens = 50</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- METHOD -->
+  <div class="panel" id="method">
+    <div class="card">
+      <h2>The steering pipeline</h2>
+      <p class="sub" style="margin-bottom:12px">Click a stage to see what the real code does.</p>
+      <div class="pipe">
+        <div class="stage sel" data-s="0"><div class="n">STEP 1</div><div class="t">Build vector</div><div class="d">mean(concept) − mean(neutral) at layer L</div></div>
+        <div class="arrow">→</div>
+        <div class="stage" data-s="1"><div class="n">STEP 2</div><div class="t">Hook the layer</div><div class="d">register_forward_hook on layer L</div></div>
+        <div class="arrow">→</div>
+        <div class="stage" data-s="2"><div class="n">STEP 3</div><div class="t">Inject + α</div><div class="d">hidden += α · vector</div></div>
+        <div class="arrow">→</div>
+        <div class="stage" data-s="3"><div class="n">STEP 4</div><div class="t">Generate</div><div class="d">decode steered description</div></div>
+      </div>
+      <div id="stageDetail"></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>1 · Batch-averaged steering vector</h3>
+        <pre>vec = repr(concept_img, L)
+    − repr(neutral_img, L)
+steering_vector = mean(vecs)   # over N=10 pairs</pre>
+        <p class="note">From <span class="mono">get_averaged_steering_vector()</span>. Images are
+        resized to 336×336; the layer representation is captured by a forward hook on the chosen
+        layer (<span class="mono">get_layer_representation</span>).</p>
+      </div>
+      <div class="card">
+        <h3>2–3 · Injection hook</h3>
+        <pre>def insertion_hook(module, inp, out):
+    hs = out[0]
+    # interpolate vector to seq len
+    modified = hs + (alpha * target_v)
+    return (modified,) + out[1:]</pre>
+        <p class="note">From <span class="mono">generate_with_vector_insertion()</span>. The vector is
+        length-matched to the current sequence with <span class="mono">F.interpolate</span>; LLM
+        steering is skipped during single-token decode steps (prefill-only).</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Robust layer access across architectures</h3>
+      <p>The same code targets two very different model families. <span class="mono">get_target_layers()</span> resolves the right module list:</p>
+      <div class="kvs">
+        <div><span>Qwen2-VL · LLM</span><span>model.model.layers</span></div>
+        <div><span>Qwen2-VL · Vision</span><span>model.visual.blocks</span></div>
+        <div><span>Llama-3.2-V · LLM</span><span>model.language_model.model.layers</span></div>
+        <div><span>Llama-3.2-V · Vision</span><span>model.vision_model.transformer.layers</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXAMPLES -->
+  <div class="panel" id="examples">
+    <div class="card">
+      <h2>Real steered outputs</h2>
+      <p class="sub">Baseline (unsteered) vs. steered generations, copied verbatim from the repo's
+      JSON results. Pick an example:</p>
+      <div class="seg" id="exSeg"></div>
+      <div class="io">
+        <div class="box base"><div class="lbl">Baseline · unsteered</div><p id="exBase"></p></div>
+        <div class="box steer"><div class="lbl">Steered · concept injected</div><p id="exSteer"></p></div>
+      </div>
+      <div class="meta" id="exMeta"></div>
+    </div>
+    <p class="note">Examples are read directly from <span class="mono">json_results/</span> and
+    <span class="mono">json_results_emotions/</span>. <span class="mono">vector_norm</span> is the L2
+    norm of the steering direction at that layer; in the Controlled Hallucination examples the input
+    is a blank noise image, so any concept content in the steered text is injected, not observed.</p>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="panel" id="results">
+    <div class="card">
+      <h2>Findings (real figures from the repo)</h2>
+      <p>Effectiveness is measured as a keyword-match rate: does the steered description contain
+      concept keywords that the unsteered baseline does not. Results are reported per model, per
+      concept, and swept across layers and α.</p>
+    </div>
+    <figure>
+      <img src="figures/baseline_comparison.png" alt="Unsteered baseline vs mean steered specific-match">
+      <figcaption><b>Controlled Hallucination — steered vs. unsteered baseline</b>, averaged across
+      all layers &amp; α with the tighter (v2) keyword evaluation. Bars are steered specific-match %;
+      stars mark a clean signal (baseline ≈ 0%, lift &gt; 0). Llama-3.2-11B shows the strongest,
+      cleanest injection effect across both domains. (<span class="mono">baseline_analysis/baseline_comparison_figure.png</span>)</figcaption>
+    </figure>
+    <div class="grid2">
+      <figure>
+        <img src="figures/weather_hallucination_summary.png" alt="Weather hallucination sensitivity by layer">
+        <figcaption><b>Weather · hallucination sensitivity by layer.</b> Match rate vs. injection
+        layer for each model, targeting CLOUDY / RAIN / SHINE. (<span class="mono">graphs_weather/summary_hallucination_comparison.png</span>)</figcaption>
+      </figure>
+      <figure>
+        <img src="figures/emotion_transfer_summary.png" alt="Emotion transfer success rate by layer">
+        <figcaption><b>Emotion · transfer success rate by layer.</b> happy→sad, neutral→angry,
+        sad→happy across layers for all three models. (<span class="mono">graphs_emotions/summary_transformation_comparison.png</span>)</figcaption>
+      </figure>
+    </div>
+    <figure>
+      <img src="figures/poc_steering_effectiveness.png" alt="PoC steering effectiveness LLM vs vision layers">
+      <figcaption><b>Proof-of-concept — LLM vs. Vision layers.</b> Number of responses changed by
+      steering as a function of layer, separately for LLM and Vision components: the injection point
+      matters, and the two pathways respond differently across depth.
+      (<span class="mono">json_results_PoC/images_results/emotion_steering_analysis.png</span>)</figcaption>
+    </figure>
+    <div class="card">
+      <h3>What the data shows</h3>
+      <ul>
+        <li><b>Image-derived vectors do steer.</b> A vector built purely from concept vs. neutral
+        <i>images</i> can inject that concept into the text output &mdash; even onto a blank noise
+        image (controlled hallucination).</li>
+        <li><b>Layer and component matter.</b> Effectiveness is not uniform: it varies strongly with
+        injection depth and differs between the LLM and Vision encoder pathways.</li>
+        <li><b>Model scale helps cleanliness.</b> Llama-3.2-11B yields the clearest signal
+        (baseline≈0, positive lift) in the tightened keyword evaluation.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- CODE -->
+  <div class="panel" id="code">
+    <div class="card">
+      <h2>Repository map</h2>
+      <div class="kvs">
+        <div><span>VLM_experiments.py</span><span>main runner · both experiments</span></div>
+        <div><span>VLM_manipulation.py</span><span>steering hooks &amp; layer access</span></div>
+        <div><span>Load_VLM.py</span><span>load Qwen / Llama VLMs</span></div>
+        <div><span>Load_dataset.py</span><span>FER + weather via kagglehub</span></div>
+        <div><span>visualize.py</span><span>hallucination &amp; transfer figures</span></div>
+        <div><span>baseline_analysis/</span><span>baseline extraction + plots</span></div>
+        <div><span>json_results/ · json_results_emotions/</span><span>raw experiment outputs</span></div>
+        <div><span>graphs_weather/ · graphs_emotions/</span><span>generated figures</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Run it</h3>
+      <pre># run both experiments across configured models
+python VLM_experiments.py
+
+# regenerate figures
+python visualize.py
+python baseline_analysis/plot_baseline_comparison.py</pre>
+      <p style="margin-top:14px"><a href="https://github.com/GilCaplan/Adversarial_ML_2360207" target="_blank">→ GilCaplan/Adversarial_ML_2360207 on GitHub</a></p>
+      <p class="note">The repo also ships a project proposal PDF and a write-up
+      (<span class="mono">VLM_Steering-7.pdf</span>).</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// tabs
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById(t.dataset.p).classList.add('active');
+  };
+});
+
+// pipeline detail
+const stageText=[
+  "<b>Build the steering direction.</b> For N=10 concept/neutral image pairs, capture the hidden activation at layer L for each, take the difference, and average. The result is one vector pointing from “neutral” toward the concept in that layer’s representation space.",
+  "<b>Hook the target layer.</b> A forward hook is registered on layer L (LLM or Vision). It intercepts the layer’s hidden-state output during generation so it can be modified in place.",
+  "<b>Inject, scaled by α.</b> The hook adds <code>α · steering_vector</code> to the hidden state (length-matched to the current sequence via interpolation). α controls how hard the model is pushed: the hallucination sweep uses α ∈ {1,3,5,10}.",
+  "<b>Generate &amp; decode.</b> The model generates up to 50 new tokens with the hook active, then the steered description is decoded and saved alongside the unsteered baseline for comparison."
+];
+function selStage(i){
+  document.querySelectorAll('.stage').forEach(s=>s.classList.remove('sel'));
+  document.querySelector('.stage[data-s="'+i+'"]').classList.add('sel');
+  document.getElementById('stageDetail').innerHTML=stageText[i];
+}
+document.querySelectorAll('.stage').forEach(s=>s.onclick=()=>selStage(+s.dataset.s));
+selStage(0);
+
+// real examples (copied verbatim from repo json_results)
+const examples=[
+  {label:"halluc · cloudy · Llama L13",
+   exp:"Controlled Hallucination", model:"Llama-3.2-11B", concept:"cloudy", comp:"LLM", layer:13, alpha:1.0, norm:10.16, input:"blank noise image",
+   base:"The image is a blank, white square with a subtle texture. The background is a plain white color, and there are no objects or features visible in the image.",
+   steer:"The image is a blank, grayish-beige square with a grainy texture. The color is a light, neutral tone that is neither bright nor dark, but rather falls somewhere in between."},
+  {label:"halluc · cloudy · Llama L9",
+   exp:"Controlled Hallucination", model:"Llama-3.2-11B", concept:"cloudy", comp:"LLM", layer:9, alpha:3.0, norm:7.73, input:"blank noise image",
+   base:"The image is a blank, white square with a subtle texture. The background is a plain white color, and there are no objects or features visible in the image.",
+   steer:"The image is a solid light gray color with a subtle texture. The background is a uniform gray color, with no discernible objects or features. The overall atmosphere..."},
+  {label:"transfer · happy→sad · Llama L5",
+   exp:"Semantic Transfer", model:"Llama-3.2-11B", concept:"happy → sad", comp:"LLM", layer:5, alpha:1.0, norm:1.64, input:"real photo of a smiling man",
+   base:"The image is a close-up, black and white photograph of a man's face, with a blurred background... He is smiling, showing his teeth.",
+   steer:"The image is a close-up, black and white photograph of a man's face, with the purpose of showcasing his features and expression. The image is likely used for identification or recognition purposes."}
+];
+const seg=document.getElementById('exSeg');
+examples.forEach((e,i)=>{
+  const b=document.createElement('button');
+  b.textContent=e.label; b.onclick=()=>selEx(i);
+  if(i===0)b.classList.add('active');
+  seg.appendChild(b);
+});
+function selEx(i){
+  [...seg.children].forEach((b,j)=>b.classList.toggle('active',i===j));
+  const e=examples[i];
+  document.getElementById('exBase').textContent=e.base;
+  document.getElementById('exSteer').textContent=e.steer;
+  document.getElementById('exMeta').innerHTML=
+    `<b>${e.exp}</b> &nbsp;·&nbsp; model ${e.model} &nbsp;·&nbsp; concept: ${e.concept} `+
+    `&nbsp;·&nbsp; ${e.comp} layer ${e.layer} &nbsp;·&nbsp; α=${e.alpha} `+
+    `&nbsp;·&nbsp; ‖vec‖=${e.norm} &nbsp;·&nbsp; input: ${e.input}`;
+}
+selEx(0);
+</script>
+</body>
+</html>

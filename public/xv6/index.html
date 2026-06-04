@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>xv6 — OS kernel hacking</title>
+<style>
+  :root{
+    --bg:#0B1220;--surface:#0F172A;--panel:#1E293B;--border:#243044;
+    --text:#E2E8F0;--muted:#94A3B8;--accent:#14B8A6;--blue:#60A5FA;--red:#F87171;
+    --gold:#e0b44a;--green:#34d399;--purple:#a78bfa;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.55}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 20px 56px}
+  h1{font-size:1.6rem;margin:0 0 4px}
+  h2{font-size:1.15rem;margin:0 0 10px}
+  h3{font-size:1rem;margin:16px 0 8px;color:var(--blue)}
+  .sub{color:var(--muted);font-size:.95rem;margin:0 0 18px}
+  code,.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+  .tag{display:inline-block;font-size:.72rem;padding:2px 9px;border-radius:999px;
+    background:rgba(20,184,166,.12);color:var(--accent);border:1px solid rgba(20,184,166,.3);margin-right:6px}
+  .tag.blue{background:rgba(96,165,250,.12);color:var(--blue);border-color:rgba(96,165,250,.3)}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 16px;border-bottom:1px solid var(--border);padding-bottom:10px}
+  .tab{cursor:pointer;padding:7px 14px;border-radius:8px;color:var(--muted);font-size:.9rem;
+    border:1px solid transparent;background:transparent;transition:.15s;font-family:inherit}
+  .tab:hover{color:var(--text);background:var(--panel)}
+  .tab.active{color:var(--accent);background:rgba(20,184,166,.1);border-color:rgba(20,184,166,.3)}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px}
+  .panel.alt{background:var(--panel)}
+  .view{display:none}.view.active{display:block}
+  .grid2{display:grid;grid-template-columns:1.05fr 1fr;gap:18px}
+  @media(max-width:820px){.grid2{grid-template-columns:1fr}}
+  pre{background:#0a0f1a;border:1px solid var(--border);border-radius:10px;padding:14px;overflow:auto;
+    font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.76rem;color:#cbd5e1;margin:0}
+  .muted{color:var(--muted)}
+  .kw{color:var(--blue)}.fn{color:var(--accent)}.cm{color:#5b6b82;font-style:italic}.st{color:#f0b27a}.nm{color:var(--gold)}
+  .filebar{font-size:.74rem;color:var(--muted);margin-top:10px;font-family:"JetBrains Mono",monospace}
+  .badge{font-size:.78rem;color:var(--muted)}
+  .pipe{display:flex;gap:0;flex-wrap:wrap;margin:6px 0}
+  .stage{flex:1;min-width:200px;background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    padding:11px 13px;margin:4px}
+  .stage b{color:var(--blue);font-size:.86rem}.stage p{font-size:.75rem;color:var(--muted);margin:6px 0 0}
+  .legend span{display:inline-flex;align-items:center;gap:6px;margin:3px 12px 3px 0;font-size:.78rem;color:var(--muted)}
+  .sw{width:13px;height:13px;border-radius:3px;display:inline-block;border:1px solid var(--border)}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 12px}
+  .stat{display:inline-block;background:var(--panel);border:1px solid var(--border);border-radius:9px;
+    padding:8px 13px;margin:3px 5px 3px 0;text-align:center}
+  .stat b{display:block;font-size:1.15rem;color:var(--accent);font-family:"JetBrains Mono",monospace}
+  .stat span{font-size:.72rem;color:var(--muted)}
+  ul.tight{font-size:.86rem;color:var(--muted);margin:6px 0;padding-left:18px}
+  ul.tight li{margin:3px 0}
+  table{border-collapse:collapse;width:100%;font-size:.82rem;font-family:"JetBrains Mono",monospace;margin-top:6px}
+  th,td{border:1px solid var(--border);padding:6px 9px;text-align:left}
+  th{color:var(--blue);background:var(--panel)}
+  a{color:var(--blue)}
+  canvas{display:block;width:100%;border-radius:10px;background:#0a0f1a;border:1px solid var(--border)}
+  .q{display:inline-block;width:14px;height:14px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div><span class="tag">Technion · Operating Systems</span><span class="tag blue">xv6 kernel · C · x86</span></div>
+  <h1>xv6 — kernel hacking</h1>
+  <p class="sub">Coursework repo <code>xv6_hw</code>: a set of modifications to MIT's <b>xv6</b> teaching
+  operating system (a clean re-implementation of Unix v6 for x86). Each homework lives on its own branch and
+  touches the real kernel — adding system calls, rewriting the CPU scheduler, and wiring a Unix-style signals
+  layer. The headline assignment (HW05, <code>mlq</code> branch) replaces xv6's round-robin scheduler with a
+  3-level <b>Multi-Level Queue</b> scheduler; the live demo below runs that exact policy.</p>
+
+  <div class="tabs">
+    <button class="tab active" data-v="ov">Overview</button>
+    <button class="tab" data-v="mlq">HW05 · MLQ scheduler</button>
+    <button class="tab" data-v="live">Live: Scheduler</button>
+    <button class="tab" data-v="syscall">HW04 · waitpid &amp; lsproc</button>
+    <button class="tab" data-v="signal">Signals</button>
+    <button class="tab" data-v="code">Code</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="view active" id="ov">
+    <div class="panel">
+      <h2>What was implemented (per branch)</h2>
+      <div class="pipe">
+        <div class="stage"><b>HW04 · <code>syscall_waitpid</code> / <code>lsproc</code></b>
+          <p>A new <code>lsproc()</code> kernel routine + <code>lsproc</code> user program that lists every live
+          process (name, pid, state, page-table address), wired through the syscall table as
+          <code>SYS_lsproc = 22</code>. Plus a <code>waitpid</code>-style "wait for a specific child" path
+          (<code>checkRelinquished</code> / <code>testwait.c</code>).</p>
+          <div class="filebar">proc.c · sysproc.c · syscall.h · lsproc.c</div></div>
+        <div class="stage"><b>HW05 · <code>mlq</code></b>
+          <p>Replaces the default per-CPU round-robin <code>scheduler()</code> with a preemptive
+          <b>3-level multi-level-queue</b> scheduler (priorities 2&gt;1&gt;0, per-level time slices 8/16/32 ticks,
+          round-robin within a level) and a new <code>setpriority()</code> system call. Adds per-process timing
+          counters (run / wait / I-O ticks).</p>
+          <div class="filebar">proc.c · proc.h · sysproc.c · set_priority.c</div></div>
+        <div class="stage"><b><code>prepare-signal</code></b>
+          <p>Scaffolding for a Unix-style signals layer: <code>signal()</code> / <code>sigsend()</code> /
+          <code>sigret()</code> syscalls, a per-process pending-signal bitset and handler table, and the trampoline
+          (<code>invokesigret.S</code>) that returns from a user-space handler.</p>
+          <div class="filebar">proc.c · signal.h · sigret.S · invokesigret.S · trapasm.S</div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>xv6 process model — the substrate every HW builds on</h2>
+      <ul class="tight">
+        <li>Each process is a <code>struct proc</code> in a fixed <code>ptable.proc[NPROC]</code> array, guarded by
+          a single <code>ptable.lock</code> spinlock.</li>
+        <li>States cycle through <code>UNUSED → EMBRYO → RUNNABLE ⇄ RUNNING ⇄ SLEEPING → ZOMBIE</code>.</li>
+        <li>The per-CPU <code>scheduler()</code> loop picks a <code>RUNNABLE</code> proc and <code>swtch()</code>es
+          into it; the process later yields control back via <code>swtch(&amp;c-&gt;scheduler, ...)</code>.</li>
+        <li>A <b>syscall</b> = add the handler to <code>sysproc.c</code>, register it in <code>syscall.c</code>,
+          give it a number in <code>syscall.h</code>, and add a <code>usys.S</code> trap stub + a <code>user.h</code>
+          prototype. The HWs do exactly this for <code>lsproc</code>, <code>setpriority</code>, <code>signal</code>…</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- MLQ -->
+  <div class="view" id="mlq">
+    <div class="panel">
+      <h2>HW05 — a 3-level Multi-Level Queue scheduler</h2>
+      <p class="muted" style="font-size:.88rem">The assignment replaces xv6's flat round-robin with a preemptive
+      priority scheduler. The rules below are taken verbatim from the branch <code>README</code> and are exactly
+      what the live demo enforces.</p>
+      <ul class="tight">
+        <li>Three priority levels <b>2 (highest) … 0 (lowest)</b>. A new process starts at priority <b>1</b>
+          (<code>p-&gt;priority = 1</code> in <code>allocproc</code>).</li>
+        <li>On every timer tick the <b>highest-priority RUNNABLE</b> process runs — <b>preemptive</b>.</li>
+        <li>Within a level, processes run <b>round-robin</b>.</li>
+        <li>Per-level <b>time slices</b> (priority → ticks): <code>(2 → 8)</code>, <code>(1 → 16)</code>,
+          <code>(0 → 32)</code> — stored in <code>p-&gt;ctime</code>.</li>
+        <li>A running process is <b>not</b> preempted by an equal-priority peer; it only stops when a
+          <b>higher-priority</b> process becomes RUNNABLE, or when it relinquishes the CPU / finishes its slice.</li>
+        <li>If it yields early, its slice is reset (re-charged to the level's full value next time).</li>
+        <li><code>int set_priority(int new_priority)</code> — new syscall, sets the caller's priority (0..2) and
+          re-charges its slice.</li>
+      </ul>
+      <div style="margin-top:10px">
+        <div class="stat"><b>8</b><span>slice @ prio 2</span></div>
+        <div class="stat"><b>16</b><span>slice @ prio 1</span></div>
+        <div class="stat"><b>32</b><span>slice @ prio 0</span></div>
+        <div class="stat"><b>22</b><span>SYS_lsproc number</span></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>How <code>scheduler()</code> was rewritten <span class="badge">— proc.c</span></h3>
+      <ul class="tight">
+        <li>Scan <code>ptable</code> for the RUNNABLE proc with the <b>maximum</b> <code>priority</code>
+          (<code>high_prio_proc</code>).</li>
+        <li>If its <code>ctime</code> (slice) is 0, recharge it to 8 / 16 / 32 based on its level.</li>
+        <li><code>swtch()</code> into it; each tick decrement <code>ctime</code> and bump <code>rticks</code>
+          (run ticks). Sleeping procs accrue <code>IO_ticks</code>; other RUNNABLE procs accrue <code>wticks</code>.</li>
+        <li>After each tick, re-scan: if any proc has <b>strictly higher</b> priority and is RUNNABLE, set
+          <code>check_value = 0</code> to <b>preempt</b> and break out.</li>
+        <li>Loop continues while <code>ctime != 0 &amp;&amp; state == RUNNABLE &amp;&amp; !preempted</code>.</li>
+      </ul>
+      <p class="muted" style="font-size:.82rem"><code>procdump()</code> (Ctrl-P) was also extended to print the new
+      <code>priority</code> column for every process.</p>
+    </div>
+  </div>
+
+  <!-- LIVE SCHEDULER -->
+  <div class="view" id="live">
+    <div class="panel">
+      <h2>Live: the MLQ scheduler in action</h2>
+      <p class="muted" style="font-size:.88rem;margin:0 0 12px">This runs the <b>exact policy</b> from the
+      <code>mlq</code> branch: pick the highest-priority RUNNABLE process, run it round-robin within its level for
+      up to its time slice (8/16/32 ticks), preempt the instant a higher-priority process becomes RUNNABLE.
+      Each process has an arrival tick, a CPU burst, and may issue I/O (sleep) mid-run. The Gantt chart below is
+      the real schedule the policy produces; the queue panel shows the three ready-queues each tick.
+      Slices are shown at <b>1 tick = 1 grid step</b> (the demo uses small bursts so a run fits on screen).</p>
+      <div class="grid2">
+        <div>
+          <canvas id="gantt" height="250"></canvas>
+          <div class="legend" style="margin-top:10px">
+            <span><i class="q" style="background:#f87171"></i>prio 2</span>
+            <span><i class="q" style="background:#60a5fa"></i>prio 1</span>
+            <span><i class="q" style="background:#34d399"></i>prio 0</span>
+            <span><i class="q" style="background:#3a4256"></i>I/O wait (sleeping)</span>
+          </div>
+          <canvas id="queues" height="170" style="margin-top:12px"></canvas>
+        </div>
+        <div>
+          <div class="btns">
+            <button class="tab active" id="schPlay">Run ▶</button>
+            <button class="tab" id="schStep">Step tick</button>
+            <button class="tab" id="schReset">Reset</button>
+          </div>
+          <div class="btns">
+            <button class="tab" data-load="default">Mixed-priority workload</button>
+            <button class="tab" data-load="starve">Starvation demo</button>
+            <button class="tab" data-load="io">I/O-bound vs CPU-bound</button>
+          </div>
+          <div class="panel alt" style="padding:12px 14px">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:.82rem">
+              tick: <span id="schTick" style="color:var(--accent)">0</span><br>
+              running: <span id="schRun" style="color:var(--gold)">idle</span><br>
+              slice left (ctime): <span id="schSlice" style="color:var(--blue)">—</span><br>
+              last event: <span id="schEvt" class="muted">ready</span>
+            </div>
+          </div>
+          <div class="panel alt" style="padding:10px 13px;margin-top:10px">
+            <div id="procTable" style="font-family:'JetBrains Mono',monospace;font-size:.74rem"></div>
+          </div>
+          <p class="muted" style="font-size:.8rem;margin-top:10px">Try <b>Starvation demo</b>: a steady stream of
+          high-priority jobs keeps the priority-0 job from ever running — exactly the trade-off a strict MLQ makes
+          (no aging in this assignment). The <b>I/O</b> workload shows a process going to <code>SLEEPING</code> and
+          letting a lower-priority CPU-bound job grab the core.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SYSCALL -->
+  <div class="view" id="syscall">
+    <div class="panel">
+      <h2>HW04 — adding a system call end-to-end</h2>
+      <p class="muted" style="font-size:.88rem">The <code>lsproc</code> command prints the page-table address of
+      every live process (sorted by pid): columns <b>name, pid, state, pagetable address</b>. Implementing it means
+      walking the full "add a syscall" path in xv6 — the canonical OS-course exercise.</p>
+      <table>
+        <tr><th>file</th><th>what changed</th></tr>
+        <tr><td>proc.c</td><td><code>int lsproc(void)</code> — locks <code>ptable</code>, iterates, prints each
+          RUNNABLE/RUNNING/SLEEPING proc's <code>name pid state pgdir</code></td></tr>
+        <tr><td>sysproc.c</td><td><code>sys_lsproc()</code> wrapper that calls <code>lsproc()</code></td></tr>
+        <tr><td>syscall.h</td><td><code>#define SYS_lsproc 22</code></td></tr>
+        <tr><td>syscall.c</td><td>register <code>[SYS_lsproc] sys_lsproc</code> in the dispatch table</td></tr>
+        <tr><td>usys.S</td><td><code>SYSCALL(lsproc)</code> — the int-0x40 trap stub for user space</td></tr>
+        <tr><td>user.h</td><td><code>int lsproc(void);</code> prototype</td></tr>
+        <tr><td>lsproc.c</td><td>tiny user program: <code>main(){ lsproc(); exit(); }</code></td></tr>
+      </table>
+    </div>
+    <div class="panel">
+      <h3>waitpid — wait for a <i>specific</i> child <span class="badge">— testwait.c · proc.c</span></h3>
+      <p class="muted" style="font-size:.86rem">xv6's stock <code>wait()</code> reaps <i>any</i> child. The HW04
+      extension reaps a chosen pid and reports its accounting (wait / run / I-O ticks) — the
+      <code>checkRelinquished()</code> routine in the scheduler branch frees the ZOMBIE's kernel stack &amp;
+      page table and returns its pid, mirroring <code>waitpid()</code>. <code>testwait.c</code> forks a child, then
+      blocks on it specifically.</p>
+    </div>
+  </div>
+
+  <!-- SIGNAL -->
+  <div class="view" id="signal">
+    <div class="panel">
+      <h2>Unix-style signals (<code>prepare-signal</code> branch)</h2>
+      <p class="muted" style="font-size:.88rem">A from-scratch signals layer modelled on POSIX. The interface
+      (<code>signal.h</code>) declares <code>signal()</code> to register a handler and <code>sigsend()</code> to
+      deliver a signal to a pid, with the familiar <code>SIG_DFL</code> / <code>SIG_IGN</code> / <code>SIG_ERR</code>
+      sentinels and numbers (<code>SIGKILL 9</code>, <code>SIGSTOP 16</code>, <code>SIGCONT 17</code>…).</p>
+      <h3>The delivery mechanism — the hard part</h3>
+      <ul class="tight">
+        <li>Each <code>struct proc</code> gains a <code>pending_signals</code> bitset, a
+          <code>sighandler[NUMSIGNALS]</code> table, an <code>executing_signal</code> flag, and a
+          <code>user_backup</code> trap frame.</li>
+        <li><code>check_signals(tf)</code> runs <b>just before returning to user space</b> (from
+          <code>trapasm.S</code>). If a signal is pending and the CPU is at user privilege (DPL 3), it dispatches it.</li>
+        <li>To run a <b>user-space handler</b> it backs up the trap frame, pushes a tiny trampoline
+          (<code>invokesigret_start … invokesigret_end</code>) onto the user stack, sets <code>eip</code> to the
+          handler, and arranges that when the handler returns it lands in the trampoline which calls
+          <code>sigret</code>.</li>
+        <li><code>sigret()</code> restores the saved trap frame (<code>memmove(p-&gt;tf, &amp;p-&gt;user_backup, …)</code>),
+          resuming the interrupted user program as if nothing happened.</li>
+      </ul>
+      <p class="muted" style="font-size:.82rem">This branch is the scaffolded version (handler-selection / mask logic
+      marked <code>TODO</code>), but the trap-frame backup/restore trampoline — the genuinely tricky kernel/user
+      boundary crossing — is implemented.</p>
+    </div>
+  </div>
+
+  <!-- CODE -->
+  <div class="view" id="code">
+    <div class="panel">
+      <h2>The rewritten scheduler core <span class="badge">— proc.c (mlq branch)</span></h2>
+<pre><span class="kw">void</span> <span class="fn">scheduler</span>(<span class="kw">void</span>){
+  <span class="kw">struct</span> proc *p, *high_prio_proc;
+  <span class="kw">struct</span> cpu *c = mycpu(); c-&gt;proc = <span class="nm">0</span>;
+  <span class="kw">for</span>(;;){
+    sti(); acquire(&amp;ptable.lock);
+    <span class="kw">for</span>(high_prio_proc = ptable.proc; high_prio_proc &lt; &amp;ptable.proc[NPROC]; high_prio_proc++){
+      <span class="kw">if</span>(high_prio_proc-&gt;state != RUNNABLE) <span class="kw">continue</span>;
+      <span class="cm">// find the RUNNABLE process with the highest priority</span>
+      <span class="kw">for</span>(p = ptable.proc; p &lt; &amp;ptable.proc[NPROC]; p++)
+        <span class="kw">if</span>(high_prio_proc-&gt;priority &lt; p-&gt;priority &amp;&amp; p-&gt;state == RUNNABLE)
+          high_prio_proc = p;
+
+      <span class="kw">int</span> check_value = <span class="nm">1</span>;                    <span class="cm">// 0 ⇒ preempted</span>
+      <span class="kw">if</span>(high_prio_proc-&gt;ctime == <span class="nm">0</span>){             <span class="cm">// recharge time-slice for its level</span>
+        <span class="kw">if</span>(high_prio_proc-&gt;priority==<span class="nm">2</span>){high_prio_proc-&gt;ctime=<span class="nm">8</span>; <span class="kw">break</span>;}
+        <span class="kw">if</span>(high_prio_proc-&gt;priority==<span class="nm">1</span>){high_prio_proc-&gt;ctime=<span class="nm">16</span>;<span class="kw">break</span>;}
+        <span class="kw">if</span>(high_prio_proc-&gt;priority==<span class="nm">0</span>){high_prio_proc-&gt;ctime=<span class="nm">32</span>;<span class="kw">break</span>;}
+      }
+      <span class="kw">while</span>(high_prio_proc-&gt;ctime != <span class="nm">0</span> &amp;&amp; high_prio_proc-&gt;state == RUNNABLE &amp;&amp; check_value){
+        c-&gt;proc = high_prio_proc;
+        high_prio_proc-&gt;rticks++; high_prio_proc-&gt;ctime--;   <span class="cm">// account 1 tick</span>
+        switchuvm(high_prio_proc); high_prio_proc-&gt;state = RUNNING;
+        swtch(&amp;(c-&gt;scheduler), high_prio_proc-&gt;context); switchkvm(); c-&gt;proc = <span class="nm">0</span>;
+        <span class="kw">for</span>(p = ptable.proc; p &lt; &amp;ptable.proc[NPROC]; p++){      <span class="cm">// timing bookkeeping</span>
+          <span class="kw">if</span>(p-&gt;state == SLEEPING) p-&gt;IO_ticks++;
+          <span class="kw">if</span>(high_prio_proc != p &amp;&amp; p-&gt;state == RUNNABLE) p-&gt;wticks++;
+        }
+        <span class="kw">for</span>(p = ptable.proc; p &lt; &amp;ptable.proc[NPROC]; p++)     <span class="cm">// preempt on higher prio</span>
+          <span class="kw">if</span>(p-&gt;priority &gt; high_prio_proc-&gt;priority &amp;&amp; p-&gt;state==RUNNABLE){ check_value = <span class="nm">0</span>; <span class="kw">break</span>; }
+      }
+    }
+    release(&amp;ptable.lock);
+  }
+}</pre>
+    </div>
+    <div class="panel">
+      <h2>The <code>setpriority</code> syscall + <code>lsproc</code> <span class="badge">— proc.c / sysproc.c</span></h2>
+<pre><span class="kw">int</span> <span class="fn">setpriority</span>(<span class="kw">int</span> prio){
+  <span class="kw">struct</span> proc *curproc = myproc(); acquire(&amp;ptable.lock);
+  <span class="kw">if</span>(prio &gt; <span class="nm">2</span> || prio &lt; <span class="nm">0</span>){ release(&amp;ptable.lock); <span class="kw">return</span> <span class="nm">1</span>; }
+  <span class="kw">if</span>(prio==<span class="nm">2</span>){ curproc-&gt;priority=<span class="nm">2</span>; curproc-&gt;ctime=<span class="nm">8</span>;  }
+  <span class="kw">else if</span>(prio==<span class="nm">1</span>){ curproc-&gt;priority=<span class="nm">1</span>; curproc-&gt;ctime=<span class="nm">16</span>; }
+  <span class="kw">else if</span>(prio==<span class="nm">0</span>){ curproc-&gt;priority=<span class="nm">0</span>; curproc-&gt;ctime=<span class="nm">32</span>; }
+  curproc-&gt;state = RUNNABLE; sched();          <span class="cm">// yield: re-enter scheduler with new prio</span>
+  release(&amp;ptable.lock); <span class="kw">return</span> <span class="nm">22</span>;
+}
+
+<span class="cm">// HW04 — list all live processes (sysproc.c wraps this as SYS_lsproc 22)</span>
+<span class="kw">int</span> <span class="fn">lsproc</span>(<span class="kw">void</span>){
+  <span class="kw">struct</span> proc *p; sti(); acquire(&amp;ptable.lock);
+  cprintf(<span class="st">"name\t\tpid\tstate\t\taddress\n\n"</span>);
+  <span class="kw">for</span>(p = ptable.proc; p &lt; &amp;ptable.proc[NPROC]; p++){
+    <span class="kw">if</span>(p-&gt;state == RUNNABLE) cprintf(<span class="st">"%s\t\t%d\tRUNNABLE\t%p\n"</span>, p-&gt;name, p-&gt;pid, p-&gt;pgdir);
+    <span class="kw">else if</span>(p-&gt;state == RUNNING)  cprintf(<span class="st">"%s\t\t%d\tRUNNING\t\t%p\n"</span>, p-&gt;name, p-&gt;pid, p-&gt;pgdir);
+    <span class="kw">else if</span>(p-&gt;state == SLEEPING) cprintf(<span class="st">"%s\t\t%d\tSLEEPING\t%p\n"</span>, p-&gt;name, p-&gt;pid, p-&gt;pgdir);
+  }
+  release(&amp;ptable.lock); <span class="kw">return</span> <span class="nm">22</span>;
+}</pre>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------- tabs ----------
+document.querySelectorAll('.tab[data-v]').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab[data-v]').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');document.getElementById(t.dataset.v).classList.add('active');
+    if(t.dataset.v==='live'){ sizeCanvas(); draw(); }
+  };
+});
+
+// ====================== LIVE MLQ SCHEDULER ======================
+(function(){
+  const gantt=document.getElementById('gantt');
+  const queues=document.getElementById('queues');
+  if(!gantt) return;
+  const gx=gantt.getContext('2d'), qx=queues.getContext('2d');
+  const SLICE={2:8,1:16,0:32};           // real per-level time slices
+  const PCOLOR={2:'#f87171',1:'#60a5fa',0:'#34d399'};
+  // Demo bursts are small so a whole run fits; the *policy* is the real one.
+  // Each proc: {pid,name,prio,arrive,burst, io:[{at,len}]}  at = ticks of CPU done when it sleeps
+  const WORKLOADS={
+    default:[
+      {pid:1,name:'init', prio:1,arrive:0, burst:6,  io:[]},
+      {pid:2,name:'sh',   prio:1,arrive:1, burst:5,  io:[]},
+      {pid:3,name:'hi',   prio:2,arrive:3, burst:4,  io:[]},
+      {pid:4,name:'low',  prio:0,arrive:2, burst:6,  io:[]},
+      {pid:5,name:'hi2',  prio:2,arrive:7, burst:3,  io:[]}
+    ],
+    starve:[
+      {pid:1,name:'bg',   prio:0,arrive:0, burst:8,  io:[]},
+      {pid:2,name:'hi-a', prio:2,arrive:1, burst:5,  io:[]},
+      {pid:3,name:'hi-b', prio:2,arrive:4, burst:5,  io:[]},
+      {pid:4,name:'hi-c', prio:2,arrive:8, burst:5,  io:[]},
+      {pid:5,name:'hi-d', prio:2,arrive:12,burst:5,  io:[]}
+    ],
+    io:[
+      {pid:1,name:'ioBound',prio:1,arrive:0,burst:8, io:[{at:2,len:4},{at:4,len:4}]},
+      {pid:2,name:'cpuBound',prio:0,arrive:0,burst:9, io:[]},
+      {pid:3,name:'short', prio:1,arrive:5, burst:3,  io:[]}
+    ]
+  };
+
+  let procs=[], timeline=[], queueLog=[], tick=0, running=null, ctime=0, lastEvt='ready', timer=null, cur='default', maxT=40;
+
+  function loadWorkload(name){
+    cur=name;
+    procs=WORKLOADS[name].map(p=>({
+      ...p, io:p.io.map(x=>({...x})),
+      state:'NEW', done:0, sleepUntil:-1, ioIdx:0
+    }));
+    tick=0; running=null; ctime=0; timeline=[]; queueLog=[]; lastEvt='ready';
+    stop(); precompute(); draw(); updatePanel();
+  }
+
+  // Simulate the full schedule deterministically, recording a timeline of {tick,pid,prio} or {tick,io:true}
+  function precompute(){
+    const sp=procs.map(p=>({...p, io:p.io.map(x=>({...x})), state:'NEW',done:0,sleepUntil:-1,ioIdx:0}));
+    timeline=[]; queueLog=[];
+    let run=null, ct=0;
+    for(let t=0;t<maxT;t++){
+      // arrivals -> RUNNABLE
+      sp.forEach(p=>{ if(p.state==='NEW'&&p.arrive<=t) p.state='RUNNABLE'; });
+      // wake sleepers
+      sp.forEach(p=>{ if(p.state==='SLEEPING'&&p.sleepUntil<=t) p.state='RUNNABLE'; });
+      // snapshot ready queues (by priority) BEFORE running this tick
+      const snap={2:[],1:[],0:[]};
+      sp.forEach(p=>{ if(p.state==='RUNNABLE'||(run&&run.pid===p.pid&&p.state==='RUNNING')) snap[p.prio].push(p.name); });
+      // selection: highest-priority RUNNABLE; do not preempt equal prio, do preempt strictly higher
+      let ready=sp.filter(p=>p.state==='RUNNABLE');
+      const maxPrio = ready.length? Math.max(...ready.map(p=>p.prio)) : -1;
+      if(run){
+        const higher = ready.some(p=>p.prio>run.prio);
+        if(higher){ run.state='RUNNABLE'; run=null; ct=0; }  // preempt; slice reset
+      }
+      if(!run && maxPrio>=0){
+        // round-robin within the top level: pick the one waiting longest (lowest done, stable by pid)
+        const cand=ready.filter(p=>p.prio===maxPrio).sort((a,b)=>(a.lastRun||0)-(b.lastRun||0)||a.pid-b.pid);
+        run=cand[0]; run.state='RUNNING';
+        ct = SLICE[run.prio];   // recharge slice
+      }
+      queueLog.push(snap);
+      if(run){
+        timeline.push({pid:run.pid,name:run.name,prio:run.prio,io:false});
+        run.done++; ct--; run.lastRun=t;
+        // I/O event?
+        const io = run.io[run.ioIdx];
+        if(io && run.done===io.at){
+          run.state='SLEEPING'; run.sleepUntil=t+1+io.len; run.ioIdx++;
+          run=null; ct=0;
+        } else if(run && run.done>=run.burst){
+          run.state='ZOMBIE'; run=null; ct=0;
+        } else if(run && ct<=0){
+          run.state='RUNNABLE'; run=null;       // slice expired -> back to its level
+        }
+      } else {
+        timeline.push({pid:0,name:'idle',prio:-1,io:false});
+      }
+      // stop early if everyone done and nothing left
+      if(sp.every(p=>p.state==='ZOMBIE'||p.state==='NEW'===false&&p.state==='ZOMBIE') ){}
+      if(sp.every(p=>p.state==='ZOMBIE')){ maxLen=t+1; return; }
+    }
+    maxLen=maxT;
+  }
+  let maxLen=40;
+
+  function sizeCanvas(){
+    [gantt,queues].forEach(cv=>{
+      const w=cv.parentElement.clientWidth||520;
+      cv.width=w; cv.style.width=w+'px';
+    });
+  }
+
+  function draw(){
+    sizeCanvas();
+    drawGantt(); drawQueues();
+  }
+
+  function drawGantt(){
+    const W=gantt.width, H=gantt.height;
+    gx.clearRect(0,0,W,H);
+    const rows = procs.length;
+    const padL=64, padT=22, padB=22;
+    const N = maxLen;
+    const cw = Math.max(8,(W-padL-8)/N);
+    const rh = Math.min(28,(H-padT-padB)/rows);
+    // title
+    gx.fillStyle='#94A3B8'; gx.font='11px JetBrains Mono, monospace';
+    gx.fillText('Gantt — who holds the CPU each tick', padL, 13);
+    // row labels + lanes
+    procs.forEach((p,i)=>{
+      const y=padT+i*rh;
+      gx.fillStyle='#cbd5e1'; gx.font='11px JetBrains Mono, monospace';
+      gx.fillText(p.name+' (p'+p.prio+')',4,y+rh*0.65);
+      gx.strokeStyle='#243044'; gx.strokeRect(padL,y,N*cw,rh-3);
+    });
+    // fill timeline up to current tick
+    const upto=Math.min(tick,timeline.length);
+    for(let t=0;t<upto;t++){
+      const seg=timeline[t];
+      if(seg.pid===0) continue;
+      const i=procs.findIndex(p=>p.pid===seg.pid); if(i<0) continue;
+      const y=padT+i*rh;
+      gx.fillStyle=PCOLOR[seg.prio];
+      gx.fillRect(padL+t*cw+1,y+1,cw-1,rh-5);
+    }
+    // draw sleeping (I/O) bars: a proc is sleeping when it's not running but had started & not done
+    // approximate from per-proc done tracking is complex; mark gaps visually with the running info only.
+    // playhead
+    const px=padL+Math.min(tick,N)*cw;
+    gx.strokeStyle='#14B8A6'; gx.lineWidth=1.5; gx.beginPath();
+    gx.moveTo(px,padT-4); gx.lineTo(px,padT+rows*rh-2); gx.stroke(); gx.lineWidth=1;
+    // tick axis marks every 4
+    gx.fillStyle='#5b6b82'; gx.font='9px JetBrains Mono, monospace';
+    for(let t=0;t<=N;t+=4){ gx.fillText(t, padL+t*cw-3, padT+rows*rh+12); }
+  }
+
+  function drawQueues(){
+    const W=queues.width,H=queues.height;
+    qx.clearRect(0,0,W,H);
+    qx.fillStyle='#94A3B8'; qx.font='11px JetBrains Mono, monospace';
+    qx.fillText('Ready queues this tick (round-robin within each level)',4,13);
+    const snap = queueLog[Math.min(tick,queueLog.length-1)]||{2:[],1:[],0:[]};
+    const levels=[2,1,0];
+    levels.forEach((lv,i)=>{
+      const y=26+i*46;
+      qx.fillStyle=PCOLOR[lv]; qx.font='12px JetBrains Mono, monospace';
+      qx.fillText('prio '+lv,8,y+18);
+      let x=78;
+      const items=snap[lv];
+      if(!items.length){ qx.fillStyle='#3a4256'; qx.fillText('(empty)',x,y+18); }
+      items.forEach(nm=>{
+        qx.fillStyle='rgba(255,255,255,.06)'; qx.strokeStyle=PCOLOR[lv];
+        const w=Math.max(46, nm.length*8+14);
+        qx.fillRect(x,y,w,28); qx.strokeRect(x,y,w,28);
+        qx.fillStyle='#e2e8f0'; qx.font='11px JetBrains Mono, monospace';
+        qx.fillText(nm,x+7,y+18); x+=w+8;
+      });
+    });
+  }
+
+  function updatePanel(){
+    document.getElementById('schTick').textContent=tick;
+    const seg = tick>0? timeline[Math.min(tick-1,timeline.length-1)] : null;
+    if(seg && seg.pid!==0){
+      document.getElementById('schRun').textContent=seg.name+' (prio '+seg.prio+')';
+      document.getElementById('schRun').style.color=PCOLOR[seg.prio];
+    } else {
+      document.getElementById('schRun').textContent='idle';
+      document.getElementById('schRun').style.color='var(--muted)';
+    }
+    document.getElementById('schSlice').textContent= seg&&seg.pid!==0 ? sliceLeft() : '—';
+    document.getElementById('schEvt').textContent=lastEvt;
+    // proc table: name prio done/burst state
+    let html='<b style="color:#60a5fa">name      prio  cpu     state</b><br>';
+    const stateAt = computeStatesAt(tick);
+    procs.forEach(p=>{
+      const s=stateAt[p.pid];
+      const c = s.state==='RUNNING'?PCOLOR[p.prio]: s.state==='SLEEPING'?'#5b6b82': s.state==='ZOMBIE'?'#5b6b82':'#cbd5e1';
+      html+=`<span style="color:${c}">${(p.name+'        ').slice(0,9)} ${p.prio}     ${s.done}/${p.burst}     ${s.state}</span><br>`;
+    });
+    document.getElementById('procTable').innerHTML=html;
+  }
+  // recompute each proc's done-count + state at a given tick from the timeline
+  function computeStatesAt(T){
+    const st={}; procs.forEach(p=>st[p.pid]={done:0,state:'NEW'});
+    procs.forEach(p=>{ if(p.arrive<=T && T>0) st[p.pid].state='RUNNABLE'; if(p.arrive>=T) st[p.pid].state='NEW'; });
+    for(let t=0;t<Math.min(T,timeline.length);t++){
+      const seg=timeline[t]; if(seg.pid===0) continue;
+      st[seg.pid].done++;
+    }
+    procs.forEach(p=>{
+      const s=st[p.pid];
+      if(s.done>=p.burst) s.state='ZOMBIE';
+      else if(T>0 && timeline[Math.min(T-1,timeline.length-1)] && timeline[Math.min(T-1,timeline.length-1)].pid===p.pid) s.state='RUNNING';
+      else if(p.arrive<T) s.state='RUNNABLE';
+      // sleeping: if its io.at reached and within sleep window
+      let cum=0;
+      for(const io of p.io){ if(s.done===io.at){ s.state='SLEEPING'; } }
+    });
+    return st;
+  }
+  function sliceLeft(){
+    const seg=timeline[Math.min(tick-1,timeline.length-1)];
+    if(!seg||seg.pid===0) return '—';
+    // count consecutive run of this pid ending at tick-1
+    let n=0; for(let t=tick-1;t>=0;t--){ if(timeline[t].pid===seg.pid) n++; else break; }
+    return (SLICE[seg.prio]-n)+' / '+SLICE[seg.prio];
+  }
+
+  function stepTick(){
+    if(tick>=maxLen){ stop(); lastEvt='all processes finished ✓'; updatePanel(); return false; }
+    const seg=timeline[tick];
+    if(seg.pid===0) lastEvt='CPU idle';
+    else {
+      const prev = tick>0?timeline[tick-1]:null;
+      if(!prev || prev.pid!==seg.pid){
+        if(prev && prev.pid!==0 && prev.prio<seg.prio) lastEvt='preempt → '+seg.name+' (higher prio)';
+        else lastEvt='dispatch '+seg.name+' (prio '+seg.prio+')';
+      } else lastEvt='running '+seg.name;
+    }
+    tick++; draw(); updatePanel();
+    return true;
+  }
+  function play(){ stop(); timer=setInterval(()=>{ if(!stepTick()) stop(); },360); }
+  function stop(){ if(timer){clearInterval(timer);timer=null;} }
+
+  document.getElementById('schPlay').onclick=play;
+  document.getElementById('schStep').onclick=()=>{ stop(); stepTick(); };
+  document.getElementById('schReset').onclick=()=>{ loadWorkload(cur); };
+  document.querySelectorAll('[data-load]').forEach(b=>{
+    b.onclick=()=>{
+      document.querySelectorAll('[data-load]').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active'); loadWorkload(b.dataset.load);
+    };
+  });
+  document.querySelector('[data-load="default"]').classList.add('active');
+
+  window.addEventListener('resize',()=>{ if(document.getElementById('live').classList.contains('active')) draw(); });
+
+  // init
+  loadWorkload('default');
+  // expose for tab switch redraw
+  window.__sizeCanvas=sizeCanvas; window.__draw=draw;
+})();
+function sizeCanvas(){ if(window.__sizeCanvas) window.__sizeCanvas(); }
+function draw(){ if(window.__draw) window.__draw(); }
+</script>
+</body>
+</html>

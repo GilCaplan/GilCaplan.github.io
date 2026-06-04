@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Interview Process Assistant — Explainer</title>
+<style>
+  :root{
+    --bg:#0B1220; --surface:#0F172A; --panel:#1E293B; --border:#243044;
+    --text:#E2E8F0; --muted:#94A3B8; --accent:#14B8A6; --blue:#60A5FA; --red:#F87171;
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    line-height:1.55; padding:20px; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px;margin:0 auto}
+  header.top{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start;justify-content:space-between;margin-bottom:18px}
+  h1{font-size:1.5rem;margin:0 0 4px}
+  .tag{color:var(--muted);font-size:.9rem;margin:0}
+  .stackrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .chip{font-family:var(--mono);font-size:.72rem;background:var(--panel);border:1px solid var(--border);
+        color:var(--blue);padding:3px 9px;border-radius:999px}
+  .chip.t{color:var(--accent)}
+  nav.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 18px;border-bottom:1px solid var(--border);padding-bottom:10px}
+  .tab{background:transparent;border:1px solid transparent;color:var(--muted);padding:8px 14px;border-radius:9px;
+       cursor:pointer;font-size:.9rem;font-family:inherit;transition:.15s}
+  .tab:hover{color:var(--text);background:var(--surface)}
+  .tab.active{color:var(--bg);background:var(--accent);font-weight:600}
+  .panel{display:none;animation:fade .25s ease}
+  .panel.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px}
+  .card h2{font-size:1.05rem;margin:0 0 10px}
+  .card h3{font-size:.92rem;margin:16px 0 6px;color:var(--blue)}
+  p{margin:8px 0}
+  .muted{color:var(--muted)}
+  code{font-family:var(--mono);background:var(--panel);padding:1px 6px;border-radius:5px;font-size:.82em;color:var(--accent)}
+  ul{margin:8px 0;padding-left:20px}li{margin:4px 0}
+  .grid{display:grid;gap:14px}
+  @media(min-width:760px){.grid.two{grid-template-columns:1fr 1fr}.grid.three{grid-template-columns:repeat(3,1fr)}}
+  .arch{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;justify-content:center;margin:6px 0}
+  .node{flex:1;min-width:150px;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;position:relative}
+  .node .name{font-weight:600;font-size:.95rem}
+  .node .port{font-family:var(--mono);font-size:.72rem;color:var(--muted);display:block;margin-top:3px}
+  .node .role{font-size:.78rem;color:var(--muted);margin-top:8px}
+  .node.client{border-color:#3b6ea5}.node.server{border-color:var(--accent)}
+  .node.db{border-color:#7c6ad6}.node.ai{border-color:var(--red);opacity:.92}
+  .flowtag{display:inline-block;font-family:var(--mono);font-size:.68rem;color:var(--muted);margin:0 4px}
+  .pill{display:inline-block;font-family:var(--mono);font-size:.72rem;padding:2px 8px;border-radius:6px;border:1px solid var(--border);margin:2px 3px 2px 0;color:var(--text)}
+  .pill.sel{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:600}
+  button.qbtn{cursor:pointer}
+  pre{background:#0a0f1a;border:1px solid var(--border);border-radius:9px;padding:14px;overflow:auto;
+      font-family:var(--mono);font-size:.78rem;color:#cbd5e1;margin:6px 0}
+  pre .k{color:var(--blue)}pre .s{color:var(--accent)}pre .c{color:#64748b}
+  .demo-ctrls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}
+  .field{display:flex;flex-direction:column;gap:4px}
+  .field label{font-size:.74rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  select,input[type=text]{background:var(--panel);border:1px solid var(--border);color:var(--text);
+        border-radius:8px;padding:8px 10px;font-family:inherit;font-size:.86rem;min-width:150px}
+  .gen{background:var(--accent);color:var(--bg);border:none;font-weight:600;padding:10px 18px;border-radius:9px;cursor:pointer;font-size:.88rem;align-self:flex-end}
+  .gen:hover{filter:brightness(1.08)}
+  .note{font-size:.8rem;color:var(--muted);border-left:2px solid var(--accent);padding-left:10px;margin:10px 0}
+  .ev{display:flex;gap:10px;align-items:flex-start;margin:8px 0}
+  .ev .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);margin-top:6px;flex:0 0 auto}
+  .ev code{white-space:nowrap}
+  table{width:100%;border-collapse:collapse;font-size:.82rem;margin-top:8px}
+  th,td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--border)}
+  th{color:var(--muted);font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.03em}
+  td.ok{color:var(--accent);font-family:var(--mono)}
+  .bar{height:7px;background:var(--panel);border-radius:4px;overflow:hidden;margin-top:3px}
+  .bar i{display:block;height:100%;background:var(--accent)}
+  .src{font-size:.75rem;color:var(--muted);margin-top:14px}
+  .src code{font-size:.72em}
+  .banner{background:rgba(96,165,250,.08);border:1px solid #2b3f5c;border-radius:10px;padding:10px 14px;font-size:.82rem;color:#bcd3f0;margin-bottom:16px}
+  .steps{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+  .step{display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:8px 12px}
+  .step .num{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--panel);font-size:.74rem;font-weight:600}
+  .step.active{color:var(--text);border-color:var(--accent)}
+  .step.active .num{background:var(--accent);color:var(--bg)}
+  .step.done{color:var(--accent)}
+  .stage{display:none}.stage.active{display:block}
+  .qitem{background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:11px 13px;margin:8px 0}
+  .qitem .qmeta{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 8px}
+  .badge{font-family:var(--mono);font-size:.66rem;padding:2px 7px;border-radius:5px;border:1px solid var(--border);color:var(--muted)}
+  .badge.type{color:var(--blue);border-color:#2b3f5c}
+  .badge.diff{color:var(--accent);border-color:#1f5b53}
+  .qitem .qtext{font-size:.88rem}
+  .qitem .acts{display:flex;gap:6px;margin-top:8px}
+  .mini{cursor:pointer;font-size:.74rem;font-family:inherit;border-radius:6px;padding:5px 10px;border:1px solid var(--border);background:transparent;color:var(--text)}
+  .mini.ok{border-color:var(--accent);color:var(--accent)}
+  .mini.ok:hover{background:var(--accent);color:var(--bg)}
+  .mini.no:hover{border-color:var(--red);color:var(--red)}
+  .qitem input.edit{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 8px;font-family:inherit;font-size:.85rem}
+  .interview-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px}
+  .opt{display:flex;align-items:center;gap:9px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:9px 12px;margin:6px 0;cursor:pointer;font-size:.86rem}
+  .opt:hover{border-color:var(--blue)}
+  .opt.sel{border-color:var(--accent);background:rgba(20,184,166,.08)}
+  textarea.ans{width:100%;min-height:90px;background:var(--panel);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px;font-family:inherit;font-size:.86rem;resize:vertical}
+  .res-item{border-left:3px solid var(--border);padding:8px 0 8px 12px;margin:10px 0}
+  .res-item.correct{border-color:var(--accent)}.res-item.incorrect{border-color:var(--red)}.res-item.review{border-color:var(--blue)}
+  .res-item .rh{display:flex;justify-content:space-between;gap:8px;font-size:.88rem}
+  .res-item .ind{font-family:var(--mono);font-size:.74rem;white-space:nowrap}
+  .res-item .rb{font-size:.82rem;color:var(--muted);margin-top:5px}
+  .bigscore{font-size:2.4rem;font-weight:700;line-height:1}
+  .parts{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+  .pp{display:flex;align-items:center;gap:9px;font-size:.84rem}
+  .pp .dotg{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+  .pp .htag{font-family:var(--mono);font-size:.66rem;color:var(--bg);background:var(--blue);padding:1px 6px;border-radius:5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Interview Process Assistant</h1>
+      <p class="tag">Collaborative platform to build &amp; practice interview question templates, with AI assistance and real‑time multi‑user editing.</p>
+      <div class="stackrow">
+        <span class="chip t">Flask</span><span class="chip t">Flask‑SocketIO</span>
+        <span class="chip">React</span><span class="chip">React‑Router</span>
+        <span class="chip t">MongoDB</span><span class="chip">Google Gemini 1.5 Flash</span>
+        <span class="chip">JWT auth</span><span class="chip">Docker Compose</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="banner">
+    Interactive explainer — this is a Dockerized full‑stack app (React + Flask + MongoDB + Gemini), so it can’t run inside a static page. Everything below is reconstructed from the real repository: source, README and the project’s own documentation.
+  </div>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-p="demo">▶ Live app demo</button>
+    <button class="tab" data-p="overview">Overview</button>
+    <button class="tab" data-p="arch">Architecture</button>
+    <button class="tab" data-p="gen">Question Generation</button>
+    <button class="tab" data-p="collab">Collaboration</button>
+    <button class="tab" data-p="testing">Testing</button>
+  </nav>
+
+  <!-- LIVE APP DEMO -->
+  <section class="panel active" id="demo">
+    <div class="banner" style="background:rgba(20,184,166,.07);border-color:#1f5b53;color:#a7e8dd">
+      <strong>Client-side recreation of the core app loop.</strong> The full product runs Flask + MongoDB + Gemini 1.5 Flash + Flask-SocketIO across three Docker containers. This in-page demo has <em>no backend</em>: it runs the <em>same</em> mock question generator and objective auto-grader ported verbatim from <code>server/app/llm_service.py</code> and <code>server/app/sessions.py</code> — the exact fallback path the real app uses when no Gemini key is configured.
+    </div>
+
+    <!-- step nav -->
+    <div class="steps" id="steps">
+      <div class="step active" data-s="1"><span class="num">1</span> Build question set</div>
+      <div class="step" data-s="2"><span class="num">2</span> Mock interview</div>
+      <div class="step" data-s="3"><span class="num">3</span> Auto-graded results</div>
+    </div>
+
+    <!-- STEP 1: BUILD -->
+    <div class="stage active" id="stage1">
+      <div class="card">
+        <h2>Build a question template</h2>
+        <p class="muted">Pick a role. The app maps it to a subject and generates questions with the real mock generator (<code>LLMService._mock_generate_question</code>). New questions land in a <strong>building queue</strong> as <code>status: "pending"</code> — mirroring the host-approval flow in <code>sessions.py</code>. Approve the ones you want; approved questions move to the <strong>ready list</strong> used for the interview.</p>
+
+        <div class="demo-ctrls">
+          <div class="field">
+            <label>Role</label>
+            <select id="role">
+              <option value="frontend">Frontend Engineer</option>
+              <option value="backend">Backend Engineer</option>
+              <option value="datascience">Data Scientist</option>
+              <option value="pm">Product Manager</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Question type</label>
+            <select id="dtype">
+              <option value="multiple_choice">multiple_choice</option>
+              <option value="true_false">true_false</option>
+              <option value="open_ended">open_ended</option>
+              <option value="short_answer">short_answer</option>
+              <option value="coding">coding</option>
+            </select>
+          </div>
+          <button class="gen" id="addQ">+ Generate question</button>
+          <button class="gen" id="seedSet" style="background:var(--panel);color:var(--text);border:1px solid var(--border)">Seed a 4-question set</button>
+        </div>
+        <p class="muted" style="font-size:.78rem">Role → subject map: Frontend → <code>javascript</code>, Backend → <code>python</code>, Data Scientist → <code>algorithms</code>, PM → <code>system_design</code> (the four subject banks in the repo).</p>
+      </div>
+
+      <div class="grid two">
+        <div class="card">
+          <h3>Building queue <span class="muted" id="pendCount">(0)</span></h3>
+          <p class="muted" style="font-size:.8rem;margin-top:0">Pending host review.</p>
+          <div id="pendingList"><p class="muted" style="font-size:.82rem">No questions yet — generate one above.</p></div>
+        </div>
+        <div class="card">
+          <h3>Ready list <span class="muted" id="readyCount">(0)</span></h3>
+          <p class="muted" style="font-size:.8rem;margin-top:0">Approved → used in the interview.</p>
+          <div id="readyList"><p class="muted" style="font-size:.82rem">Nothing approved yet.</p></div>
+          <button class="gen" id="startInt" style="margin-top:12px;width:100%;align-self:auto" disabled>Start mock interview →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2: INTERVIEW -->
+    <div class="stage" id="stage2">
+      <div class="card">
+        <div class="interview-head">
+          <h2 id="intTitle">Mock interview</h2>
+          <span class="muted" id="progress">Question 1 of 1</span>
+        </div>
+        <div class="bar" style="margin:6px 0 16px"><i id="progBar" style="width:0%"></i></div>
+        <div id="qBody"></div>
+        <div style="display:flex;justify-content:space-between;margin-top:16px">
+          <button class="gen" id="abort" style="background:var(--panel);color:var(--muted);border:1px solid var(--border)">Cancel</button>
+          <button class="gen" id="nextQ" disabled>Next question</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3: RESULTS -->
+    <div class="stage" id="stage3">
+      <div class="card" id="resultsCard"></div>
+      <div style="display:flex;gap:10px">
+        <button class="gen" id="restart" style="background:var(--panel);color:var(--text);border:1px solid var(--border)">← Build another set</button>
+      </div>
+    </div>
+
+    <!-- collaboration sim -->
+    <div class="card" style="margin-top:18px">
+      <h2>Real-time collaborative session <span class="muted" style="font-size:.7rem;font-weight:400">(simulated)</span></h2>
+      <p class="muted" style="font-size:.82rem">In the real app, peers join a session via a 6-char code over a Socket.IO room; the host approves suggestions and toggles a viewing mode (<code>view_only</code> / <code>suggestions_only</code>) and <code>auto_approve_questions</code>. There's no WebSocket here, so the participant activity below is <strong>scripted</strong> — but the approval mechanics it drives (queue → host approve → ready) are the genuine ones above.</p>
+      <div class="demo-ctrls" style="align-items:center">
+        <span class="pill" id="sessCode">code: ——————</span>
+        <label style="display:flex;gap:6px;align-items:center;font-size:.82rem;color:var(--muted)"><input type="checkbox" id="autoApprove"> auto_approve_questions</label>
+        <button class="gen" id="simPeer" style="background:var(--panel);color:var(--text);border:1px solid var(--border)">Simulate a peer suggesting a question</button>
+      </div>
+      <div id="participants" class="parts"></div>
+    </div>
+
+    <p class="src">Ported from: <code>server/app/llm_service.py</code> (<code>_mock_generate_question</code>), <code>server/app/sessions.py</code> (objective grading + approval/queue + <code>auto_approve_questions</code> + <code>viewing_mode</code>), <code>server/app/templates.py</code> (<code>QUESTION_TYPES</code> schemas), and the React <code>MockInterviewSession</code> / <code>InterviewSummary</code> / <code>EvaluationResults</code> components (score thresholds + performance levels).</p>
+  </section>
+
+  <!-- OVERVIEW -->
+  <section class="panel" id="overview">
+    <div class="card">
+      <h2>What it does</h2>
+      <p>Two user journeys, as described in the project’s <code>APP_EXPLANATION.md</code> / <code>FEATURES_DESCRIPTION.md</code>:</p>
+      <div class="grid two">
+        <div>
+          <h3>Content creation &amp; management</h3>
+          <p class="muted">Users build personal libraries of interview questions and full templates — manually, with an integrated AI assistant, or in live real‑time collaborative sessions with peers. A host‑led suggestion/approval queue keeps the final template curated.</p>
+        </div>
+        <div>
+          <h3>Interview simulation &amp; practice</h3>
+          <p class="muted">Launch a mock interview from any template. Questions are presented sequentially with a progress bar; objective types (multiple‑choice, true/false) are auto‑graded.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid three">
+      <div class="card">
+        <h3>Real‑time collaboration</h3>
+        <p class="muted">Sessions with a unique 6‑char code, optional password, host controls, and view‑only / suggestions‑only permission modes — powered by Flask‑SocketIO (WebSockets).</p>
+      </div>
+      <div class="card">
+        <h3>AI co‑pilot</h3>
+        <p class="muted">Google Gemini 1.5 Flash generates structured questions and per‑field suggestions. A mock generator is the automatic fallback when no API key is set or rate limits are hit.</p>
+      </div>
+      <div class="card">
+        <h3>Security‑first backend</h3>
+        <p class="muted">Stateless JWT auth, PBKDF2‑SHA256 password hashing, request rate limiting, CORS, and input validation. Only the web container is client‑facing.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Context</h2>
+      <p class="muted">Built as a Technion course project judged on <em>backend robustness</em> (the brief explicitly states no points for AI complexity or visual design). The requirements emphasize a multi‑image Docker setup, MongoDB persistence, never storing plain‑text passwords, spam protection, scalability, and a full test matrix — unit, integration, system, stress, and security tests.</p>
+    </div>
+    <p class="src">Grounded in: <code>README.md</code>, <code>documentation/APP_EXPLANATION.md</code>, <code>documentation/FEATURES_DESCRIPTION.md</code>, <code>documentation/INSTRUCTIONS.md</code>.</p>
+  </section>
+
+  <!-- ARCHITECTURE -->
+  <section class="panel" id="arch">
+    <div class="card">
+      <h2>Service topology</h2>
+      <p class="muted">Three containers defined in <code>docker-compose.yml</code> (<code>server</code>, <code>client</code>, <code>db: mongo:latest</code>), plus the optional external Gemini API. The React client talks only to Flask; Flask talks to MongoDB and Gemini.</p>
+      <div class="arch">
+        <div class="node client"><span class="name">React Frontend</span><span class="port">:3000</span><div class="role">SPA, React‑Router, Socket.IO client, Monaco code editor</div></div>
+        <div class="node server"><span class="name">Flask Backend</span><span class="port">:5002</span><div class="role">REST API + Flask‑SocketIO, JWT auth, rate limiting</div></div>
+        <div class="node db"><span class="name">MongoDB</span><span class="port">:27017</span><div class="role">users, templates, sessions, questions</div></div>
+      </div>
+      <p style="text-align:center;margin:6px 0">
+        <span class="flowtag">client &nbsp;⇄&nbsp; HTTP + WebSocket &nbsp;⇄&nbsp; server &nbsp;⇄&nbsp; MongoDB</span>
+      </p>
+      <div class="arch" style="max-width:340px;margin:0 auto">
+        <div class="node ai"><span class="name">Google Gemini 1.5 Flash</span><span class="port">external · optional</span><div class="role">question + field suggestion generation; mock fallback</div></div>
+      </div>
+    </div>
+
+    <div class="grid two">
+      <div class="card">
+        <h3>Backend modules (<code>server/app/</code>)</h3>
+        <ul class="muted">
+          <li><code>auth.py</code> · <code>security.py</code> · <code>password_utils.py</code> — JWT + PBKDF2 hashing</li>
+          <li><code>sessions.py</code> · <code>websocket_handlers.py</code> — collaborative sessions</li>
+          <li><code>templates.py</code> · <code>questions.py</code> — template &amp; question CRUD</li>
+          <li><code>llm_service.py</code> · <code>rate_limiter.py</code> — Gemini + throttling</li>
+          <li><code>interviews.py</code> · <code>availability.py</code> · <code>async_handler.py</code></li>
+          <li><code>crash_prevention.py</code> · <code>database.py</code> · <code>routes.py</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Health &amp; status API</h3>
+        <p class="muted">From <code>routes.py</code>:</p>
+        <ul class="muted">
+          <li><code>GET /api/health</code> — DB ping + system status</li>
+          <li><code>GET /api/info</code> — name, version, feature list</li>
+          <li><code>GET /api/system/status</code> — availability + security + perf</li>
+          <li><code>GET /api/llm/status</code> — Gemini availability</li>
+        </ul>
+      </div>
+    </div>
+    <p class="src">Grounded in: <code>docker-compose.yml</code>, <code>server/app/routes.py</code>, <code>server/app/*</code>, <code>Client/src/App.js</code>, <code>Client/package.json</code>.</p>
+  </section>
+
+  <!-- QUESTION GENERATION -->
+  <section class="panel" id="gen">
+    <div class="card">
+      <h2>AI question generation — live demo</h2>
+      <p class="muted">Pick a subject and question type. This reproduces the backend’s real <strong>mock generator</strong> (<code>LLMService._mock_generate_question</code> in <code>llm_service.py</code>) — the exact fallback used when no Gemini key is configured. The subject question banks, type‑specific fields and structure below are copied verbatim from the source.</p>
+
+      <div class="demo-ctrls">
+        <div class="field">
+          <label>Subject</label>
+          <select id="subj">
+            <option value="python">python</option>
+            <option value="javascript">javascript</option>
+            <option value="algorithms">algorithms</option>
+            <option value="system_design">system_design</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Question type</label>
+          <select id="qtype">
+            <option value="multiple_choice">multiple_choice</option>
+            <option value="true_false">true_false</option>
+            <option value="coding">coding</option>
+            <option value="short_answer">short_answer</option>
+            <option value="open_ended" selected>open_ended</option>
+          </select>
+        </div>
+        <button class="gen" id="genBtn">Generate</button>
+      </div>
+      <pre id="genOut"><span class="c">// Click “Generate” to run the real mock generator…</span></pre>
+      <p class="note">With a Gemini key, the server instead builds a type‑specific prompt (see <code>_build_prompt</code>) asking for this exact JSON shape, calls <code>gemini-1.5-flash</code>, parses the JSON, and tags it <code>llm_source: "gemini"</code>. The selection, structure and field names here are identical to that path.</p>
+    </div>
+
+    <div class="card">
+      <h2>The five question types</h2>
+      <p class="muted">Each type has its own validated structure (from <code>questions.py</code> and the Gemini prompt templates):</p>
+      <table>
+        <tr><th>Type</th><th>Type‑specific fields</th></tr>
+        <tr><td><code>multiple_choice</code></td><td class="muted">options[4], correct_answer, explanation</td></tr>
+        <tr><td><code>true_false</code></td><td class="muted">correct_answer (bool), explanation</td></tr>
+        <tr><td><code>coding</code></td><td class="muted">language, starter_code, solution, test_cases[]</td></tr>
+        <tr><td><code>short_answer</code></td><td class="muted">expected_keywords[], sample_answers[], max_words</td></tr>
+        <tr><td><code>open_ended</code></td><td class="muted">sample_answer, grading_criteria[]</td></tr>
+      </table>
+      <p class="muted" style="margin-top:10px">All types also carry <code>question_text</code>, <code>difficulty</code>, <code>hints</code>, <code>subject</code>, <code>type</code>, <code>generated_by</code> and a <code>timestamp</code>.</p>
+    </div>
+    <p class="src">Grounded in: <code>server/app/llm_service.py</code>, <code>server/app/questions.py</code>.</p>
+  </section>
+
+  <!-- COLLABORATION -->
+  <section class="panel" id="collab">
+    <div class="card">
+      <h2>Real‑time collaborative sessions</h2>
+      <p class="muted">The most developed feature. A host creates a session (unique 6‑char code, optional password), peers join, and questions move through a building queue → host review → finalized “ready” list.</p>
+      <h3>WebSocket events (<code>websocket_handlers.py</code>)</h3>
+      <div class="ev"><span class="dot"></span><div><code>connect</code> / <code>disconnect</code><div class="muted">socket lifecycle</div></div></div>
+      <div class="ev"><span class="dot"></span><div><code>join_session</code> / <code>leave_session</code><div class="muted">enter / exit a session room by id</div></div></div>
+      <div class="ev"><span class="dot"></span><div><code>update_session_metadata</code> → emits <code>session_updated</code><div class="muted">broadcast to everyone in the session room</div></div></div>
+    </div>
+
+    <div class="grid two">
+      <div class="card">
+        <h3>Host controls &amp; permissions</h3>
+        <ul class="muted">
+          <li>Manage participants (remove users)</li>
+          <li>Finalize questions; accept / reject suggestions</li>
+          <li>Configure <em>view‑only</em> or <em>suggestions‑only</em> modes</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Suggestion &amp; approval workflow</h3>
+        <p class="muted">New questions and user suggestions land in a “building queue.” The host reviews, edits, and finalizes them into the “ready” list — ensuring curated, high‑quality content in the final template.</p>
+      </div>
+    </div>
+    <p class="src">Grounded in: <code>server/app/websocket_handlers.py</code>, <code>server/app/sessions.py</code>, <code>documentation/FEATURES_DESCRIPTION.md</code>, and the React <code>Session*</code> components.</p>
+  </section>
+
+  <!-- TESTING -->
+  <section class="panel" id="testing">
+    <div class="card">
+      <h2>Test suite</h2>
+      <p class="muted">Per the project’s <code>TEST_COVERAGE_REPORT.md</code>: 7 test files, 65+ cases, run by a cross‑platform bash runner against live services with an isolated test database (<code>interview-assistant-test</code>).</p>
+      <table>
+        <tr><th>File</th><th>Focus</th><th>Tests</th><th>Pass</th></tr>
+        <tr><td><code>test_unit_comprehensive.py</code></td><td class="muted">Units</td><td>31</td><td class="ok">100%</td></tr>
+        <tr><td><code>test_basic_functionality.py</code></td><td class="muted">Core API</td><td>13</td><td class="ok">92.3%</td></tr>
+        <tr><td><code>test_llm_integration.py</code></td><td class="muted">AI</td><td>8</td><td class="ok">100%</td></tr>
+        <tr><td><code>test_session_management.py</code></td><td class="muted">Sessions</td><td>8</td><td class="ok">100%</td></tr>
+        <tr><td><code>test_template_building.py</code></td><td class="muted">Templates</td><td>4</td><td class="ok">75%</td></tr>
+        <tr><td><code>test_websocket_collaboration.py</code></td><td class="muted">Real‑time (5‑user stress)</td><td>1</td><td class="ok">100%</td></tr>
+        <tr><td><code>test_utils.py</code></td><td class="muted">Utilities</td><td>—</td><td class="ok">100%</td></tr>
+      </table>
+      <h3>Required test types covered</h3>
+      <p>
+        <span class="pill">Unit</span><span class="pill">Integration</span><span class="pill">System / E2E</span>
+        <span class="pill">Stress</span><span class="pill">Security (login‑gated)</span>
+      </p>
+      <p class="muted">Run with <code>npm run test</code> / <code>npm run test:parallel</code>, or in Docker via <code>docker-compose.test.yml</code>.</p>
+    </div>
+    <p class="src">Grounded in: <code>documentation/TEST_COVERAGE_REPORT.md</code>, <code>README.md</code>, <code>docker-compose.test.yml</code>.</p>
+  </section>
+
+</div>
+
+<script>
+// ---- tabs ----
+const tabs=document.getElementById('tabs');
+tabs.addEventListener('click',e=>{
+  const b=e.target.closest('.tab'); if(!b)return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  b.classList.add('active');
+  document.getElementById(b.dataset.p).classList.add('active');
+});
+
+// ---- faithful port of LLMService._mock_generate_question (server/app/llm_service.py) ----
+const subjectQuestions={
+  python:["Explain the difference between lists and tuples in Python","How does Python's garbage collection work?","What are Python decorators and how do you use them?","Implement a function to find duplicates in a list"],
+  javascript:["Explain JavaScript closures with an example","What is the difference between == and === in JavaScript?","How do you handle asynchronous operations in JavaScript?","Implement a debounce function"],
+  algorithms:["Implement a binary search algorithm","Explain the time complexity of quicksort","How would you detect a cycle in a linked list?","Design an algorithm to find the shortest path in a graph"],
+  system_design:["Design a URL shortening service like bit.ly","How would you design a chat application?","Explain how you would scale a web application","Design a caching system for a high-traffic website"]
+};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+
+function mockGenerate(subject,qtype){
+  const questions=subjectQuestions[subject]||subjectQuestions.python;
+  const base=pick(questions);
+  const d={
+    question_text:base,
+    difficulty:pick(["easy","medium","hard"]),
+    type:qtype,
+    generated_by:"mock_llm",
+    timestamp:new Date().toISOString(),
+    subject:subject
+  };
+  if(qtype==="multiple_choice"){
+    if(subject==="python") Object.assign(d,{options:["A. True","B. False","C. It depends","D. None of the above"],correct_answer:"A. True",explanation:"This is the correct answer because...",hints:["Think about Python's design principles","Consider the context"]});
+    else Object.assign(d,{options:["A. Option A","B. Option B","C. Option C","D. Option D"],correct_answer:"A. Option A",explanation:"This is the correct answer because...",hints:["Consider the fundamentals","Think step by step"]});
+  } else if(qtype==="true_false"){
+    Object.assign(d,{correct_answer:pick([true,false]),explanation:"This statement is correct/incorrect because...",hints:["Consider common misconceptions","Think about edge cases"]});
+  } else if(qtype==="coding"){
+    const lang=["python","javascript","java"].includes(subject)?subject:"python";
+    Object.assign(d,{language:lang,starter_code:"# Write your solution here\ndef solution():\n    pass",solution:"# Sample solution\ndef solution():\n    return 'implemented'",test_cases:[{input:"example",expected:"output"},{input:"test",expected:"result"}],hints:["Think about the algorithm","Consider edge cases","Optimize for time complexity"]});
+  } else if(qtype==="short_answer"){
+    Object.assign(d,{expected_keywords:["key","concept","important",subject],sample_answers:["Sample answer focusing on key concepts","Alternative approach explanation"],max_words:50,hints:["Be concise but complete","Focus on key concepts"]});
+  } else {
+    Object.assign(d,{sample_answer:"A comprehensive answer would cover the fundamental concepts of "+subject+", including practical applications and considerations for different scenarios.",grading_criteria:["Demonstrates understanding of core concepts","Provides practical examples","Shows analytical thinking"],hints:["Think about real-world applications","Consider multiple perspectives","Provide specific examples"]});
+  }
+  d.llm_source="mock";
+  return d;
+}
+
+function syntaxHighlight(json){
+  return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,m=>{
+    let cls='s';
+    if(/^"/.test(m)){cls=/:$/.test(m)?'k':'s';}
+    else if(/true|false|null/.test(m)){cls='k';}
+    return '<span class="'+cls+'">'+m+'</span>';
+  });
+}
+const out=document.getElementById('genOut');
+document.getElementById('genBtn').addEventListener('click',()=>{
+  const subj=document.getElementById('subj').value;
+  const qtype=document.getElementById('qtype').value;
+  const res=mockGenerate(subj,qtype);
+  out.innerHTML=syntaxHighlight(JSON.stringify(res,null,2));
+});
+
+/* ============================================================
+   LIVE APP DEMO — build set → mock interview → auto-grade
+   Logic ported from server/app/sessions.py + llm_service.py
+   ============================================================ */
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+// Role → subject (the four banks that exist in the repo)
+const ROLE_SUBJECT={frontend:'javascript',backend:'python',datascience:'algorithms',pm:'system_design'};
+let qid=0;
+let pending=[];   // building queue  (status:"pending")
+let ready=[];     // approved        (status:"approved")
+let session=null; // active interview session
+
+const $=id=>document.getElementById(id);
+
+function genCode(){let s='';for(let i=0;i<6;i++)s+='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)];return s;}
+$('sessCode').textContent='code: '+genCode();
+
+// participant list (scripted, no real WebSocket)
+const PARTS=[{name:'you',host:true},{name:'maya',host:false},{name:'dan',host:false}];
+function renderParts(){
+  $('participants').innerHTML=PARTS.map(p=>
+    `<div class="pp"><span class="dotg"></span>${esc(p.name)}${p.host?' <span class="htag">HOST</span>':''}</div>`
+  ).join('');
+}
+renderParts();
+
+// --- build set ---
+function addQuestion(role,qtype,fromPeer){
+  const subject=ROLE_SUBJECT[role];
+  const q=mockGenerate(subject,qtype);          // <-- real ported generator
+  q._id='q'+(++qid);
+  q.status='pending';
+  q.suggested_by=fromPeer||'you';
+  // host-approval flow: auto_approve_questions setting (sessions.py)
+  if($('autoApprove').checked){ approve(q._id,q); }
+  else { pending.push(q); }
+  renderQueues();
+}
+
+function approve(id,qObj){
+  const q=qObj||pending.find(x=>x._id===id);
+  if(!q)return;
+  pending=pending.filter(x=>x._id!==id);
+  q.status='approved';
+  ready.push(q);
+  renderQueues();
+}
+function reject(id){ pending=pending.filter(x=>x._id!==id); renderQueues(); }
+function removeReady(id){ ready=ready.filter(x=>x._id!==id); renderQueues(); }
+
+function qCard(q,inReady){
+  const acts=inReady
+    ? `<div class="acts"><button class="mini no" data-rm="${q._id}">Remove</button></div>`
+    : `<div class="acts"><button class="mini ok" data-ap="${q._id}">✓ Approve</button>`+
+      `<button class="mini" data-ed="${q._id}">Edit</button>`+
+      `<button class="mini no" data-rj="${q._id}">Reject</button></div>`;
+  return `<div class="qitem" data-q="${q._id}">
+    <div class="qmeta"><span class="badge type">${q.type}</span>`+
+    `<span class="badge diff">${q.difficulty}</span>`+
+    `<span class="badge">by ${esc(q.suggested_by)}</span></div>`+
+    `<div class="qtext" data-text>${esc(q.question_text)}</div>${acts}</div>`;
+}
+function renderQueues(){
+  $('pendCount').textContent='('+pending.length+')';
+  $('readyCount').textContent='('+ready.length+')';
+  $('pendingList').innerHTML=pending.length?pending.map(q=>qCard(q,false)).join('')
+    :'<p class="muted" style="font-size:.82rem">Queue empty.</p>';
+  $('readyList').innerHTML=ready.length?ready.map(q=>qCard(q,true)).join('')
+    :'<p class="muted" style="font-size:.82rem">Nothing approved yet.</p>';
+  $('startInt').disabled=ready.length===0;
+}
+
+// queue event delegation
+$('demo').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.ap){approve(b.dataset.ap);}
+  else if(b.dataset.rj){reject(b.dataset.rj);}
+  else if(b.dataset.rm){removeReady(b.dataset.rm);}
+  else if(b.dataset.ed){
+    const wrap=b.closest('.qitem');const id=b.dataset.ed;
+    const q=pending.find(x=>x._id===id);if(!q)return;
+    const tx=wrap.querySelector('[data-text]');
+    if(b.textContent==='Edit'){
+      tx.innerHTML=`<input class="edit" value="${esc(q.question_text)}">`;
+      b.textContent='Save';
+      tx.querySelector('input').focus();
+    } else {
+      q.question_text=tx.querySelector('input').value;
+      renderQueues();
+    }
+  }
+});
+
+$('addQ').addEventListener('click',()=>addQuestion($('role').value,$('dtype').value));
+$('seedSet').addEventListener('click',()=>{
+  const role=$('role').value;
+  ['multiple_choice','true_false','open_ended','short_answer'].forEach(t=>addQuestion(role,t));
+});
+$('simPeer').addEventListener('click',()=>{
+  const peer=['maya','dan'][Math.floor(Math.random()*2)];
+  const t=['multiple_choice','true_false','open_ended'][Math.floor(Math.random()*3)];
+  addQuestion($('role').value,t,peer);
+});
+
+// --- step navigation ---
+function gotoStep(n){
+  document.querySelectorAll('.stage').forEach(s=>s.classList.remove('active'));
+  $('stage'+n).classList.add('active');
+  document.querySelectorAll('.step').forEach(s=>{
+    const sn=+s.dataset.s;
+    s.classList.toggle('active',sn===n);
+    s.classList.toggle('done',sn<n);
+  });
+}
+
+// --- mock interview ---
+$('startInt').addEventListener('click',()=>{
+  session={questions:ready.map(q=>({...q})),answers:[],idx:0,started:Date.now()};
+  gotoStep(2);
+  renderQuestion();
+});
+$('abort').addEventListener('click',()=>gotoStep(1));
+
+function renderQuestion(){
+  const i=session.idx, q=session.questions[i], n=session.questions.length;
+  $('intTitle').textContent=ROLE_LABEL();
+  $('progress').textContent=`Question ${i+1} of ${n}`;
+  $('progBar').style.width=Math.round(i/n*100)+'%';
+  let body=`<p class="qtext" style="font-size:.95rem;margin:0 0 12px">${esc(q.question_text)}</p>`;
+  if(q.type==='multiple_choice'){
+    body+=q.options.map((o,k)=>`<div class="opt" data-opt="${esc(o)}">${esc(o)}</div>`).join('');
+  } else if(q.type==='true_false'){
+    body+=['true','false'].map(o=>`<div class="opt" data-opt="${o}">${o[0].toUpperCase()+o.slice(1)}</div>`).join('');
+  } else {
+    body+=`<textarea class="ans" placeholder="Type your answer here..."></textarea>`;
+    if(q.type==='short_answer'&&q.max_words) body+=`<p class="muted" style="font-size:.74rem">max ~${q.max_words} words · expected keywords help grade short_answer (see below)</p>`;
+  }
+  $('qBody').innerHTML=body;
+  $('nextQ').textContent=(i<n-1)?'Next question':'Finish & grade';
+  $('nextQ').disabled=true;
+  // option selection
+  $('qBody').querySelectorAll('.opt').forEach(el=>el.addEventListener('click',()=>{
+    $('qBody').querySelectorAll('.opt').forEach(o=>o.classList.remove('sel'));
+    el.classList.add('sel');
+    $('nextQ').disabled=false;
+  }));
+  const ta=$('qBody').querySelector('textarea');
+  if(ta) ta.addEventListener('input',()=>{$('nextQ').disabled=ta.value.trim()==='';});
+}
+function ROLE_LABEL(){return $('role').selectedOptions[0].text+' — mock interview';}
+
+function currentAnswer(){
+  const sel=$('qBody').querySelector('.opt.sel');
+  if(sel) return sel.dataset.opt;
+  const ta=$('qBody').querySelector('textarea');
+  return ta?ta.value:'';
+}
+
+$('nextQ').addEventListener('click',()=>{
+  const i=session.idx, q=session.questions[i];
+  session.answers.push(gradeAnswer(q,i,currentAnswer()));
+  if(i<session.questions.length-1){ session.idx++; renderQuestion(); }
+  else { session.ended=Date.now(); showResults(); }
+});
+
+/* Objective grading ported verbatim from sessions.py submit_answer():
+     multiple_choice -> is_correct = (user_answer == correct_answer)
+     true_false      -> is_correct = (str(answer).lower()=='true' == correct_answer)
+     other types     -> is_correct = None  (not auto-graded server-side)
+   For non-objective types we add a transparent keyword/criteria heuristic for
+   demo feedback, but it does NOT count toward the % (matching the real app,
+   where only is_correct answers form the InterviewSummary score).            */
+function gradeAnswer(q,index,answer){
+  let is_correct=null, feedback='', graded=false;
+  if(q.type==='multiple_choice'){
+    is_correct=(answer===q.correct_answer); graded=true;
+  } else if(q.type==='true_false'){
+    is_correct=((String(answer).toLowerCase()==='true')===q.correct_answer); graded=true;
+  } else if(q.type==='short_answer'){
+    const kws=(q.expected_keywords||[]).map(k=>k.toLowerCase());
+    const hit=kws.filter(k=>answer.toLowerCase().includes(k));
+    feedback=kws.length?`Matched ${hit.length}/${kws.length} expected keyword(s): `+
+      kws.map(k=>hit.includes(k)?'✓'+k:'✗'+k).join(', ')+'. (Heuristic — not scored automatically server-side.)'
+      :'Reviewed against expected keywords.';
+  } else if(q.type==='open_ended'){
+    feedback=`Open-ended — graded against criteria: ${(q.grading_criteria||[]).join('; ')}. The real app sends these to Gemini (or a mock evaluator) for a 0–100 score; objective types here are auto-scored, open-ended is flagged for review.`;
+  } else if(q.type==='coding'){
+    feedback=`Coding — would run ${(q.test_cases||[]).length} test case(s) against your solution. Auto-scoring of code is out of scope for this in-page demo.`;
+  }
+  return {question_index:index, question_text:q.question_text, type:q.type,
+          answer, is_correct, correct_answer:q.correct_answer, graded, feedback,
+          explanation:q.explanation};
+}
+
+/* Score + thresholds ported from InterviewSummary (correct/answered*100)
+   and EvaluationResults (color + performance level bands).               */
+function scoreColor(s){return s>=90?'#4CAF50':s>=80?'#8BC34A':s>=70?'#FFC107':s>=60?'#FF9800':'#F44336';}
+function perfLevel(s){return s>=90?'Excellent':s>=80?'Good':s>=70?'Satisfactory':s>=60?'Needs Improvement':'Poor';}
+
+function showResults(){
+  gotoStep(3);
+  const ans=session.answers;
+  const objective=ans.filter(a=>a.graded);              // only auto-graded count
+  const correct=objective.filter(a=>a.is_correct).length;
+  const score=objective.length?Math.round(correct/objective.length*100):0;
+  const col=scoreColor(score), lvl=perfLevel(score);
+  const dur=Math.max(1,Math.round((session.ended-session.started)/1000));
+  const reviewCount=ans.length-objective.length;
+
+  let html=`<h2>Interview results: ${esc(ROLE_LABEL().replace(' — mock interview',''))}</h2>
+    <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin:10px 0 4px">
+      <div class="bigscore" style="color:${col}">${objective.length?score+'%':'—'}</div>
+      <div>
+        <div style="color:${col};font-weight:600">${objective.length?lvl:'No objective questions'}</div>
+        <div class="muted" style="font-size:.82rem">${correct}/${objective.length} objective correct · ${reviewCount} flagged for review · ${dur}s</div>
+      </div>
+    </div>
+    <div class="bar" style="margin:6px 0 14px"><i style="width:${score}%;background:${col}"></i></div>
+    <h3>Per-question breakdown</h3>`;
+
+  ans.forEach((a,k)=>{
+    let cls,ind;
+    if(a.graded){ cls=a.is_correct?'correct':'incorrect'; ind=a.is_correct?'✔ Correct':'✖ Incorrect'; }
+    else { cls='review'; ind='◐ Flagged for review'; }
+    let body=`<div class="rb"><strong>Your answer:</strong> ${esc(a.answer||'—')||'No answer'}`;
+    if(a.graded&&!a.is_correct){
+      const ca=typeof a.correct_answer==='boolean'?(a.correct_answer?'True':'False'):a.correct_answer;
+      body+=`<br><strong>Correct answer:</strong> ${esc(ca)}`;
+      if(a.explanation) body+=`<br><span class="muted"><strong>Explanation:</strong> ${esc(a.explanation)}</span>`;
+    }
+    if(a.feedback) body+=`<br><span class="muted">${esc(a.feedback)}</span>`;
+    body+='</div>';
+    html+=`<div class="res-item ${cls}"><div class="rh"><strong>Q${k+1}: ${esc(a.question_text)}</strong>`+
+      `<span class="ind">${ind}</span></div>${body}</div>`;
+  });
+  $('resultsCard').innerHTML=html;
+}
+
+$('restart').addEventListener('click',()=>{ session=null; gotoStep(1); });
+</script>
+</body>
+</html>

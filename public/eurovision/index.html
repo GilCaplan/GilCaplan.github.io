@@ -1,0 +1,1595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EuroVision — Computer Vision Methods (MPV)</title>
+<style>
+:root{
+  --bg:#0B1220; --surface:#0F172A; --panel:#1E293B; --border:#243044;
+  --text:#E2E8F0; --muted:#94A3B8; --accent:#14B8A6; --blue:#60A5FA; --red:#F87171; --amber:#FBBF24;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.5;}
+.wrap{max-width:1040px;margin:0 auto;padding:22px 18px 60px;}
+h1{font-size:1.5rem;margin:0 0 4px;}
+h2{font-size:1.1rem;margin:0 0 10px;}
+h3{margin:0 0 6px;}
+.sub{color:var(--muted);font-size:.92rem;margin:0 0 18px;}
+.mono{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:10px;}
+.tab{background:var(--panel);border:1px solid var(--border);color:var(--muted);
+  padding:7px 14px;border-radius:9px;cursor:pointer;font-size:.88rem;transition:.15s;}
+.tab:hover{color:var(--text);border-color:var(--accent);}
+.tab.active{background:var(--accent);color:#04201c;border-color:var(--accent);font-weight:600;}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px;}
+.view{display:none;} .view.active{display:block;}
+pre{background:#0a0f1c;border:1px solid var(--border);border-radius:10px;padding:14px 16px;
+  overflow:auto;font-size:.8rem;color:#cbd5e1;font-family:'JetBrains Mono',monospace;line-height:1.45;}
+.k{color:var(--accent);} .b{color:var(--blue);} .c{color:#64748b;} .s{color:#fca5a5;}
+.tag{display:inline-block;background:var(--panel);border:1px solid var(--border);
+  color:var(--muted);border-radius:20px;padding:3px 11px;font-size:.76rem;margin:0 6px 6px 0;}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:14px;}
+.card h3{margin:0 0 6px;font-size:.95rem;color:var(--accent);}
+.card p{margin:0;color:var(--muted);font-size:.85rem;}
+.btn{background:var(--accent);color:#04201c;border:none;border-radius:9px;padding:9px 16px;font-weight:600;cursor:pointer;font-size:.88rem;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.btn.alt{background:var(--panel);color:var(--text);border:1px solid var(--border);}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.muted{color:var(--muted);font-size:.85rem;}
+label{font-size:.83rem;color:var(--muted);}
+input[type=range]{accent-color:var(--accent);width:160px;vertical-align:middle;}
+table{border-collapse:collapse;width:100%;font-size:.83rem;font-family:'JetBrains Mono',monospace;}
+th,td{border:1px solid var(--border);padding:6px 9px;text-align:left;}
+th{color:var(--accent);} td{color:var(--muted);}
+a{color:var(--blue);}
+.note{background:#0a0f1c;border:1px solid var(--border);border-left:3px solid var(--blue);border-radius:8px;padding:10px 13px;font-size:.84rem;color:var(--muted);margin-top:12px;}
+.note.warn{border-left-color:var(--amber);}
+.stagewrap{display:grid;grid-template-columns:auto 260px;gap:18px;align-items:start;}
+@media(max-width:760px){.stagewrap{grid-template-columns:1fr;}}
+#stage{border:1px solid var(--border);border-radius:10px;background:#000;cursor:crosshair;display:block;max-width:100%;touch-action:none;}
+.statline{font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--muted);}
+.statline b{color:var(--accent);}
+.legend{font-size:.78rem;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;}
+.swatch{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:middle;margin-right:4px;}
+.respwrap{text-align:center;}
+#respCanvas{border:1px solid var(--border);border-radius:8px;image-rendering:pixelated;width:160px;height:130px;background:#0a0f1c;}
+.ctrlgrid{display:grid;grid-template-columns:1fr;gap:10px;}
+.kpi{display:flex;justify-content:space-between;border-bottom:1px dashed var(--border);padding:4px 0;font-family:'JetBrains Mono',monospace;font-size:.8rem;}
+.kpi span:last-child{color:var(--text);}
+.classchips span{display:inline-block;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:4px 9px;margin:0 5px 5px 0;font-size:.78rem;}
+canvas.chart{width:100%;background:#0a0f1c;border:1px solid var(--border);border-radius:10px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>EuroVision — Computer Vision Methods</h1>
+  <p class="sub mono">CTU BE4M33MPV (EuroTeQ exchange) · local features &amp; RANSAC · indexing &amp; retrieval/SfM · CNN classification + colorization · KCF &amp; KLT tracking</p>
+
+  <div class="tabs">
+    <div class="tab active" data-v="track">Live: Object Tracking</div>
+    <div class="tab" data-v="filter">Live: Image Filtering</div>
+    <div class="tab" data-v="harris">Live: Harris Corners</div>
+    <div class="tab" data-v="klt">Live: KLT Tracking</div>
+    <div class="tab" data-v="corr">Live: Correspondences &amp; RANSAC</div>
+    <div class="tab" data-v="cnn">CNN Results</div>
+    <div class="tab" data-v="overview">Course Overview</div>
+    <div class="tab" data-v="how">How the tracker works</div>
+  </div>
+
+  <!-- ================= LIVE TRACKER ================= -->
+  <div class="view active" id="track">
+    <div class="panel">
+      <h2>Live KCF object tracker — running in your browser</h2>
+      <p class="muted">This is a faithful vanilla-JS port of the <span class="mono">kcf.py</span> I wrote for the
+      tracking assignment: a <b>Kernelized Correlation Filter</b>. It trains a discriminative filter on a single
+      bounding box entirely in the <b>Fourier domain</b> (RBF kernel correlation + a Gaussian target response +
+      a cosine window), then detects the response peak each frame and adapts the template on-line. The frames are
+      real frames from the course's 284-frame "leaflet" sequence (downscaled to 320×240). No tracking library —
+      the FFT and the filter are implemented from scratch below.</p>
+
+      <div class="row" style="margin:6px 0 14px">
+        <button class="btn" id="playBtn" disabled>▶ Play</button>
+        <button class="btn alt" id="resetBtn">↺ Reset box</button>
+        <span class="muted" id="hint">Drag a box on the first frame (or use the default), then press Play.</span>
+      </div>
+
+      <div class="stagewrap">
+        <div>
+          <canvas id="stage" width="320" height="240"></canvas>
+          <div class="legend">
+            <span><span class="swatch" style="background:#14B8A6"></span>tracked bounding box</span>
+            <span><span class="swatch" style="background:#60A5FA"></span>your drawn box</span>
+          </div>
+          <div class="statline" style="margin-top:8px">
+            frame <b id="fIdx">0</b>/<span id="fTot">0</span> ·
+            box <b id="boxStat">—</b> · Δ <b id="dStat">0,0</b> · peak <b id="peakStat">—</b>
+          </div>
+        </div>
+        <div class="ctrlgrid">
+          <div class="respwrap">
+            <div class="muted" style="margin-bottom:5px">correlation response (peak = match)</div>
+            <canvas id="respCanvas" width="48" height="40"></canvas>
+          </div>
+          <div>
+            <div class="kpi"><span>kernel</span><span id="pKernel">RBF (Gauss)</span></div>
+            <div class="kpi"><span>rbf σ</span><span class="mono"><input type="range" id="sigma" min="0.5" max="6" step="0.5" value="2" style="width:90px"> <i id="sigVal">2.0</i></span></div>
+            <div class="kpi"><span>adaptation γ</span><span class="mono"><input type="range" id="gamma" min="0" max="0.3" step="0.025" value="0.075" style="width:90px"> <i id="gamVal">0.075</i></span></div>
+            <div class="kpi"><span>window</span><span>cosine</span></div>
+            <div class="kpi"><span>λ (regularizer)</span><span class="mono">1e-4</span></div>
+          </div>
+          <div class="row">
+            <label><input type="checkbox" id="showResp" checked> show response</label>
+          </div>
+        </div>
+      </div>
+      <div class="note warn">Honest scope: this ports my <b>KCF</b> tracker (single bounding box, the
+      <span class="mono">track_kcf</span> path). The assignment also contains a <b>KLT/Lucas–Kanade</b> point
+      tracker (<span class="mono">klt.py</span>) used to estimate a homography of the planar leaflet — its code
+      and math are shown in the other tabs. The FFT here is a from-scratch radix-2/Bluestein implementation, not
+      a numpy FFT, so peak coordinates can differ by a sub-pixel from the Python run.</div>
+    </div>
+  </div>
+
+  <!-- ================= LIVE IMAGE FILTERING ================= -->
+  <div class="view" id="filter">
+    <div class="panel">
+      <h2>Live image-filtering playground — running in your browser</h2>
+      <p class="muted">A faithful vanilla-JS port of <span class="mono">imagefiltering.py</span> from the
+      correspondences assignment. The image is converted to grayscale [0..1] and every filter below is the
+      <b>exact convolution the .py applies</b>: a <b>separable Gaussian</b> built from
+      <span class="mono">gaussian1d</span> / <span class="mono">get_gausskernel_size</span>
+      (<span class="mono">ksize = 2·⌈3σ⌉+1</span>), the <b>Gaussian first derivative</b>
+      <span class="mono">gaussian_deriv1d</span> &nbsp;<span class="mono">dG/dx = −(x/σ²)·G(x)</span>
+      used by <span class="mono">spatial_gradient_first_order</span> (derivative along one axis, smoothing along the
+      other), the <b>gradient magnitude</b> <span class="mono">√(gx²+gy²)</span>, and a <b>Laplacian</b>
+      <span class="mono">∂²/∂x² + ∂²/∂y²</span> of the smoothed image. All use replicate padding, exactly like
+      <span class="mono">filter2d</span>.</p>
+
+      <div class="row" style="margin:6px 0 14px">
+        <label>filter
+          <select id="fltKind" class="alt" style="background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 9px;font-size:.85rem">
+            <option value="gauss">Gaussian blur</option>
+            <option value="gx">x-derivative (gx)</option>
+            <option value="gy">y-derivative (gy)</option>
+            <option value="grad">gradient magnitude</option>
+            <option value="lap">Laplacian</option>
+          </select>
+        </label>
+        <label style="margin-left:6px">σ <input type="range" id="fltSigma" min="0.5" max="5" step="0.25" value="1.5"> <i id="fltSigVal" class="mono">1.50</i></label>
+        <span class="muted mono" id="fltKsize"></span>
+      </div>
+
+      <div class="stagewrap">
+        <div>
+          <canvas id="fltCanvas" width="300" height="126" style="border:1px solid var(--border);border-radius:10px;background:#000;display:block;max-width:100%;image-rendering:auto"></canvas>
+          <div class="legend"><span>real sunflowers.png from the assignment (downscaled to 300px), grayscale</span></div>
+          <div class="statline" style="margin-top:8px">filter <b id="fltStat">Gaussian blur</b> · kernel <b id="fltKstat">—</b> · <b id="fltSep">separable 1D×2</b></div>
+        </div>
+        <div class="ctrlgrid">
+          <div class="respwrap">
+            <div class="muted" style="margin-bottom:5px">1-D kernel taps (the separable filter)</div>
+            <canvas id="fltKernCanvas" width="180" height="90" style="border:1px solid var(--border);border-radius:8px;background:#0a0f1c;width:180px;height:90px"></canvas>
+          </div>
+          <div>
+            <div class="kpi"><span>padding</span><span>replicate</span></div>
+            <div class="kpi"><span>conv</span><span>true (flipped)</span></div>
+            <div class="kpi"><span>gauss norm</span><span>Σ=1</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="note">Ported functions: <span class="mono">gaussian1d</span>, <span class="mono">gaussian_deriv1d</span>,
+      <span class="mono">get_gausskernel_size</span>, <span class="mono">filter2d</span> (separable),
+      <span class="mono">gaussian_filter2d</span>, <span class="mono">spatial_gradient_first_order</span>. Derivatives are
+      contrast-stretched for display (0 → mid-gray); the Laplacian is the sum of second derivatives of the
+      σ-smoothed image. These filters feed the Harris/blob detectors in the next tab.</div>
+    </div>
+  </div>
+
+  <!-- ================= LIVE HARRIS CORNERS ================= -->
+  <div class="view" id="harris">
+    <div class="panel">
+      <h2>Live Harris corner detector — running in your browser</h2>
+      <p class="muted">A faithful port of <span class="mono">harris_response</span> + <span class="mono">nms2d</span>
+      from <span class="mono">local_detector.py</span>. For every pixel it builds the <b>second-moment (structure)
+      tensor</b> from the Gaussian-smoothed gradients
+      <span class="mono">M = G<sub>σi</sub> ∗ [Ix² , IxIy ; IxIy , Iy²]</span>, then computes the cornerness
+      <span class="mono">R = det(M) − α·trace(M)²</span> with <span class="mono">α = 0.05</span>. The very same
+      separable Gaussian/derivative code from the filtering tab supplies <span class="mono">Ix, Iy</span>
+      (<span class="mono">spatial_gradient_first_order</span>, scale σ<sub>d</sub>), then a Gaussian integration
+      window σ<sub>i</sub> averages the tensor. A <b>3×3 non-maximum suppression</b>
+      (<span class="mono">nms2d → nms_nd</span>) keeps strict local maxima above the threshold — exactly the
+      <span class="mono">harris()</span> pipeline.</p>
+
+      <div class="row" style="margin:6px 0 14px">
+        <label>image
+          <select id="harImg" class="alt" style="background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 9px;font-size:.85rem">
+            <option value="sunflowers">sunflowers.png</option>
+            <option value="blobs">blobs.png</option>
+          </select>
+        </label>
+        <label style="margin-left:6px">σd <input type="range" id="harSd" min="0.7" max="2.5" step="0.1" value="1.0"> <i id="harSdVal" class="mono">1.0</i></label>
+        <label style="margin-left:6px">σi <input type="range" id="harSi" min="1.0" max="3.5" step="0.1" value="1.5"> <i id="harSiVal" class="mono">1.5</i></label>
+        <label style="margin-left:6px">threshold <input type="range" id="harTh" min="0" max="100" step="1" value="35"> <i id="harThVal" class="mono">35%</i></label>
+      </div>
+
+      <div class="stagewrap">
+        <div>
+          <canvas id="harCanvas" width="300" height="126" style="border:1px solid var(--border);border-radius:10px;background:#000;display:block;max-width:100%"></canvas>
+          <div class="legend"><span><span class="swatch" style="background:#FBBF24"></span>detected corner (local max of R)</span></div>
+          <div class="statline" style="margin-top:8px">corners <b id="harCount">—</b> · α <b>0.05</b> · R = det(M) − α·trace(M)² · NMS <b>3×3</b></div>
+        </div>
+        <div class="ctrlgrid">
+          <div class="respwrap">
+            <div class="muted" style="margin-bottom:5px">Harris response R (clamped, hot=corner)</div>
+            <canvas id="harRespCanvas" width="150" height="63" style="border:1px solid var(--border);border-radius:8px;background:#0a0f1c;image-rendering:pixelated;width:150px"></canvas>
+          </div>
+          <div>
+            <div class="kpi"><span>tensor</span><span>Gσi ∗ ∇I∇Iᵀ</span></div>
+            <div class="kpi"><span>nms</span><span>strict 3×3 max</span></div>
+            <div class="kpi"><span>compute</span><span id="harMs" class="mono">—</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="note warn">Honest scope: this runs the single-scale <span class="mono">harris()</span> detector live.
+      The assignment also has the <b>scale-space</b> versions (<span class="mono">scalespace_harris_response</span>,
+      <span class="mono">create_scalespace</span>, <span class="mono">nms3d</span>) that find blobs across a Gaussian
+      pyramid with σ⁴ Lindeberg normalisation — too heavy to run interactively, so only the planar detector is live
+      here. Threshold is a percentile of the positive response so it is comparable across images.</div>
+    </div>
+  </div>
+
+  <!-- ================= LIVE KLT TRACKING ================= -->
+  <div class="view" id="klt">
+    <div class="panel">
+      <h2>Live KLT / Lucas–Kanade point tracker — running in your browser</h2>
+      <p class="muted">A faithful port of <span class="mono">klt.py</span> (<span class="mono">track_klt</span> /
+      <span class="mono">klt_compute_updates</span>). These are the real <b>64×64 test frames</b>
+      (<span class="mono">test_data/toy_im_*.png</span>) — a translating letter "A". Click anywhere on the first frame
+      to place tracked points (or press <b>Auto-seed</b>), then <b>Play</b>: each point is tracked frame-to-frame by
+      iteratively solving the <b>2×2 structure-tensor system</b> for the optimal shift, with sub-pixel bilinear patch
+      sampling (<span class="mono">get_patches_subpix</span>):</p>
+<pre><span class="c"># per point, iterate klt_max_iter times:</span>
+e   = T - I                          <span class="c"># template patch - current patch</span>
+Ix2,Iy2,IxIy = (Ix*Ix).sum(),(Iy*Iy).sum(),(Ix*Iy).sum()
+Ixe,Iye      = (Ix*e).sum(), (Iy*e).sum()
+det = Ix2*Iy2 - IxIy**2              <span class="c"># Cramer's rule 2x2 solve</span>
+dpx = (Iy2*Ixe - IxIy*Iye)/det ; dpy = (Ix2*Iye - IxIy*Ixe)/det
+p  += (dpx, dpy)                      <span class="c"># refine shift until convergence</span></pre>
+
+      <div class="row" style="margin:6px 0 14px">
+        <button class="btn" id="kltPlay" disabled>▶ Play</button>
+        <button class="btn alt" id="kltSeed">⊕ Auto-seed grid</button>
+        <button class="btn alt" id="kltClear">↺ Clear points</button>
+        <span class="muted" id="kltHint">Click points on the first frame, then Play.</span>
+      </div>
+
+      <div class="row" style="margin:0 0 14px">
+        <label class="btn alt" style="cursor:pointer">⬆ Upload your own frames
+          <input type="file" id="kltUpload" accept="image/*" multiple style="display:none">
+        </label>
+        <button class="btn alt" id="kltSample">↺ Reset to sample frames</button>
+        <span class="muted mono" id="kltSrc">sample: toy_im_*.png (5 frames)</span>
+      </div>
+
+      <div class="stagewrap">
+        <div>
+          <canvas id="kltCanvas" width="320" height="320" style="border:1px solid var(--border);border-radius:10px;background:#000;display:block;max-width:100%;cursor:crosshair;image-rendering:pixelated"></canvas>
+          <div class="legend">
+            <span><span class="swatch" style="background:#14B8A6"></span>tracked point</span>
+            <span><span class="swatch" style="background:#60A5FA"></span>trajectory</span>
+            <span><span class="swatch" style="background:#F87171"></span>diverged (dropped)</span>
+          </div>
+          <div class="statline" style="margin-top:8px">frame <b id="kltF">0</b>/<span id="kltTot">4</span> · points <b id="kltN">0</b> · window <b>±10</b> · max-iter <b>20</b></div>
+        </div>
+        <div class="ctrlgrid">
+          <div>
+            <div class="kpi"><span>klt_window</span><span>10</span></div>
+            <div class="kpi"><span>klt_max_iter</span><span>20</span></div>
+            <div class="kpi"><span>klt_sigma_d</span><span>1.3</span></div>
+            <div class="kpi"><span>stop_thr</span><span class="mono">0.02²</span></div>
+            <div class="kpi"><span>solver</span><span>Cramer 2×2</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="note">Ported from <span class="mono">klt.py</span>: <span class="mono">track_klt</span>,
+      <span class="mono">klt_compute_updates</span>, <span class="mono">get_patches_subpix</span> (sub-pixel bilinear),
+      with <span class="mono">spatial_gradient_first_order</span> for the patch gradients — params from
+      <span class="mono">klt_params.py</span> (window 10, 20 iters, σd 1.3, stop 0.02²). On the real leaflet sequence
+      these converged correspondences feed <span class="mono">ransac_h</span> →
+      <span class="mono">compute_and_show_homography</span> to localise the planar leaflet.
+      <b>Upload</b>: pick ≥2 of your own frames (a short sequence, in order) — they are downscaled to ≤320px,
+      converted to grayscale, and tracked with the same Lucas–Kanade port. Everything runs in your browser;
+      <b>no image is uploaded anywhere</b>.</div>
+    </div>
+  </div>
+
+  <!-- ================= LIVE CORRESPONDENCES & RANSAC ================= -->
+  <div class="view" id="corr">
+    <div class="panel">
+      <h2>Live correspondence problem — matching &amp; RANSAC homography in your browser</h2>
+      <p class="muted">The whole wide-baseline-stereo pipeline from the correspondences assignment, ported to vanilla
+      JS. Given <b>two views of the same scene</b> it: (1) detects keypoints in both with the same
+      <span class="mono">harris_response</span> + <span class="mono">nms2d</span> from
+      <span class="mono">local_detector.py</span>; (2) builds a <b>SIFT-style local descriptor</b> per keypoint —
+      a dominant-orientation-normalised 4×4×8 = 128-D gradient histogram (port of
+      <span class="mono">calc_sift_descriptor</span> + <span class="mono">estimate_patch_dominant_orientation</span>
+      from <span class="mono">local_descriptor.py</span>); (3) matches them with <b>mutual nearest neighbours +
+      Lowe's ratio test</b> (<span class="mono">match_smnn</span> in <span class="mono">matching.py</span>); then
+      (4) <b>RANSAC a homography</b> with a 4-point DLT minimal solver, counting inliers by squared reprojection
+      error and refitting on the inliers (<span class="mono">ransac_h</span> / <span class="mono">getH</span> /
+      <span class="mono">hdist</span> in <span class="mono">ransac.py</span>).</p>
+
+      <div class="row" style="margin:6px 0 10px">
+        <button class="btn" id="corrRun" disabled>▶ Run match + RANSAC</button>
+        <label style="margin-left:4px">th(px) <input type="range" id="corrTh" min="2" max="12" step="0.5" value="5"> <i id="corrThVal" class="mono">5.0</i></label>
+        <label style="margin-left:6px">ratio <input type="range" id="corrRatio" min="0.6" max="0.95" step="0.01" value="0.85"> <i id="corrRatioVal" class="mono">0.85</i></label>
+        <label style="margin-left:6px"><input type="checkbox" id="corrWarp"> overlay warp(H)</label>
+      </div>
+
+      <div class="row" style="margin:0 0 14px">
+        <label class="btn alt" style="cursor:pointer">⬆ Image A
+          <input type="file" id="corrUpA" accept="image/*" style="display:none">
+        </label>
+        <label class="btn alt" style="cursor:pointer">⬆ Image B
+          <input type="file" id="corrUpB" accept="image/*" style="display:none">
+        </label>
+        <button class="btn alt" id="corrSample">↺ Reset to sample pair</button>
+        <span class="muted mono" id="corrSrc">sample: v_woman 1 ↔ 6 (real wide-baseline pair)</span>
+      </div>
+
+      <div class="stagewrap">
+        <div>
+          <canvas id="corrCanvas" width="690" height="260" style="border:1px solid var(--border);border-radius:10px;background:#000;display:block;max-width:100%"></canvas>
+          <div class="legend">
+            <span><span class="swatch" style="background:#14B8A6"></span>inlier match (consistent with H)</span>
+            <span><span class="swatch" style="background:#F87171"></span>tentative match rejected by RANSAC</span>
+            <span><span class="swatch" style="background:#FBBF24"></span>keypoint</span>
+          </div>
+          <div class="statline" style="margin-top:8px">kpts A/B <b id="corrKp">—</b> · tentatives <b id="corrTent">—</b> · inliers <b id="corrInl">—</b> · iters <b id="corrIter">—</b> · <b id="corrMs">—</b></div>
+        </div>
+        <div class="ctrlgrid">
+          <div>
+            <div class="kpi"><span>detector</span><span>Harris + 3×3 NMS</span></div>
+            <div class="kpi"><span>descriptor</span><span>SIFT 4×4×8 (128-D)</span></div>
+            <div class="kpi"><span>matcher</span><span>mutual NN + ratio</span></div>
+            <div class="kpi"><span>solver</span><span>4-pt DLT (SVD)</span></div>
+            <div class="kpi"><span>RANSAC conf</span><span class="mono">0.99</span></div>
+            <div class="kpi"><span>refit</span><span>DLT on inliers</span></div>
+          </div>
+          <div class="respwrap">
+            <div class="muted" style="margin-bottom:5px">estimated H (A→B)</div>
+            <pre id="corrH" style="text-align:left;font-size:.72rem;padding:8px 10px;margin:0">—</pre>
+          </div>
+        </div>
+      </div>
+      <div class="note warn">Honest scope: the assignment uses scale-space Harris with affine-shape adaptation and
+      a torch <span class="mono">svd</span>; this live demo runs <b>single-scale</b> Harris and a Jacobi-SVD 4-point
+      DLT, with the SIFT descriptor and <span class="mono">match_smnn</span> / <span class="mono">ransac_h</span>
+      logic ported faithfully. <b>Upload</b> your own <b>Image A</b> and <b>Image B</b> (two views of one scene) to
+      run the full pipeline on them — uploads are downscaled to ≤480px and processed in grayscale.
+      Everything stays in your browser; <b>no image is uploaded anywhere</b>.</div>
+    </div>
+  </div>
+
+  <!-- ================= CNN RESULTS ================= -->
+  <div class="view" id="cnn">
+    <div class="panel">
+      <h2>CNN assignment — Imagenette classification &amp; colorization</h2>
+      <p class="muted">An <b>SE-ResNet</b>-style classifier (<span class="mono">SimpleCNN</span> in
+      <span class="mono">cnn_training.py</span>): a wide 64-channel stem, four stages of residual blocks with
+      <b>Squeeze-and-Excitation</b> channel attention (64→128→256→512), BatchNorm + Dropout, Kaiming init,
+      gradient clipping, an LR-range-finder and a OneCycle schedule with TensorBoard logging. Trained on
+      <b>Imagenette-160</b> (a 10-class ImageNet subset).</p>
+
+      <div class="row" style="margin-bottom:12px">
+        <div class="kpi" style="min-width:160px"><span>best val acc</span><span><b style="color:var(--accent)">79.5%</b></span></div>
+        <div class="kpi" style="min-width:160px"><span>epochs</span><span>20 (OneCycle)</span></div>
+        <div class="kpi" style="min-width:160px"><span>device</span><span>Apple MPS</span></div>
+      </div>
+
+      <h3 style="color:var(--accent);font-size:.95rem">Validation accuracy / loss (real logged values)</h3>
+      <canvas id="cnnChart" class="chart" width="900" height="320"></canvas>
+      <div class="legend">
+        <span><span class="swatch" style="background:#14B8A6"></span>val accuracy (OneCycle, 20 ep)</span>
+        <span><span class="swatch" style="background:#60A5FA"></span>train accuracy</span>
+        <span><span class="swatch" style="background:#F87171"></span>val loss</span>
+      </div>
+
+      <h3 style="color:var(--accent);font-size:.95rem;margin-top:20px">The 10 Imagenette classes</h3>
+      <div class="classchips" id="classChips"></div>
+
+      <h3 style="color:var(--accent);font-size:.95rem;margin-top:16px">Colorization task</h3>
+      <p class="muted"><span class="mono">colorization.py</span> — a U-Net decoder on a <b>frozen pretrained
+      VGG13-BN</b> encoder (<span class="mono">UnetFromPretrained</span>), trained with a perceptual
+      <b>content loss</b> on AlexNet features. Antialiased rescaling via kornia. Predicts RGB from grayscale input.</p>
+
+      <div class="note">Numbers are parsed verbatim from <span class="mono">results.html</span> (the exported
+      training notebook). Two runs were logged: AdamW with no scheduler peaked at 67.5% val acc (10 ep); the
+      AdamW + OneCycle run reached <b>79.5%</b> at epoch 19.</div>
+    </div>
+  </div>
+
+  <!-- ================= OVERVIEW ================= -->
+  <div class="view" id="overview">
+    <div class="panel">
+      <h2>What the course covers</h2>
+      <p class="muted">BE4M33MPV builds computer vision from local features up to deep nets and tracking. Each
+      assignment is a working pipeline on real data.</p>
+      <div style="margin-top:6px">
+        <span class="tag">Harris / blob detection</span><span class="tag">local descriptors</span>
+        <span class="tag">RANSAC homography</span><span class="tag">image indexing</span>
+        <span class="tag">retrieval / SfM</span><span class="tag">SE-ResNet CNN</span>
+        <span class="tag">U-Net colorization</span><span class="tag">KCF tracking</span>
+        <span class="tag">KLT / Lucas–Kanade</span><span class="tag">PyTorch · kornia · OpenCV</span>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="card"><h3>Correspondences (0–3)</h3><p>Image filtering, Harris corners, scale-space blobs,
+        local descriptors, NN matching, and RANSAC homography estimation. Wide-baseline stereo demo.</p></div>
+      <div class="card"><h3>Indexing (4–5)</h3><p>Inverted-file / bag-of-words indexing of local descriptors for
+        large-scale image search.</p></div>
+      <div class="card"><h3>Retrieval &amp; SfM (7–8)</h3><p>Descriptor-based retrieval feeding a
+        Structure-from-Motion pipeline (sfm_lab).</p></div>
+      <div class="card"><h3>CNN + colorization (6–7)</h3><p>SE-ResNet classifier on Imagenette (79.5% val acc) and
+        a VGG13-BN U-Net colorizer with a perceptual content loss.</p></div>
+      <div class="card"><h3>Tracking (8–9)</h3><p>KCF correlation-filter tracker and a KLT/Lucas–Kanade point
+        tracker; tracked correspondences feed a RANSAC homography of the planar leaflet.</p></div>
+      <div class="card"><h3>DML &amp; SSL (11–12)</h3><p>Deep metric learning and self-supervised learning
+        mini-assignments, plus a wide-baseline-stereo descriptor tournament.</p></div>
+    </div>
+    <div class="note">Repo: <a href="https://github.com/GilCaplan/EuroVision" target="_blank">github.com/GilCaplan/EuroVision</a>.
+      Author Gil Caplan · CTU BE4M33MPV, via the EuroTeQ exchange.</div>
+  </div>
+
+  <!-- ================= HOW ================= -->
+  <div class="view" id="how">
+    <div class="panel">
+      <h2>The two trackers</h2>
+      <h3 style="color:var(--accent);font-size:.95rem">KCF — Kernelized Correlation Filter (live above)</h3>
+      <p class="muted">Train a filter so that the correlation response peaks at the object center; everything is
+      done in the Fourier domain so it is fast. This is the exact structure of my <span class="mono">kcf.py</span>:</p>
+<pre><span class="c"># train: solve (K + λI) α = y  in Fourier domain</span>
+<span class="k">def</span> <span class="b">kcf_train</span>(x, y, pars):
+    k = kernel_correlation(x, x, pars)
+    alphaf = fft2(y) / (fft2(k) + pars.lam)
+    <span class="k">return</span> alphaf
+
+<span class="c"># detect: response = ifft( alphaf * fft(k(x,z)) )</span>
+<span class="k">def</span> <span class="b">kcf_detect</span>(alphaf, x, z, pars):
+    k = kernel_correlation(x, z, pars)
+    <span class="k">return</span> ifft2(alphaf * fft2(k)).real
+
+<span class="k">def</span> <span class="b">kernel_correlation</span>(x1, x2, pars):
+    c = ifft2((fft2(x1).conj() * fft2(x2)).sum(axis=2)).real
+    d = (x1**2).sum() + (x2**2).sum() - 2*c
+    <span class="k">return</span> np.exp(-1/pars.rbf_sigma**2 * d / d.size)   <span class="c"># RBF</span>
+
+<span class="c"># per frame: peak of response -> shift box; adapt template</span>
+dy, dx = argmax(responses) - (cy, cx)
+S.x += dx; S.y += dy
+S.x_train = (1-gamma)*S.x_train + gamma*patch_next</pre>
+      <p class="muted">The JS demo implements <span class="mono">fft2 / ifft2</span> (2D FFT over an arbitrary box size
+      via a 1-D mixed radix-2 + Bluestein transform), the RBF <span class="mono">kernel_correlation</span>, the
+      Gaussian target response, the cosine envelope, and the on-line adaptation — matching the params in
+      <span class="mono">kcf_params.py</span> (rbf σ=2, γ=0.075, λ=1e-4, cosine window).</p>
+
+      <h3 style="color:var(--accent);font-size:.95rem;margin-top:16px">KLT — Lucas–Kanade point tracker</h3>
+      <p class="muted">Tracks Harris keypoints frame-to-frame by iteratively solving the 2×2 structure-tensor
+      (normal-equation) system for the optimal shift, with sub-pixel patch extraction. From
+      <span class="mono">klt.py</span>:</p>
+<pre><span class="c"># structure tensor + temporal error -> 2x2 solve (Cramer)</span>
+e   = T - I                       <span class="c"># template - current patch</span>
+Ix2, Iy2, IxIy = (Ix*Ix).sum(), (Iy*Iy).sum(), (Ix*Iy).sum()
+Ixe, Iye       = (Ix*e).sum(),  (Iy*e).sum()
+det = Ix2*Iy2 - IxIy**2
+dx  = (Iy2*Ixe - IxIy*Iye) / det
+dy  = (Ix2*Iye - IxIy*Ixe) / det   <span class="c"># iterate until convergence</span></pre>
+      <p class="muted">Converged correspondences between the first and last frames are then fed to
+      <span class="mono">ransac_h</span> to estimate the homography that localizes the planar leaflet
+      (<span class="mono">compute_and_show_homography</span>).</p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================ TAB SWITCHING ============================ */
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    const v=document.getElementById(t.dataset.v);
+    v.classList.add('active');
+    if(t.dataset.v==='cnn') drawCnnChart();
+    if(t.dataset.v==='filter') initFilterDemo();
+    if(t.dataset.v==='harris') initHarrisDemo();
+    if(t.dataset.v==='klt') initKltDemo();
+    if(t.dataset.v==='corr') initCorrDemo();
+  });
+});
+
+/* ============================ FFT (vanilla) ============================ */
+/* In-place iterative radix-2 FFT for power-of-two sizes. */
+function fftRadix2(re, im, inv){
+  const n = re.length;
+  for(let i=1,j=0;i<n;i++){
+    let bit=n>>1;
+    for(;j&bit;bit>>=1) j^=bit;
+    j^=bit;
+    if(i<j){ let t=re[i];re[i]=re[j];re[j]=t; t=im[i];im[i]=im[j];im[j]=t; }
+  }
+  for(let len=2;len<=n;len<<=1){
+    const ang=(inv?2:-2)*Math.PI/len;
+    const wr=Math.cos(ang), wi=Math.sin(ang);
+    for(let i=0;i<n;i+=len){
+      let cr=1, ci=0;
+      for(let k=0;k<len/2;k++){
+        const ur=re[i+k], ui=im[i+k];
+        const vr=re[i+k+len/2]*cr - im[i+k+len/2]*ci;
+        const vi=re[i+k+len/2]*ci + im[i+k+len/2]*cr;
+        re[i+k]=ur+vr; im[i+k]=ui+vi;
+        re[i+k+len/2]=ur-vr; im[i+k+len/2]=ui-vi;
+        const ncr=cr*wr - ci*wi; ci=cr*wi + ci*wr; cr=ncr;
+      }
+    }
+  }
+  if(inv){ for(let i=0;i<n;i++){ re[i]/=n; im[i]/=n; } }
+}
+/* Bluestein chirp-z transform -> 1D DFT for ANY length n. */
+function fft1d(re, im, inv){
+  const n=re.length;
+  if((n&(n-1))===0){ fftRadix2(re,im,inv); return; }
+  let m=1; while(m < 2*n-1) m<<=1;
+  const ar=new Float64Array(m), ai=new Float64Array(m);
+  const br=new Float64Array(m), bi=new Float64Array(m);
+  const cosT=new Float64Array(n), sinT=new Float64Array(n);
+  const sign=inv?1:-1;
+  for(let k=0;k<n;k++){
+    const ang=sign*Math.PI*((k*k)%(2*n))/n;
+    cosT[k]=Math.cos(ang); sinT[k]=Math.sin(ang);
+    ar[k]= re[k]*cosT[k] - im[k]*sinT[k];
+    ai[k]= re[k]*sinT[k] + im[k]*cosT[k];
+  }
+  br[0]=cosT[0]; bi[0]=-sinT[0];
+  for(let k=1;k<n;k++){ br[k]=br[m-k]=cosT[k]; bi[k]=bi[m-k]=-sinT[k]; }
+  fftRadix2(ar,ai,false); fftRadix2(br,bi,false);
+  for(let k=0;k<m;k++){ const r=ar[k]*br[k]-ai[k]*bi[k]; ai[k]=ar[k]*bi[k]+ai[k]*br[k]; ar[k]=r; }
+  fftRadix2(ar,ai,true);
+  for(let k=0;k<n;k++){
+    const r=ar[k]*cosT[k]-ai[k]*sinT[k];
+    const i=ar[k]*sinT[k]+ai[k]*cosT[k];
+    re[k]= inv ? r/n : r;
+    im[k]= inv ? i/n : i;
+  }
+}
+/* 2D FFT over a (h x w) complex array stored row-major (Float64Array). */
+function fft2(re, im, h, w, inv){
+  const rr=new Float64Array(w), ri=new Float64Array(w);
+  for(let y=0;y<h;y++){
+    const o=y*w;
+    for(let x=0;x<w;x++){ rr[x]=re[o+x]; ri[x]=im[o+x]; }
+    fft1d(rr,ri,inv);
+    for(let x=0;x<w;x++){ re[o+x]=rr[x]; im[o+x]=ri[x]; }
+  }
+  const cr=new Float64Array(h), ci=new Float64Array(h);
+  for(let x=0;x<w;x++){
+    for(let y=0;y<h;y++){ cr[y]=re[y*w+x]; ci[y]=im[y*w+x]; }
+    fft1d(cr,ci,inv);
+    for(let y=0;y<h;y++){ re[y*w+x]=cr[y]; im[y*w+x]=ci[y]; }
+  }
+}
+
+/* ============================ KCF tracker ============================ */
+/* Faithful port of kcf.py. Works on 3 colour channels of a box patch. */
+const KCF = {
+  pars:{ rbf_sigma:2.0, gamma:0.075, lam:1e-4 },
+  // state
+  x:0,y:0,w:0,h:0, cx:0,cy:0,
+  yf_re:null,yf_im:null,        // fft2 of target response
+  env:null,                     // cosine window (h*w)
+  xtrain:null,                  // adapted template, 3 channels [h*w each]
+  alphaf_re:null,alphaf_im:null,
+  resp:null,                    // last response (h*w)
+
+  // forward fft of a real (h*w) buffer -> returns {re,im}
+  _fwd(buf){
+    const re=Float64Array.from(buf), im=new Float64Array(buf.length);
+    fft2(re,im,this.h,this.w,false); return {re,im};
+  },
+
+  // kernel_correlation(x1,x2): RBF over summed cross-correlation of 3 channels
+  _kernelCorr(x1, x2){
+    const n=this.w*this.h;
+    const cr=new Float64Array(n), ci=new Float64Array(n);
+    let e1=0,e2=0;
+    for(let ch=0;ch<3;ch++){
+      const f1=this._fwd(x1[ch]), f2=this._fwd(x2[ch]);
+      for(let i=0;i<n;i++){
+        // conj(F1)*F2
+        cr[i]+= f1.re[i]*f2.re[i] + f1.im[i]*f2.im[i];
+        ci[i]+= f1.re[i]*f2.im[i] - f1.im[i]*f2.re[i];
+      }
+      for(let i=0;i<n;i++){ e1+=x1[ch][i]*x1[ch][i]; e2+=x2[ch][i]*x2[ch][i]; }
+    }
+    // ifft2 of summed cross-spectrum -> real
+    fft2(cr,ci,this.h,this.w,true);
+    const c=cr; // real part holds correlation
+    const k=new Float64Array(n);
+    const s2=this.pars.rbf_sigma*this.pars.rbf_sigma;
+    for(let i=0;i<n;i++){
+      let d=e1+e2-2*c[i];
+      if(d<0) d=0;
+      k[i]=Math.exp(-(1/s2)*d/n);
+    }
+    return k;
+  },
+
+  _train(xt){
+    const k=this._kernelCorr(xt,xt);
+    const kr=Float64Array.from(k), ki=new Float64Array(k.length);
+    fft2(kr,ki,this.h,this.w,false);
+    const ar=new Float64Array(k.length), ai=new Float64Array(k.length);
+    for(let i=0;i<k.length;i++){
+      const dr=kr[i]+this.pars.lam, di=ki[i];
+      const den=dr*dr+di*di;
+      // yf / (kf + lam)
+      ar[i]=(this.yf_re[i]*dr + this.yf_im[i]*di)/den;
+      ai[i]=(this.yf_im[i]*dr - this.yf_re[i]*di)/den;
+    }
+    this.alphaf_re=ar; this.alphaf_im=ai;
+  },
+
+  // extract a w*h box from imageData (RGBA), windowed by envelope, 3 channels [0..1]
+  _patch(img, iw, x, y){
+    const out=[new Float64Array(this.w*this.h),new Float64Array(this.w*this.h),new Float64Array(this.w*this.h)];
+    for(let r=0;r<this.h;r++){
+      for(let c=0;c<this.w;c++){
+        let sx=x+c, sy=y+r;
+        sx=Math.max(0,Math.min(iw-1,sx));
+        sy=Math.max(0,Math.min(img.height-1,sy));
+        const p=(sy*iw+sx)*4, o=r*this.w+c;
+        out[0][o]=img.data[p]/255; out[1][o]=img.data[p+1]/255; out[2][o]=img.data[p+2]/255;
+      }
+    }
+    return out;
+  },
+  _applyEnv(patch){
+    for(let ch=0;ch<3;ch++) for(let i=0;i<patch[ch].length;i++) patch[ch][i]*=this.env[i];
+    return patch;
+  },
+
+  init(img, iw, bbox, pars){
+    Object.assign(this.pars,pars);
+    this.x=bbox[0]|0; this.y=bbox[1]|0; this.w=bbox[2]|0; this.h=bbox[3]|0;
+    const w=this.w,h=this.h;
+    this.cx=(w/2)|0; this.cy=(h/2)|0;
+    const sigma=Math.max(w,h)/10.0;
+    // Gaussian target response + cosine envelope
+    const y=new Float64Array(w*h); this.env=new Float64Array(w*h);
+    for(let r=0;r<h;r++) for(let c=0;c<w;c++){
+      const dx=c-this.cx, dy=r-this.cy, o=r*w+c;
+      y[o]=Math.exp(-(dx*dx+dy*dy)/(2*sigma*sigma));
+      const wx=(1+Math.cos(dx/(w/2)*Math.PI))/2;
+      const wy=(1+Math.cos(dy/(h/2)*Math.PI))/2;
+      this.env[o]=wx*wy;
+    }
+    this.yf_re=Float64Array.from(y); this.yf_im=new Float64Array(w*h);
+    fft2(this.yf_re,this.yf_im,h,w,false);
+    this.xtrain=this._applyEnv(this._patch(img,iw,this.x,this.y));
+    this._train(this.xtrain);
+  },
+
+  track(img, iw){
+    const w=this.w,h=this.h, n=w*h;
+    const z=this._applyEnv(this._patch(img,iw,this.x,this.y));
+    const k=this._kernelCorr(this.xtrain,z);
+    const kr=Float64Array.from(k), ki=new Float64Array(n);
+    fft2(kr,ki,h,w,false);
+    // responses = ifft( alphaf * fft(k) )
+    const rr=new Float64Array(n), ri=new Float64Array(n);
+    for(let i=0;i<n;i++){
+      rr[i]=this.alphaf_re[i]*kr[i]-this.alphaf_im[i]*ki[i];
+      ri[i]=this.alphaf_re[i]*ki[i]+this.alphaf_im[i]*kr[i];
+    }
+    fft2(rr,ri,h,w,true);
+    this.resp=rr;
+    // peak
+    let mi=0,mv=-1e30;
+    for(let i=0;i<n;i++){ if(rr[i]>mv){mv=rr[i];mi=i;} }
+    const py=(mi/w)|0, px=mi%w;
+    const dy=py-this.cy, dx=px-this.cx;
+    this.x+=dx; this.y+=dy;
+    // clamp box inside image
+    this.x=Math.max(0,Math.min(iw-w,this.x));
+    this.y=Math.max(0,Math.min(img.height-h,this.y));
+    // adapt template
+    const next=this._applyEnv(this._patch(img,iw,this.x,this.y));
+    for(let ch=0;ch<3;ch++) for(let i=0;i<n;i++)
+      this.xtrain[ch][i]=(1-this.pars.gamma)*this.xtrain[ch][i]+this.pars.gamma*next[ch][i];
+    this._train(this.xtrain);
+    return {dx,dy,peak:mv};
+  }
+};
+
+/* ============================ DEMO DRIVER ============================ */
+const NFRAMES=48, IW=320, IH=240;
+const DEFAULT_BOX={x:150,y:35,w:54,h:48}; // top-right red "39.90" product cell (320x240 space)
+const frames=[]; let loaded=0;
+const stage=document.getElementById('stage'), sctx=stage.getContext('2d');
+const respC=document.getElementById('respCanvas'), rctx=respC.getContext('2d');
+let userBox={...DEFAULT_BOX}, playing=false, fIdx=0, rafId=null, scratch=document.createElement('canvas');
+scratch.width=IW; scratch.height=IH; const schctx=scratch.getContext('2d',{willReadFrequently:true});
+
+document.getElementById('fTot').textContent=NFRAMES;
+
+function pad2(n){return (n<10?'0':'')+n;}
+for(let i=0;i<NFRAMES;i++){
+  const im=new Image();
+  im.onload=()=>{ loaded++; if(loaded===NFRAMES) onAllLoaded(); };
+  im.onerror=()=>{ loaded++; if(loaded===NFRAMES) onAllLoaded(); };
+  im.src='frames/'+pad2(i)+'.jpg';
+  frames[i]=im;
+}
+function onAllLoaded(){
+  document.getElementById('playBtn').disabled=false;
+  document.getElementById('hint').textContent='Drag a box on the frame, then press Play.';
+  drawFrame(0);
+}
+
+function getImageData(idx){
+  schctx.drawImage(frames[idx],0,0,IW,IH);
+  return schctx.getImageData(0,0,IW,IH);
+}
+function drawFrame(idx, box, drawUser){
+  if(frames[idx] && frames[idx].complete) sctx.drawImage(frames[idx],0,0,IW,IH);
+  else { sctx.fillStyle='#000'; sctx.fillRect(0,0,IW,IH); }
+  if(drawUser!==false && !playing){
+    sctx.strokeStyle='#60A5FA'; sctx.lineWidth=2;
+    sctx.strokeRect(userBox.x,userBox.y,userBox.w,userBox.h);
+  }
+  if(box){
+    sctx.strokeStyle='#14B8A6'; sctx.lineWidth=2.5;
+    sctx.strokeRect(box.x,box.y,box.w,box.h);
+    sctx.fillStyle='rgba(20,184,166,.12)';
+    sctx.fillRect(box.x,box.y,box.w,box.h);
+  }
+  document.getElementById('fIdx').textContent=idx;
+}
+function drawResp(){
+  if(!KCF.resp || !document.getElementById('showResp').checked){ rctx.clearRect(0,0,respC.width,respC.height); return; }
+  const w=KCF.w,h=KCF.h;
+  respC.width=w; respC.height=h;
+  const id=rctx.createImageData(w,h);
+  let mn=1e30,mx=-1e30;
+  for(let i=0;i<KCF.resp.length;i++){ mn=Math.min(mn,KCF.resp[i]); mx=Math.max(mx,KCF.resp[i]); }
+  const rng=(mx-mn)||1;
+  // fftshift so peak shows centered-ish
+  for(let r=0;r<h;r++) for(let c=0;c<w;c++){
+    const sr=(r+((h/2)|0))%h, sc=(c+((w/2)|0))%w;
+    const v=(KCF.resp[sr*w+sc]-mn)/rng;
+    const o=(r*w+c)*4;
+    id.data[o]=20+v*0; id.data[o+1]=Math.floor(40+v*144); id.data[o+2]=Math.floor(50+v*116); id.data[o+3]=255;
+    if(v>0.92){ id.data[o]=251; id.data[o+1]=191; id.data[o+2]=36; }
+  }
+  rctx.putImageData(id,0,0);
+}
+
+/* ---- drag to draw box ---- */
+let dragging=false, dragStart=null;
+function evtPos(e){
+  const r=stage.getBoundingClientRect();
+  const t=e.touches?e.touches[0]:e;
+  return { x:(t.clientX-r.left)*(IW/r.width), y:(t.clientY-r.top)*(IH/r.height) };
+}
+function startDrag(e){ if(playing) return; e.preventDefault(); dragging=true; dragStart=evtPos(e); }
+function moveDrag(e){
+  if(!dragging) return; e.preventDefault();
+  const p=evtPos(e);
+  userBox={ x:Math.min(dragStart.x,p.x), y:Math.min(dragStart.y,p.y),
+            w:Math.abs(p.x-dragStart.x), h:Math.abs(p.y-dragStart.y) };
+  drawFrame(0);
+}
+function endDrag(e){
+  if(!dragging) return; dragging=false;
+  if(userBox.w<8||userBox.h<8){ userBox={...DEFAULT_BOX}; }
+  userBox.x|=0;userBox.y|=0;userBox.w|=0;userBox.h|=0;
+  drawFrame(0);
+}
+stage.addEventListener('mousedown',startDrag);
+window.addEventListener('mousemove',moveDrag);
+window.addEventListener('mouseup',endDrag);
+stage.addEventListener('touchstart',startDrag,{passive:false});
+stage.addEventListener('touchmove',moveDrag,{passive:false});
+stage.addEventListener('touchend',endDrag);
+
+/* ---- params ---- */
+const sigEl=document.getElementById('sigma'), gamEl=document.getElementById('gamma');
+sigEl.oninput=()=>{ document.getElementById('sigVal').textContent=parseFloat(sigEl.value).toFixed(1); KCF.pars.rbf_sigma=parseFloat(sigEl.value); };
+gamEl.oninput=()=>{ document.getElementById('gamVal').textContent=parseFloat(gamEl.value).toFixed(3); KCF.pars.gamma=parseFloat(gamEl.value); };
+
+/* ---- play / reset ---- */
+const playBtn=document.getElementById('playBtn');
+playBtn.onclick=()=>{ playing?stop():start(); };
+document.getElementById('resetBtn').onclick=()=>{ stop(); userBox={...DEFAULT_BOX}; fIdx=0; KCF.resp=null; drawFrame(0); drawResp(); document.getElementById('boxStat').textContent='—'; document.getElementById('dStat').textContent='0,0'; document.getElementById('peakStat').textContent='—'; };
+
+function start(){
+  playing=true; playBtn.textContent='⏸ Pause';
+  fIdx=0;
+  const img0=getImageData(0);
+  KCF.init(img0, IW, [userBox.x,userBox.y,userBox.w,userBox.h],
+           {rbf_sigma:parseFloat(sigEl.value), gamma:parseFloat(gamEl.value), lam:1e-4});
+  drawFrame(0, {x:KCF.x,y:KCF.y,w:KCF.w,h:KCF.h});
+  drawResp();
+  step();
+}
+function stop(){ playing=false; playBtn.textContent='▶ Play'; if(rafId) cancelAnimationFrame(rafId); }
+function step(){
+  if(!playing) return;
+  fIdx++;
+  if(fIdx>=NFRAMES){ stop(); document.getElementById('hint').textContent='Sequence done — press Reset to draw a new box.'; return; }
+  const img=getImageData(fIdx);
+  const res=KCF.track(img, IW);
+  drawFrame(fIdx, {x:KCF.x,y:KCF.y,w:KCF.w,h:KCF.h});
+  drawResp();
+  document.getElementById('boxStat').textContent=KCF.x+','+KCF.y;
+  document.getElementById('dStat').textContent=res.dx+','+res.dy;
+  document.getElementById('peakStat').textContent=res.peak.toFixed(3);
+  // ~12 fps so the FFT work stays smooth
+  setTimeout(()=>{ rafId=requestAnimationFrame(step); }, 80);
+}
+
+/* ============================================================================
+   IMAGE FILTERING PRIMITIVES  — faithful port of imagefiltering.py
+   Greyscale images are Float32 [0..1], row-major, with width w / height h.
+   filter2d uses replicate padding + true convolution (kernel flipped), exactly
+   like F.conv2d(replicate-padded, flipped kernel) in the .py.
+============================================================================ */
+function gausskernelSize(sigma){ let k=2*Math.ceil(sigma*3.0)+1; if(k%2===0) k++; return k; }
+function gaussian1d(sigma){                       // gaussian1d, normalised Σ=1
+  const half=(gausskernelSize(sigma)>>1), k=new Float64Array(2*half+1); let s=0;
+  for(let i=-half;i<=half;i++){ const v=Math.exp(-(i*i)/(2*sigma*sigma))/(Math.sqrt(2*Math.PI)*sigma); k[i+half]=v; s+=v; }
+  for(let i=0;i<k.length;i++) k[i]/=s; return k;
+}
+function gaussianDeriv1d(sigma){                  // dG/dx = -(x/sigma^2) G(x)
+  const half=(gausskernelSize(sigma)>>1), k=new Float64Array(2*half+1); let s=0;
+  for(let i=-half;i<=half;i++){ const g=Math.exp(-(i*i)/(2*sigma*sigma))/(Math.sqrt(2*Math.PI)*sigma); s+=g; }
+  for(let i=-half;i<=half;i++){ const g=Math.exp(-(i*i)/(2*sigma*sigma))/(Math.sqrt(2*Math.PI)*sigma)/s; k[i+half]=-(i/(sigma*sigma))*g; }
+  return k; // note: g normalised first, matching the .py (g = g/g.sum())
+}
+function clampIdx(i,n){ return i<0?0:(i>=n?n-1:i); }   // replicate padding
+// 1-D horizontal convolution (along width) with a true-convolution flip
+function conv1dH(src,w,h,k){
+  const half=(k.length>>1), out=new Float64Array(w*h);
+  for(let y=0;y<h;y++){ const o=y*w;
+    for(let x=0;x<w;x++){ let acc=0;
+      for(let t=0;t<k.length;t++){ const sx=clampIdx(x+half-t,w); acc+=src[o+sx]*k[t]; }
+      out[o+x]=acc; } }
+  return out;
+}
+// 1-D vertical convolution (along height)
+function conv1dV(src,w,h,k){
+  const half=(k.length>>1), out=new Float64Array(w*h);
+  for(let y=0;y<h;y++){
+    for(let x=0;x<w;x++){ let acc=0;
+      for(let t=0;t<k.length;t++){ const sy=clampIdx(y+half-t,h); acc+=src[sy*w+x]*k[t]; }
+      out[y*w+x]=acc; } }
+  return out;
+}
+function gaussianFilter2d(src,w,h,sigma){          // separable Gaussian, gaussian_filter2d
+  const k=gaussian1d(sigma); return conv1dV(conv1dH(src,w,h,k),w,h,k);
+}
+// spatial_gradient_first_order -> {gx,gy}
+function spatialGradient(src,w,h,sigma){
+  const g=gaussian1d(sigma), dg=gaussianDeriv1d(sigma);
+  const gx=conv1dV(conv1dH(src,w,h,dg),w,h,g);     // deriv along W, smooth along H
+  const gy=conv1dH(conv1dV(src,w,h,dg),w,h,g);     // deriv along H, smooth along W
+  return {gx,gy};
+}
+
+/* ============================ FILTERING DEMO ============================ */
+let fltGray=null, fltW=0, fltH=0, fltReady=false, fltInited=false;
+function initFilterDemo(){
+  if(fltInited) return; fltInited=true;
+  const cv=document.getElementById('fltCanvas');
+  const img=new Image();
+  img.onload=()=>{
+    fltW=cv.width; fltH=cv.height;
+    const tmp=document.createElement('canvas'); tmp.width=fltW; tmp.height=fltH;
+    const tc=tmp.getContext('2d',{willReadFrequently:true});
+    tc.drawImage(img,0,0,fltW,fltH);
+    const d=tc.getImageData(0,0,fltW,fltH).data;
+    fltGray=new Float64Array(fltW*fltH);
+    for(let i=0;i<fltW*fltH;i++){ const p=i*4; fltGray[i]=(0.299*d[p]+0.587*d[p+1]+0.114*d[p+2])/255; }
+    fltReady=true; runFilter();
+  };
+  img.onerror=()=>{ document.getElementById('fltStat').textContent='image load failed'; };
+  img.src='cv/sunflowers.png';
+  document.getElementById('fltKind').onchange=runFilter;
+  const sig=document.getElementById('fltSigma');
+  sig.oninput=()=>{ document.getElementById('fltSigVal').textContent=parseFloat(sig.value).toFixed(2); runFilter(); };
+}
+function drawKernelTaps(k){
+  const cv=document.getElementById('fltKernCanvas'), ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,cv.width,cv.height);
+  let mn=Infinity,mx=-Infinity; for(const v of k){ mn=Math.min(mn,v); mx=Math.max(mx,v); }
+  const span=Math.max(Math.abs(mn),Math.abs(mx))||1, zeroY=cv.height/2;
+  ctx.strokeStyle='#243044'; ctx.beginPath(); ctx.moveTo(0,zeroY); ctx.lineTo(cv.width,zeroY); ctx.stroke();
+  const bw=cv.width/k.length;
+  for(let i=0;i<k.length;i++){ const hgt=(k[i]/span)*(cv.height/2-4);
+    ctx.fillStyle=k[i]>=0?'#14B8A6':'#F87171';
+    ctx.fillRect(i*bw+1, zeroY-(hgt>0?hgt:0), bw-2, Math.abs(hgt)); }
+}
+function runFilter(){
+  if(!fltReady) return;
+  const kind=document.getElementById('fltKind').value;
+  const sigma=parseFloat(document.getElementById('fltSigma').value);
+  const w=fltW,h=fltH,n=w*h;
+  const ksize=gausskernelSize(sigma);
+  document.getElementById('fltKsize').textContent='ksize = 2·⌈3σ⌉+1 = '+ksize;
+  document.getElementById('fltKstat').textContent=ksize+'×'+ksize;
+  let out=new Float64Array(n), centered=false, sepLabel='separable 1D×2';
+  const lbl={gauss:'Gaussian blur',gx:'x-derivative (gx)',gy:'y-derivative (gy)',grad:'gradient magnitude',lap:'Laplacian'}[kind];
+  document.getElementById('fltStat').textContent=lbl;
+  if(kind==='gauss'){ out=gaussianFilter2d(fltGray,w,h,sigma); drawKernelTaps(gaussian1d(sigma)); }
+  else if(kind==='gx'){ out=spatialGradient(fltGray,w,h,sigma).gx; centered=true; drawKernelTaps(gaussianDeriv1d(sigma)); }
+  else if(kind==='gy'){ out=spatialGradient(fltGray,w,h,sigma).gy; centered=true; drawKernelTaps(gaussianDeriv1d(sigma)); }
+  else if(kind==='grad'){ const g=spatialGradient(fltGray,w,h,sigma);
+    for(let i=0;i<n;i++) out[i]=Math.hypot(g.gx[i],g.gy[i]); drawKernelTaps(gaussianDeriv1d(sigma)); }
+  else if(kind==='lap'){ // Laplacian of smoothed image: dxx + dyy
+    const g=gaussianFilter2d(fltGray,w,h,sigma);
+    const lapK=[1,-2,1];
+    const dxx=conv1dH(g,w,h,lapK), dyy=conv1dV(g,w,h,lapK);
+    for(let i=0;i<n;i++) out[i]=dxx[i]+dyy[i]; centered=true; sepLabel='∂²x + ∂²y';
+    drawKernelTaps([1,-2,1]);
+  }
+  document.getElementById('fltSep').textContent=sepLabel;
+  renderGray(document.getElementById('fltCanvas'), out, w, h, centered);
+}
+// render a Float buffer to a canvas; centered=true -> contrast-stretch around mid-gray
+function renderGray(cv, buf, w, h, centered){
+  const ctx=cv.getContext('2d'), id=ctx.createImageData(w,h), n=w*h;
+  let mn=Infinity,mx=-Infinity; for(let i=0;i<n;i++){ mn=Math.min(mn,buf[i]); mx=Math.max(mx,buf[i]); }
+  for(let i=0;i<n;i++){ let v;
+    if(centered){ const m=Math.max(Math.abs(mn),Math.abs(mx))||1; v=(buf[i]/m)*0.5+0.5; }
+    else { const r=(mx-mn)||1; v=(buf[i]-mn)/r; }
+    const g=Math.max(0,Math.min(255,Math.round(v*255))), o=i*4;
+    id.data[o]=id.data[o+1]=id.data[o+2]=g; id.data[o+3]=255; }
+  ctx.putImageData(id,0,0);
+}
+
+/* ============================ HARRIS DEMO ============================ */
+const HAR={ images:{}, cur:null, inited:false };
+function initHarrisDemo(){
+  if(HAR.inited) return; HAR.inited=true;
+  const load=(name,src,cb)=>{ const im=new Image(); im.onload=()=>{
+      const tmp=document.createElement('canvas'); tmp.width=im.width; tmp.height=im.height;
+      const tc=tmp.getContext('2d',{willReadFrequently:true}); tc.drawImage(im,0,0);
+      const d=tc.getImageData(0,0,im.width,im.height).data, g=new Float64Array(im.width*im.height);
+      for(let i=0;i<g.length;i++){ const p=i*4; g[i]=(0.299*d[p]+0.587*d[p+1]+0.114*d[p+2])/255; }
+      HAR.images[name]={g,w:im.width,h:im.height}; cb&&cb();
+    }; im.onerror=()=>{ cb&&cb(); }; im.src=src; };
+  const sel=document.getElementById('harImg');
+  ['harSd','harSi','harTh'].forEach(id=>{ document.getElementById(id).oninput=()=>{ updateHarLabels(); runHarris(); }; });
+  sel.onchange=runHarris;
+  load('sunflowers','cv/sunflowers.png',()=>{ load('blobs','cv/blobs.png',()=>{ updateHarLabels(); runHarris(); }); });
+}
+function updateHarLabels(){
+  document.getElementById('harSdVal').textContent=parseFloat(document.getElementById('harSd').value).toFixed(1);
+  document.getElementById('harSiVal').textContent=parseFloat(document.getElementById('harSi').value).toFixed(1);
+  document.getElementById('harThVal').textContent=document.getElementById('harTh').value+'%';
+}
+// harris_response: M = Gσi * [Ix^2, IxIy; IxIy, Iy^2]; R = detM - alpha*traceM^2
+function harrisResponse(g,w,h,sigma_d,sigma_i,alpha){
+  const grad=spatialGradient(g,w,h,sigma_d), n=w*h;
+  const Ixx=new Float64Array(n), Iyy=new Float64Array(n), Ixy=new Float64Array(n);
+  for(let i=0;i<n;i++){ Ixx[i]=grad.gx[i]*grad.gx[i]; Iyy[i]=grad.gy[i]*grad.gy[i]; Ixy[i]=grad.gx[i]*grad.gy[i]; }
+  const Sxx=gaussianFilter2d(Ixx,w,h,sigma_i), Syy=gaussianFilter2d(Iyy,w,h,sigma_i), Sxy=gaussianFilter2d(Ixy,w,h,sigma_i);
+  const R=new Float64Array(n);
+  for(let i=0;i<n;i++){ const det=Sxx[i]*Syy[i]-Sxy[i]*Sxy[i], tr=Sxx[i]+Syy[i]; R[i]=det-alpha*tr*tr; }
+  return R;
+}
+// nms2d: strict 3x3 local maximum, value>th. Returns list of [x,y].
+function nms2d(R,w,h,th){
+  const pts=[];
+  for(let y=1;y<h-1;y++) for(let x=1;x<w-1;x++){ const v=R[y*w+x];
+    if(v<=th) continue; let isMax=true;
+    for(let dy=-1;dy<=1&&isMax;dy++) for(let dx=-1;dx<=1;dx++){ if(dx===0&&dy===0) continue;
+      if(R[(y+dy)*w+(x+dx)]>=v){ isMax=false; break; } }
+    if(isMax) pts.push([x,y]);
+  }
+  return pts;
+}
+let harRespCache=null, harGCache=null;
+function runHarris(){
+  const name=document.getElementById('harImg').value, im=HAR.images[name];
+  if(!im) return;
+  const sd=parseFloat(document.getElementById('harSd').value);
+  const si=parseFloat(document.getElementById('harSi').value);
+  const thPct=parseInt(document.getElementById('harTh').value,10)/100;
+  const t0=performance.now();
+  const R=harrisResponse(im.g,im.w,im.h,sd,si,0.05);
+  // percentile threshold over positive responses
+  let mx=0; for(let i=0;i<R.length;i++) if(R[i]>mx) mx=R[i];
+  const th=mx*Math.pow(thPct,2); // squared so the slider feels linear in keypoint count
+  const pts=nms2d(R,im.w,im.h,th);
+  const ms=(performance.now()-t0).toFixed(0);
+  // draw base grayscale + corners
+  const cv=document.getElementById('harCanvas'); cv.width=im.w; cv.height=im.h;
+  renderGray(cv,im.g,im.w,im.h,false);
+  const ctx=cv.getContext('2d');
+  ctx.strokeStyle='#FBBF24'; ctx.lineWidth=1.2;
+  for(const [x,y] of pts){ ctx.beginPath(); ctx.arc(x,y,3,0,7); ctx.stroke(); }
+  document.getElementById('harCount').textContent=pts.length;
+  document.getElementById('harMs').textContent=ms+' ms';
+  // response heatmap (clamped positive)
+  const rc=document.getElementById('harRespCanvas'); rc.width=im.w; rc.height=im.h;
+  const rctx=rc.getContext('2d'), id=rctx.createImageData(im.w,im.h), rng=mx||1;
+  for(let i=0;i<R.length;i++){ const v=Math.max(0,R[i])/rng, o=i*4;
+    id.data[o]=Math.floor(20+v*231); id.data[o+1]=Math.floor(30+v*161); id.data[o+2]=Math.floor(50+v*-14<0?0:50); id.data[o+3]=255;
+    id.data[o]=Math.floor(15+v*236); id.data[o+1]=Math.floor(20+v*171); id.data[o+2]=Math.floor(40*(1-v)); }
+  rctx.putImageData(id,0,0);
+}
+
+/* ============================ KLT DEMO ============================ */
+const KLT={ frames:[], gray:[], w:64, h:64, nf:5, inited:false, ready:false,
+  pts:[], traj:[], fIdx:0, playing:false, raf:null,
+  pars:{ window:10, maxIter:20, sigmaD:1.3, stopThr:0.02*0.02 } };
+function initKltDemo(){
+  if(KLT.inited) return; KLT.inited=true;
+  kltLoadSample();
+  document.getElementById('kltPlay').onclick=()=>{ KLT.playing?kltStop():kltStart(); };
+  document.getElementById('kltSeed').onclick=kltSeed;
+  document.getElementById('kltClear').onclick=()=>{ kltStop(); KLT.pts=[]; KLT.traj=[]; KLT.fIdx=0; kltDraw(); document.getElementById('kltN').textContent=0; };
+  document.getElementById('kltSample').onclick=kltLoadSample;
+  document.getElementById('kltUpload').onchange=kltOnUpload;
+  const cv=document.getElementById('kltCanvas');
+  cv.addEventListener('click',e=>{
+    if(KLT.playing||!KLT.ready||KLT.fIdx!==0) return;
+    const r=cv.getBoundingClientRect();
+    const x=(e.clientX-r.left)*(KLT.w/r.width), y=(e.clientY-r.top)*(KLT.h/r.height);
+    KLT.pts.push({x,y,alive:true}); KLT.traj.push([[x,y]]);
+    document.getElementById('kltN').textContent=KLT.pts.length; kltDraw();
+  });
+}
+// Load the bundled toy_im_*.png sample sequence (64x64, 5 frames).
+function kltLoadSample(){
+  kltStop(); KLT.ready=false; document.getElementById('kltPlay').disabled=true;
+  KLT.frames=[]; KLT.gray=[]; KLT.pts=[]; KLT.traj=[]; KLT.fIdx=0;
+  KLT.w=64; KLT.h=64; KLT.nf=5;
+  const cv=document.getElementById('kltCanvas'); cv.width=320; cv.height=320;
+  document.getElementById('kltTot').textContent=KLT.nf-1;
+  document.getElementById('kltSrc').textContent='sample: toy_im_*.png (5 frames)';
+  document.getElementById('kltF').textContent=0;
+  let loaded=0; const total=KLT.nf;
+  for(let i=0;i<total;i++){ const im=new Image();
+    im.onload=()=>{ KLT.frames[i]=im; if(++loaded===total) kltOnLoaded(); };
+    im.onerror=()=>{ if(++loaded===total) kltOnLoaded(); };
+    im.src='cv/toy_'+i+'.png'; }
+}
+// Read user-uploaded frames (≥2), downscale to ≤320px, set up the sequence.
+function kltOnUpload(e){
+  const files=[...e.target.files].sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
+  if(files.length<2){ document.getElementById('kltHint').textContent='Need ≥2 frames — pick at least two images.'; e.target.value=''; return; }
+  kltStop(); KLT.ready=false; document.getElementById('kltPlay').disabled=true;
+  document.getElementById('kltHint').textContent='loading '+files.length+' frames…';
+  const imgs=new Array(files.length); let done=0;
+  files.forEach((f,i)=>{
+    const rd=new FileReader();
+    rd.onload=()=>{ const im=new Image();
+      im.onload=()=>{ imgs[i]=im; if(++done===files.length) kltSetUploaded(imgs); };
+      im.onerror=()=>{ if(++done===files.length) kltSetUploaded(imgs); };
+      im.src=rd.result; };
+    rd.onerror=()=>{ if(++done===files.length) kltSetUploaded(imgs); };
+    rd.readAsDataURL(f);
+  });
+  e.target.value='';
+}
+function kltSetUploaded(imgs){
+  const valid=imgs.filter(x=>x&&x.width>0);
+  if(valid.length<2){ document.getElementById('kltHint').textContent='Could not read ≥2 valid images.'; return; }
+  // Working size: scale the FIRST frame to ≤ MAXDIM, all frames sampled at that grid.
+  const MAXDIM=320, ref=valid[0];
+  const s=Math.min(1, MAXDIM/Math.max(ref.width,ref.height));
+  KLT.w=Math.max(8,Math.round(ref.width*s)); KLT.h=Math.max(8,Math.round(ref.height*s));
+  KLT.frames=valid; KLT.gray=[]; KLT.nf=valid.length;
+  KLT.pts=[]; KLT.traj=[]; KLT.fIdx=0;
+  // Canvas scaled up to a comfortable display size (longest side ~360).
+  const disp=Math.min(2, 360/Math.max(KLT.w,KLT.h));
+  const cv=document.getElementById('kltCanvas'); cv.width=Math.round(KLT.w*disp); cv.height=Math.round(KLT.h*disp);
+  document.getElementById('kltTot').textContent=KLT.nf-1;
+  document.getElementById('kltSrc').textContent='your upload: '+KLT.nf+' frames ('+KLT.w+'×'+KLT.h+', client-side only)';
+  document.getElementById('kltF').textContent=0;
+  kltOnLoaded();
+}
+function kltGrayOf(idx){
+  if(KLT.gray[idx]) return KLT.gray[idx];
+  const tmp=document.createElement('canvas'); tmp.width=KLT.w; tmp.height=KLT.h;
+  const tc=tmp.getContext('2d',{willReadFrequently:true}); tc.drawImage(KLT.frames[idx],0,0,KLT.w,KLT.h);
+  const d=tc.getImageData(0,0,KLT.w,KLT.h).data, g=new Float64Array(KLT.w*KLT.h);
+  for(let i=0;i<g.length;i++){ const p=i*4; g[i]=(0.299*d[p]+0.587*d[p+1]+0.114*d[p+2])/255; }
+  KLT.gray[idx]=g; return g;
+}
+function kltOnLoaded(){
+  if(!KLT.frames[0]){ document.getElementById('kltHint').textContent='frames failed to load'; return; }
+  KLT.ready=true; document.getElementById('kltPlay').disabled=false;
+  document.getElementById('kltHint').textContent='Click points on the first frame, then Play.';
+  kltSeed(); kltDraw();
+}
+function kltSeed(){
+  if(!KLT.ready) return; kltStop(); KLT.pts=[]; KLT.traj=[]; KLT.fIdx=0;
+  // seed on a grid where there is image structure (gradient magnitude high)
+  const g=kltGrayOf(0), grad=spatialGradient(g,KLT.w,KLT.h,1.3);
+  for(let y=10;y<KLT.h-10;y+=8) for(let x=10;x<KLT.w-10;x+=8){
+    const i=y*KLT.w+x, m=Math.hypot(grad.gx[i],grad.gy[i]);
+    if(m>0.02){ KLT.pts.push({x,y,alive:true}); KLT.traj.push([[x,y]]); }
+  }
+  document.getElementById('kltN').textContent=KLT.pts.length; kltDraw();
+}
+// bilinear sample (sub-pixel) — get_patches_subpix uses bilinear grid_sample
+function bilinear(g,w,h,x,y){
+  const x0=Math.floor(x),y0=Math.floor(y),x1=x0+1,y1=y0+1;
+  const fx=x-x0,fy=y-y0;
+  const g00=g[clampIdx(y0,h)*w+clampIdx(x0,w)], g10=g[clampIdx(y0,h)*w+clampIdx(x1,w)];
+  const g01=g[clampIdx(y1,h)*w+clampIdx(x0,w)], g11=g[clampIdx(y1,h)*w+clampIdx(x1,w)];
+  return g00*(1-fx)*(1-fy)+g10*fx*(1-fy)+g01*(1-fx)*fy+g11*fx*fy;
+}
+// klt_compute_updates for one point: returns {dx,dy} or null if degenerate
+function kltUpdateOne(Tg,nextG,nextGx,nextGy,w,h,cx,cy,px,py,hs){
+  let Ix2=0,Iy2=0,IxIy=0,Ixe=0,Iye=0;
+  for(let dy=-hs;dy<=hs;dy++) for(let dx=-hs;dx<=hs;dx++){
+    const tx=cx+dx, ty=cy+dy;            // template coord
+    const sx=cx+px+dx, sy=cy+py+dy;      // current target coord
+    const T=bilinear(Tg,w,h,tx,ty);
+    const I=bilinear(nextG,w,h,sx,sy);
+    const ix=bilinear(nextGx,w,h,sx,sy), iy=bilinear(nextGy,w,h,sx,sy);
+    const e=T-I;
+    Ix2+=ix*ix; Iy2+=iy*iy; IxIy+=ix*iy; Ixe+=ix*e; Iye+=iy*e;
+  }
+  const det=Ix2*Iy2-IxIy*IxIy;
+  if(Math.abs(det)<1e-8) return null;
+  return { dx:(Iy2*Ixe-IxIy*Iye)/det, dy:(Ix2*Iye-IxIy*Ixe)/det };
+}
+function kltStart(){
+  if(!KLT.ready||KLT.pts.length===0) return;
+  KLT.playing=true; document.getElementById('kltPlay').textContent='⏸ Pause';
+  document.getElementById('kltHint').textContent='tracking…';
+  kltStep();
+}
+function kltStop(){ KLT.playing=false; document.getElementById('kltPlay').textContent='▶ Play'; if(KLT.raf) cancelAnimationFrame(KLT.raf); }
+function kltStep(){
+  if(!KLT.playing) return;
+  if(KLT.fIdx>=KLT.nf-1){ kltStop(); document.getElementById('kltHint').textContent='sequence done — Clear or Auto-seed to retry.'; return; }
+  const prev=kltGrayOf(KLT.fIdx), next=kltGrayOf(KLT.fIdx+1);
+  const hs=KLT.pars.window;
+  const gradNext=spatialGradient(next,KLT.w,KLT.h,KLT.pars.sigmaD);
+  for(let pi=0;pi<KLT.pts.length;pi++){ const pt=KLT.pts[pi]; if(!pt.alive) continue;
+    let px=0,py=0,lastNorm=1e9;          // shift estimate, starts at 0 (track_klt: ps=0)
+    for(let it=0;it<KLT.pars.maxIter;it++){
+      const u=kltUpdateOne(prev,next,gradNext.gx,gradNext.gy,KLT.w,KLT.h,pt.x,pt.y,px,py,hs);
+      if(!u){ break; }
+      px+=u.dx; py+=u.dy; lastNorm=u.dx*u.dx+u.dy*u.dy;
+    }
+    const nx=pt.x+px, ny=pt.y+py;
+    // drop if diverged out of frame OR last update did not converge (stop_thr)
+    if(nx<2||ny<2||nx>KLT.w-2||ny>KLT.h-2||lastNorm>KLT.pars.stopThr*40){ pt.alive=false; }
+    else { pt.x=nx; pt.y=ny; KLT.traj[pi].push([nx,ny]); }
+  }
+  KLT.fIdx++;
+  document.getElementById('kltF').textContent=KLT.fIdx;
+  kltDraw();
+  KLT.raf=requestAnimationFrame(()=>setTimeout(()=>{ KLT.raf=requestAnimationFrame(kltStep); },420));
+}
+function kltDraw(){
+  const cv=document.getElementById('kltCanvas'), ctx=cv.getContext('2d');
+  const idx=Math.min(KLT.fIdx,KLT.nf-1);
+  if(KLT.frames[idx]&&KLT.frames[idx].complete) ctx.drawImage(KLT.frames[idx],0,0,cv.width,cv.height);
+  else { ctx.fillStyle='#000'; ctx.fillRect(0,0,cv.width,cv.height); }
+  const sx=cv.width/KLT.w, sy=cv.height/KLT.h;
+  // trajectories
+  ctx.lineWidth=1.5;
+  for(let pi=0;pi<KLT.traj.length;pi++){ const tr=KLT.traj[pi];
+    ctx.strokeStyle='#60A5FA'; ctx.beginPath();
+    for(let j=0;j<tr.length;j++){ const x=tr[j][0]*sx,y=tr[j][1]*sy; j?ctx.lineTo(x,y):ctx.moveTo(x,y); }
+    ctx.stroke();
+  }
+  // current points
+  for(let pi=0;pi<KLT.pts.length;pi++){ const pt=KLT.pts[pi];
+    ctx.fillStyle=pt.alive?'#14B8A6':'#F87171';
+    ctx.beginPath(); ctx.arc(pt.x*sx,pt.y*sy,4,0,7); ctx.fill();
+  }
+}
+
+/* ============================================================================
+   CORRESPONDENCES & RANSAC  — faithful port of the wide-baseline pipeline:
+     local_detector.py  : harris_response + nms2d            (keypoints)
+     local_descriptor.py : calc_sift_descriptor +            (128-D SIFT)
+                           estimate_patch_dominant_orientation (rotation norm)
+     matching.py        : match_smnn (mutual NN + Lowe ratio) (tentatives)
+     ransac.py          : ransac_h / getH (4-pt DLT) / hdist  (robust H)
+   All grayscale Float64, vanilla JS + Canvas, no external deps.
+============================================================================ */
+const CORR={ inited:false, A:null, B:null, ready:false };
+
+function initCorrDemo(){
+  if(CORR.inited) return; CORR.inited=true;
+  document.getElementById('corrRun').onclick=runCorr;
+  const th=document.getElementById('corrTh'), rt=document.getElementById('corrRatio');
+  th.oninput=()=>{ document.getElementById('corrThVal').textContent=parseFloat(th.value).toFixed(1); };
+  rt.oninput=()=>{ document.getElementById('corrRatioVal').textContent=parseFloat(rt.value).toFixed(2); };
+  document.getElementById('corrWarp').onchange=()=>{ if(CORR.last) drawCorr(CORR.last); };
+  document.getElementById('corrSample').onclick=corrLoadSample;
+  document.getElementById('corrUpA').onchange=e=>corrOnUpload(e,'A');
+  document.getElementById('corrUpB').onchange=e=>corrOnUpload(e,'B');
+  corrLoadSample();
+}
+
+// Decode an <img> into a grayscale Float64 buffer, downscaled so max side ≤ maxdim.
+function corrToGray(img, maxdim){
+  const s=Math.min(1, maxdim/Math.max(img.width,img.height));
+  const w=Math.max(8,Math.round(img.width*s)), h=Math.max(8,Math.round(img.height*s));
+  const tmp=document.createElement('canvas'); tmp.width=w; tmp.height=h;
+  const tc=tmp.getContext('2d',{willReadFrequently:true}); tc.drawImage(img,0,0,w,h);
+  const d=tc.getImageData(0,0,w,h).data, g=new Float64Array(w*h);
+  for(let i=0;i<w*h;i++){ const p=i*4; g[i]=(0.299*d[p]+0.587*d[p+1]+0.114*d[p+2])/255; }
+  return {g,w,h};
+}
+function corrLoadSample(){
+  CORR.ready=false; document.getElementById('corrRun').disabled=true;
+  document.getElementById('corrSrc').textContent='sample: v_woman 1 ↔ 6 (real wide-baseline pair)';
+  let loaded=0; const need=2; const imA=new Image(), imB=new Image();
+  const done=()=>{ if(++loaded===need){
+    CORR.A=corrToGray(imA,480); CORR.B=corrToGray(imB,480);
+    CORR.ready=true; document.getElementById('corrRun').disabled=false;
+    drawCorrIdle(); }
+  };
+  imA.onload=done; imA.onerror=done; imB.onload=done; imB.onerror=done;
+  imA.src='cv/match_a.jpg'; imB.src='cv/match_b.jpg';
+}
+function corrOnUpload(e,which){
+  const f=e.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{ const im=new Image();
+    im.onload=()=>{ const gray=corrToGray(im,480);
+      if(which==='A') CORR.A=gray; else CORR.B=gray;
+      document.getElementById('corrSrc').textContent='your upload (client-side only)';
+      CORR.ready=!!(CORR.A&&CORR.B);
+      document.getElementById('corrRun').disabled=!CORR.ready;
+      drawCorrIdle(); };
+    im.onerror=()=>{ document.getElementById('corrSrc').textContent='image '+which+' failed to decode'; };
+    im.src=rd.result; };
+  rd.readAsDataURL(f);
+  e.target.value='';
+}
+
+/* ---- keypoints: single-scale Harris + 3x3 NMS, capped & sorted by strength ---- */
+function corrKeypoints(im, maxKp){
+  const R=harrisResponse(im.g,im.w,im.h,1.0,1.5,0.05);
+  let mx=0; for(let i=0;i<R.length;i++) if(R[i]>mx) mx=R[i];
+  const th=mx*0.0025;                       // low percentile → many candidates
+  const pts=nms2d(R,im.w,im.h,th);          // [[x,y],...] strict local maxima
+  // keep the strongest maxKp by response
+  pts.sort((a,b)=>R[b[1]*im.w+b[0]]-R[a[1]*im.w+a[0]]);
+  return pts.slice(0,maxKp);
+}
+
+/* ---- dominant orientation of a patch around (x,y): port of
+   estimate_patch_dominant_orientation (36-bin weighted gradient histogram) ---- */
+function corrDominantOri(im,x,y,rad){
+  const bins=36, hist=new Float64Array(bins);
+  const sig=rad/3.0, twoPi=2*Math.PI;
+  for(let dy=-rad;dy<=rad;dy++) for(let dx=-rad;dx<=rad;dx++){
+    const sx=x+dx, sy=y+dy;
+    if(sx<1||sy<1||sx>=im.w-1||sy>=im.h-1) continue;
+    const gx=(im.g[sy*im.w+sx+1]-im.g[sy*im.w+sx-1])*0.5;
+    const gy=(im.g[(sy+1)*im.w+sx]-im.g[(sy-1)*im.w+sx])*0.5;
+    const mag=Math.hypot(gx,gy);
+    const w=mag*Math.exp(-(dx*dx+dy*dy)/(2*sig*sig));
+    let a=Math.atan2(gy,gx); if(a<0) a+=twoPi;
+    const fb=a/twoPi*bins; const b0=Math.floor(fb)%bins, b1=(b0+1)%bins, fr=fb-Math.floor(fb);
+    hist[b0]+=w*(1-fr); hist[b1]+=w*fr;
+  }
+  let bi=0,bv=-1; for(let i=0;i<bins;i++) if(hist[i]>bv){bv=hist[i];bi=i;}
+  return (bi+0.5)/bins*twoPi;               // radians
+}
+
+/* ---- SIFT descriptor: port of calc_sift_descriptor.
+   Samples a rotated PS×PS grid around (x,y) (rotation-normalised by `ang`),
+   builds 4×4 spatial × 8 orientation bins (128-D), L2→clip(0.2)→L2. ---- */
+function corrDescriptor(im,x,y,ang,PS,scale){
+  const nSp=4, nAng=8, desc=new Float64Array(nSp*nSp*nAng);
+  const ca=Math.cos(ang), sa=Math.sin(ang), half=(PS-1)/2;
+  const binSize=PS/nSp, twoPi=2*Math.PI;
+  // pre-sample patch intensities on the oriented grid, then finite-diff gradients in patch space
+  const P=new Float64Array(PS*PS);
+  for(let r=0;r<PS;r++) for(let c=0;c<PS;c++){
+    const px=(c-half)*scale, py=(r-half)*scale;     // patch coords, scaled
+    const ix=x+(ca*px - sa*py), iy=y+(sa*px + ca*py);
+    P[r*PS+c]=bilinear(im.g,im.w,im.h,ix,iy);
+  }
+  for(let r=1;r<PS-1;r++) for(let c=1;c<PS-1;c++){
+    const gx=(P[r*PS+c+1]-P[r*PS+c-1])*0.5;
+    const gy=(P[(r+1)*PS+c]-P[(r-1)*PS+c])*0.5;
+    let mag=Math.hypot(gx,gy);
+    if(mag<1e-9) continue;
+    // overall Gaussian window (sigma = PS/2)
+    const dxc=c-half, dyc=r-half;
+    mag*=Math.exp(-(dxc*dxc+dyc*dyc)/(2*(PS/2)*(PS/2)));
+    let a=Math.atan2(gy,gx); if(a<0) a+=twoPi;
+    const fb=a/twoPi*nAng; const a0=Math.floor(fb)%nAng, a1=(a0+1)%nAng, fr=fb-Math.floor(fb);
+    // trilinear-ish: nearest spatial bin (with Gaussian falloff handled by per-bin weight)
+    const si=Math.min(nSp-1,Math.max(0,Math.floor(c/binSize)));
+    const sj=Math.min(nSp-1,Math.max(0,Math.floor(r/binSize)));
+    const base=(sj*nSp+si)*nAng;
+    desc[base+a0]+=mag*(1-fr); desc[base+a1]+=mag*fr;
+  }
+  // L2 → clip(0.2) → L2  (matching the .py normalisation)
+  let nrm=0; for(let i=0;i<desc.length;i++) nrm+=desc[i]*desc[i]; nrm=Math.sqrt(nrm)||1;
+  for(let i=0;i<desc.length;i++){ let v=desc[i]/nrm; if(v>0.2) v=0.2; desc[i]=v; }
+  nrm=0; for(let i=0;i<desc.length;i++) nrm+=desc[i]*desc[i]; nrm=Math.sqrt(nrm)||1;
+  for(let i=0;i<desc.length;i++) desc[i]/=nrm;
+  return desc;
+}
+function corrDetectAndDescribe(im,maxKp){
+  const kps=corrKeypoints(im,maxKp), descs=[], locs=[];
+  const PS=16, rad=8, scale=2.0;
+  for(const [x,y] of kps){
+    if(x<rad+1||y<rad+1||x>=im.w-rad-1||y>=im.h-rad-1) continue;
+    const ang=corrDominantOri(im,x,y,rad);
+    descs.push(corrDescriptor(im,x,y,ang,PS,scale));
+    locs.push([x,y]);
+  }
+  return {locs,descs};
+}
+function descDist(a,b){ let s=0; for(let i=0;i<a.length;i++){ const d=a[i]-b[i]; s+=d*d; } return Math.sqrt(s); }
+
+/* ---- match_smnn: mutual nearest neighbour + Lowe ratio test in both directions ---- */
+function corrMatch(d1,d2,ratio){
+  const n1=d1.length, n2=d2.length; if(n1<2||n2<2) return [];
+  const fwdNN=new Int32Array(n1), fwdRatio=new Float64Array(n1);
+  for(let i=0;i<n1;i++){
+    let b1=Infinity,b2=Infinity,bi=-1;
+    for(let j=0;j<n2;j++){ const dd=descDist(d1[i],d2[j]);
+      if(dd<b1){ b2=b1; b1=dd; bi=j; } else if(dd<b2){ b2=dd; } }
+    fwdNN[i]=bi; fwdRatio[i]=b1/(b2+1e-8);
+  }
+  const bwdNN=new Int32Array(n2), bwdRatio=new Float64Array(n2);
+  for(let j=0;j<n2;j++){
+    let b1=Infinity,b2=Infinity,bi=-1;
+    for(let i=0;i<n1;i++){ const dd=descDist(d2[j],d1[i]);
+      if(dd<b1){ b2=b1; b1=dd; bi=i; } else if(dd<b2){ b2=dd; } }
+    bwdNN[j]=bi; bwdRatio[j]=b1/(b2+1e-8);
+  }
+  const out=[];
+  for(let i=0;i<n1;i++){ const j=fwdNN[i];
+    if(j<0||bwdNN[j]!==i) continue;                 // mutual NN
+    if(fwdRatio[i]<ratio && bwdRatio[j]<ratio) out.push([i,j]);  // Lowe ratio both ways
+  }
+  return out;
+}
+
+/* ---- 4-point DLT homography via SVD (getH). pairs: [[x1,y1,x2,y2],...] ---- */
+function corrGetH(sample){
+  const N=sample.length;
+  const C=[];                                        // 2N x 9
+  for(let i=0;i<N;i++){ const [x,y,xp,yp]=sample[i];
+    C.push([-x,-y,-1, 0,0,0, xp*x,xp*y,xp]);
+    C.push([0,0,0, -x,-y,-1, yp*x,yp*y,yp]);
+  }
+  const h=nullspace9(C);                             // right singular vec, smallest sing val
+  if(!h) return null;
+  const H=[[h[0],h[1],h[2]],[h[3],h[4],h[5]],[h[6],h[7],h[8]]];
+  if(Math.abs(H[2][2])<1e-9) return null;
+  for(let r=0;r<3;r++) for(let c=0;c<3;c++) H[r][c]/=H[2][2];
+  return H;
+}
+// null space of C (rows x 9): eigenvector of CᵀC with smallest eigenvalue (Jacobi on 9x9).
+function nullspace9(C){
+  const M=Array.from({length:9},()=>new Float64Array(9));
+  for(const row of C) for(let a=0;a<9;a++) for(let b=0;b<9;b++) M[a][b]+=row[a]*row[b];
+  const V=Array.from({length:9},(_,i)=>{ const r=new Float64Array(9); r[i]=1; return r; });
+  // Jacobi eigenvalue iteration on symmetric 9x9
+  for(let sweep=0;sweep<60;sweep++){
+    let off=0; for(let p=0;p<9;p++) for(let q=p+1;q<9;q++) off+=M[p][q]*M[p][q];
+    if(off<1e-18) break;
+    for(let p=0;p<9;p++) for(let q=p+1;q<9;q++){
+      if(Math.abs(M[p][q])<1e-15) continue;
+      const app=M[p][p],aqq=M[q][q],apq=M[p][q];
+      const phi=0.5*Math.atan2(2*apq,aqq-app);
+      const c=Math.cos(phi),s=Math.sin(phi);
+      for(let k=0;k<9;k++){ const mkp=M[k][p],mkq=M[k][q];
+        M[k][p]=c*mkp-s*mkq; M[k][q]=s*mkp+c*mkq; }
+      for(let k=0;k<9;k++){ const mpk=M[p][k],mqk=M[q][k];
+        M[p][k]=c*mpk-s*mqk; M[q][k]=s*mpk+c*mqk; }
+      for(let k=0;k<9;k++){ const vkp=V[k][p],vkq=V[k][q];
+        V[k][p]=c*vkp-s*vkq; V[k][q]=s*vkp+c*vkq; }
+    }
+  }
+  let mi=0,mv=Infinity; for(let i=0;i<9;i++) if(M[i][i]<mv){ mv=M[i][i]; mi=i; }
+  const h=new Float64Array(9); for(let k=0;k<9;k++) h[k]=V[k][mi];
+  return h;
+}
+// reprojection: squared pixel error of (x,y)->(xp,yp) under H  (hdist)
+function corrHdist(H,x,y,xp,yp){
+  const w=H[2][0]*x+H[2][1]*y+H[2][2];
+  const px=(H[0][0]*x+H[0][1]*y+H[0][2])/(Math.abs(w)<1e-8?1e-8:w);
+  const py=(H[1][0]*x+H[1][1]*y+H[1][2])/(Math.abs(w)<1e-8?1e-8:w);
+  return (px-xp)*(px-xp)+(py-yp)*(py-yp);
+}
+// degeneracy: no 3 of the 4 source points near-collinear (getH collinearity guard)
+function corrDegenerate(s){
+  for(let i=0;i<4;i++) for(let j=i+1;j<4;j++) for(let k=j+1;k<4;k++){
+    const ax=s[i][0]-s[k][0],ay=s[i][1]-s[k][1],bx=s[j][0]-s[k][0],by=s[j][1]-s[k][1];
+    if(Math.abs(ax*by-ay*bx)<1.0) return true;
+  }
+  return false;
+}
+/* ---- ransac_h: minimal-sample DLT, inlier count by reprojection, refit on inliers ---- */
+function corrRansac(pairs,thPx,conf,maxIter){
+  const N=pairs.length, th2=thPx*thPx;
+  if(N<4) return {H:null,inliers:[],iters:0};
+  let bestH=null,bestInl=[],bestN=0,curMax=maxIter,it=0;
+  while(it<curMax){ it++;
+    // random 4-sample
+    const idx=[]; while(idx.length<4){ const r=(Math.random()*N)|0; if(!idx.includes(r)) idx.push(r); }
+    const s=idx.map(i=>pairs[i]);
+    if(corrDegenerate(s)) continue;
+    const H=corrGetH(s); if(!H) continue;
+    const inl=[];
+    for(let i=0;i<N;i++){ const p=pairs[i]; if(corrHdist(H,p[0],p[1],p[2],p[3])<th2) inl.push(i); }
+    if(inl.length>bestN){ bestN=inl.length; bestH=H; bestInl=inl;
+      // adaptive nsamples()
+      const r=bestN/N;
+      if(r>=1) curMax=1;
+      else { const denom=Math.log(Math.max(1e-10,1-Math.pow(r,4)));
+        curMax=Math.min(maxIter, Math.floor(Math.log(Math.max(1e-10,1-conf))/denom)+1); }
+    }
+  }
+  // refit (least-squares DLT) on all inliers
+  if(bestH && bestInl.length>=4){
+    const s=bestInl.map(i=>pairs[i]); const Href=corrGetH(s);
+    if(Href){ const inl2=[];
+      for(let i=0;i<N;i++){ const p=pairs[i]; if(corrHdist(Href,p[0],p[1],p[2],p[3])<th2) inl2.push(i); }
+      if(inl2.length>=bestInl.length){ bestH=Href; bestInl=inl2; }
+    }
+  }
+  return {H:bestH,inliers:bestInl,iters:it};
+}
+
+function runCorr(){
+  if(!CORR.ready) return;
+  document.getElementById('corrRun').disabled=true;
+  document.getElementById('corrMs').textContent='running…';
+  setTimeout(()=>{
+    const t0=performance.now();
+    const maxKp=320;
+    const dA=corrDetectAndDescribe(CORR.A,maxKp), dB=corrDetectAndDescribe(CORR.B,maxKp);
+    const ratio=parseFloat(document.getElementById('corrRatio').value);
+    const thPx=parseFloat(document.getElementById('corrTh').value);
+    const m=corrMatch(dA.descs,dB.descs,ratio);        // tentative [i,j]
+    const pairs=m.map(([i,j])=>[dA.locs[i][0],dA.locs[i][1],dB.locs[j][0],dB.locs[j][1]]);
+    const rr=corrRansac(pairs,thPx,0.99,1500);
+    const ms=(performance.now()-t0).toFixed(0);
+    // res.A/res.B = grayscale images (for drawing); locsA/locsB = detected keypoints
+    const res={A:CORR.A,B:CORR.B,locsA:dA.locs,locsB:dB.locs,m,pairs,inliers:rr.inliers,H:rr.H,iters:rr.iters,thPx};
+    CORR.last=res;
+    document.getElementById('corrKp').textContent=dA.locs.length+'/'+dB.locs.length;
+    document.getElementById('corrTent').textContent=m.length;
+    document.getElementById('corrInl').textContent=rr.inliers.length;
+    document.getElementById('corrIter').textContent=rr.iters;
+    document.getElementById('corrMs').textContent=ms+' ms';
+    document.getElementById('corrH').textContent = rr.H
+      ? rr.H.map(row=>row.map(v=>v.toFixed(v===0?0:3).padStart(8)).join(' ')).join('\n')
+      : 'no consensus (need ≥4 inliers)';
+    drawCorr(res);
+    document.getElementById('corrRun').disabled=false;
+  },20);
+}
+
+// layout: A on the left, B on the right, both fit into the canvas halves.
+function corrLayout(res,cv){
+  const gap=10, halfW=(cv.width-gap)/2;
+  const sA=Math.min(halfW/res.A.w, cv.height/res.A.h);
+  const sB=Math.min(halfW/res.B.w, cv.height/res.B.h);
+  const aw=res.A.w*sA, ah=res.A.h*sA, bw=res.B.w*sB, bh=res.B.h*sB;
+  return { sA,sB, ax:0, ay:(cv.height-ah)/2, bx:halfW+gap, by:(cv.height-bh)/2, aw,ah,bw,bh };
+}
+function grayToCanvas(im){
+  const c=document.createElement('canvas'); c.width=im.w; c.height=im.h;
+  const ctx=c.getContext('2d'), id=ctx.createImageData(im.w,im.h);
+  for(let i=0;i<im.w*im.h;i++){ const v=Math.max(0,Math.min(255,Math.round(im.g[i]*255))), o=i*4;
+    id.data[o]=id.data[o+1]=id.data[o+2]=v; id.data[o+3]=255; }
+  ctx.putImageData(id,0,0); return c;
+}
+function drawCorrIdle(){
+  const cv=document.getElementById('corrCanvas'), ctx=cv.getContext('2d');
+  ctx.fillStyle='#000'; ctx.fillRect(0,0,cv.width,cv.height);
+  if(!CORR.A||!CORR.B) return;
+  const res={A:CORR.A,B:CORR.B}, L=corrLayout(res,cv);
+  ctx.drawImage(grayToCanvas(CORR.A),L.ax,L.ay,L.aw,L.ah);
+  ctx.drawImage(grayToCanvas(CORR.B),L.bx,L.by,L.bw,L.bh);
+  ctx.fillStyle='#94A3B8'; ctx.font='12px JetBrains Mono, monospace';
+  ctx.fillText('Image A',L.ax+6,L.ay+16); ctx.fillText('Image B',L.bx+6,L.by+16);
+  ctx.fillText('press “Run match + RANSAC”', cv.width/2-90, cv.height-10);
+}
+function drawCorr(res){
+  const cv=document.getElementById('corrCanvas'), ctx=cv.getContext('2d');
+  ctx.fillStyle='#000'; ctx.fillRect(0,0,cv.width,cv.height);
+  const L=corrLayout(res,cv);
+  ctx.drawImage(grayToCanvas(res.A),L.ax,L.ay,L.aw,L.ah);
+  ctx.drawImage(grayToCanvas(res.B),L.bx,L.by,L.bw,L.bh);
+  const A2c=(x,y)=>[L.ax+x*L.sA, L.ay+y*L.sA], B2c=(x,y)=>[L.bx+x*L.sB, L.by+y*L.sB];
+  // optional warp: project A's border into B via H
+  if(res.H && document.getElementById('corrWarp').checked){
+    const cs=[[0,0],[res.A.w,0],[res.A.w,res.A.h],[0,res.A.h]];
+    ctx.strokeStyle='#FBBF24'; ctx.lineWidth=2; ctx.beginPath();
+    cs.forEach((p,i)=>{ const w=res.H[2][0]*p[0]+res.H[2][1]*p[1]+res.H[2][2];
+      const px=(res.H[0][0]*p[0]+res.H[0][1]*p[1]+res.H[0][2])/w;
+      const py=(res.H[1][0]*p[0]+res.H[1][1]*p[1]+res.H[1][2])/w;
+      const [cx,cy]=B2c(px,py); i?ctx.lineTo(cx,cy):ctx.moveTo(cx,cy); });
+    ctx.closePath(); ctx.stroke();
+  }
+  // keypoints (faint)
+  ctx.fillStyle='rgba(251,191,36,.55)';
+  for(const [x,y] of res.locsA){ const [cx,cy]=A2c(x,y); ctx.fillRect(cx-1,cy-1,2,2); }
+  for(const [x,y] of res.locsB){ const [cx,cy]=B2c(x,y); ctx.fillRect(cx-1,cy-1,2,2); }
+  // rejected tentatives (red, thin)
+  const inlSet=new Set(res.inliers);
+  ctx.lineWidth=0.6; ctx.strokeStyle='rgba(248,113,113,.5)';
+  for(let k=0;k<res.pairs.length;k++){ if(inlSet.has(k)) continue;
+    const p=res.pairs[k]; const a=A2c(p[0],p[1]), b=B2c(p[2],p[3]);
+    ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke(); }
+  // inliers (teal)
+  ctx.lineWidth=1.1; ctx.strokeStyle='rgba(20,184,166,.85)';
+  for(const k of res.inliers){ const p=res.pairs[k]; const a=A2c(p[0],p[1]), b=B2c(p[2],p[3]);
+    ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
+    ctx.fillStyle='#14B8A6'; ctx.beginPath(); ctx.arc(a[0],a[1],2,0,7); ctx.fill();
+    ctx.beginPath(); ctx.arc(b[0],b[1],2,0,7); ctx.fill(); }
+}
+
+/* ============================ CNN data + chart ============================ */
+// Real logged values parsed from results.html (AdamW + OneCycle, 20 epochs).
+const CNN={
+  valAcc:[0.2925,0.3732,0.3536,0.3804,0.4958,0.4994,0.6117,0.6237,0.6650,0.6820,0.6989,0.7442,0.7470,0.7725,0.7758,0.7834,0.7906,0.7952,0.7954,0.7929],
+  trainAcc:[0.1536,0.2021,0.2744,0.3334,0.3683,0.4506,0.5112,0.5838,0.6319,0.6722,0.6917,0.7156,0.7446,0.7604,0.7766,0.7935,0.8083,0.8170,0.8254,0.8357],
+  valLoss:[3.6721,4.4096,1.9863,3.0877,1.6674,1.6885,1.4605,1.4351,1.2996,1.2965,1.2416,1.1367,1.1238,1.0739,1.0575,1.0373,1.0256,1.0207,1.0152,1.0184]
+};
+const CLASSES=['tench','English springer','cassette player','chainsaw','church','French horn','garbage truck','gas pump','golf ball','parachute'];
+(function(){ const c=document.getElementById('classChips'); CLASSES.forEach(n=>{ const s=document.createElement('span'); s.textContent=n; c.appendChild(s); }); })();
+
+let cnnDrawn=false;
+function drawCnnChart(){
+  if(cnnDrawn) return; cnnDrawn=true;
+  const cv=document.getElementById('cnnChart'), ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height, pad={l:48,r:48,t:18,b:34};
+  const n=CNN.valAcc.length;
+  const px=i=>pad.l+(W-pad.l-pad.r)*i/(n-1);
+  const pyA=v=>H-pad.b-(H-pad.t-pad.b)*v;           // accuracy 0..1
+  const maxLoss=Math.max(...CNN.valLoss);
+  const pyL=v=>H-pad.b-(H-pad.t-pad.b)*(v/maxLoss); // loss 0..max
+  ctx.clearRect(0,0,W,H);
+  // grid
+  ctx.strokeStyle='#243044'; ctx.fillStyle='#94A3B8'; ctx.font='11px JetBrains Mono, monospace';
+  for(let g=0;g<=5;g++){ const v=g/5, y=pyA(v); ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke(); ctx.fillText((v*100).toFixed(0)+'%',6,y+4); }
+  for(let g=0;g<=5;g++){ const v=g/5*maxLoss; ctx.fillStyle='#F87171'; ctx.fillText(v.toFixed(1),W-pad.r+6,pyL(v)+4); ctx.fillStyle='#94A3B8'; }
+  // x labels
+  for(let i=0;i<n;i+=4){ ctx.fillText(i,px(i)-4,H-pad.b+18); }
+  ctx.fillText('epoch',(W)/2-16,H-6);
+  function line(arr,proj,color,wd){
+    ctx.strokeStyle=color; ctx.lineWidth=wd; ctx.beginPath();
+    arr.forEach((v,i)=>{ const x=px(i),y=proj(v); i?ctx.lineTo(x,y):ctx.moveTo(x,y); }); ctx.stroke();
+    arr.forEach((v,i)=>{ ctx.fillStyle=color; ctx.beginPath(); ctx.arc(px(i),proj(v),2.2,0,7); ctx.fill(); });
+  }
+  line(CNN.valLoss,pyL,'#F87171',1.6);
+  line(CNN.trainAcc,pyA,'#60A5FA',1.6);
+  line(CNN.valAcc,pyA,'#14B8A6',2.4);
+  // mark best
+  const bi=CNN.valAcc.indexOf(Math.max(...CNN.valAcc));
+  ctx.fillStyle='#14B8A6'; ctx.font='bold 12px JetBrains Mono, monospace';
+  ctx.fillText('79.5%',px(bi)-18,pyA(CNN.valAcc[bi])-10);
+}
+</script>
+</body>
+</html>

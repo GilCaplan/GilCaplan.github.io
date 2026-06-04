@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Algebraic Methods — SVD &amp; Least Squares (095296)</title>
+<style>
+:root{
+  --bg:#0B1220; --surface:#0F172A; --panel:#1E293B; --border:#243044;
+  --text:#E2E8F0; --muted:#94A3B8; --accent:#14B8A6; --blue:#60A5FA; --red:#F87171;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.5;}
+.wrap{max-width:1040px;margin:0 auto;padding:22px 18px 60px;}
+h1{font-size:1.5rem;margin:0 0 4px;}
+h2{font-size:1.1rem;margin:0 0 10px;}
+.sub{color:var(--muted);font-size:.92rem;margin:0 0 18px;}
+.mono{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:10px;}
+.tab{background:var(--panel);border:1px solid var(--border);color:var(--muted);
+  padding:7px 14px;border-radius:9px;cursor:pointer;font-size:.88rem;transition:.15s;}
+.tab:hover{color:var(--text);border-color:var(--accent);}
+.tab.active{background:var(--accent);color:#04201c;border-color:var(--accent);font-weight:600;}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px;}
+.view{display:none;} .view.active{display:block;}
+pre{background:#0a0f1c;border:1px solid var(--border);border-radius:10px;padding:14px 16px;
+  overflow:auto;font-size:.82rem;color:#cbd5e1;font-family:'JetBrains Mono',monospace;}
+.k{color:var(--accent);} .b{color:var(--blue);} .c{color:#64748b;}
+.tag{display:inline-block;background:var(--panel);border:1px solid var(--border);
+  color:var(--muted);border-radius:20px;padding:3px 11px;font-size:.76rem;margin:0 6px 6px 0;}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:14px;}
+.card h3{margin:0 0 6px;font-size:.95rem;color:var(--accent);}
+.card p{margin:0;color:var(--muted);font-size:.85rem;}
+.btn{background:var(--accent);color:#04201c;border:none;border-radius:9px;padding:9px 16px;font-weight:600;cursor:pointer;font-size:.88rem;}
+.btn.alt{background:var(--panel);color:var(--text);border:1px solid var(--border);}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.muted{color:var(--muted);font-size:.85rem;}
+label{font-size:.83rem;color:var(--muted);}
+input[type=range]{accent-color:var(--accent);width:240px;vertical-align:middle;}
+.imgwrap{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+@media(max-width:680px){.imgwrap{grid-template-columns:1fr;}}
+.imgcard{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:10px;text-align:center;}
+.imgcard img{width:100%;border-radius:8px;display:block;}
+.imgcard .cap{font-size:.8rem;color:var(--muted);margin-top:7px;font-family:'JetBrains Mono',monospace;}
+.kbtns{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 12px;}
+.kbtn{background:var(--panel);border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:5px 11px;cursor:pointer;font-size:.82rem;font-family:'JetBrains Mono',monospace;}
+.kbtn.active{background:var(--accent);color:#04201c;border-color:var(--accent);font-weight:600;}
+.kbtn:hover{border-color:var(--accent);}
+table{border-collapse:collapse;width:100%;font-size:.83rem;font-family:'JetBrains Mono',monospace;}
+th,td{border:1px solid var(--border);padding:6px 9px;text-align:left;}
+th{color:var(--accent);} td{color:var(--muted);}
+a{color:var(--blue);}
+.note{background:#0a0f1c;border:1px solid var(--border);border-left:3px solid var(--blue);border-radius:8px;padding:10px 13px;font-size:.84rem;color:var(--muted);}
+canvas{background:#0a0f1c;border:1px solid var(--border);border-radius:10px;display:block;max-width:100%;touch-action:none;}
+.cvwrap{display:grid;grid-template-columns:1fr;gap:14px;}
+.matgrid{display:inline-grid;gap:5px;margin:4px 0;}
+.matgrid input{width:46px;background:#0a0f1c;border:1px solid var(--border);color:var(--text);
+  border-radius:6px;padding:5px 4px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:.82rem;}
+.matgrid input:focus{outline:none;border-color:var(--accent);}
+.swatch{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:middle;margin-right:5px;}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.82rem;color:var(--muted);margin:8px 0;}
+select{background:#0a0f1c;border:1px solid var(--border);color:var(--text);border-radius:7px;padding:6px 8px;font-size:.83rem;}
+.out{font-family:'JetBrains Mono',monospace;font-size:.84rem;color:var(--text);}
+.barwrap{display:flex;align-items:flex-end;gap:6px;height:90px;margin:8px 0;}
+.bar{background:var(--accent);border-radius:4px 4px 0 0;min-width:26px;position:relative;transition:height .15s;}
+.bar span{position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:.72rem;color:var(--muted);white-space:nowrap;}
+.bar small{position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:.7rem;color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Algebraic Methods — SVD &amp; Least Squares</h1>
+  <p class="sub mono">Technion 095296 · Complementary linear algebra · the SVD, algorithms &amp; applications · linear systems &amp; least squares</p>
+
+  <div class="tabs">
+    <div class="tab active" data-v="overview">Overview</div>
+    <div class="tab" data-v="svd">Live: SVD Image Compression</div>
+    <div class="tab" data-v="gs">Live: Gram–Schmidt + Projection</div>
+    <div class="tab" data-v="knnlab">Live: PCA + KNN Lab</div>
+    <div class="tab" data-v="rankk">Live: Rank-k SVD Matrix</div>
+    <div class="tab" data-v="knn">PCA + KNN</div>
+    <div class="tab" data-v="qr">QR / Gram–Schmidt</div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="view active" id="overview">
+    <div class="panel">
+      <h2>What the course covers</h2>
+      <p class="muted">From the repo README, the material is: complementary linear algebra, the
+      <b>Singular Value Decomposition</b> (algorithms and applications), and <b>linear systems &amp;
+      the least-squares problem</b> (algorithms and applications). The homework brings these to life
+      on real data — image compression, dimensionality reduction for classification, and
+      orthogonalization.</p>
+      <div style="margin-top:8px">
+        <span class="tag">SVD  A = UΣVᵀ</span>
+        <span class="tag">Rank-k approximation</span>
+        <span class="tag">PCA</span>
+        <span class="tag">Least squares</span>
+        <span class="tag">QR / Gram–Schmidt</span>
+        <span class="tag">Orthogonal projection</span>
+        <span class="tag">KNN classification</span>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="card"><h3>SVD image compression</h3><p>Truncating the SVD of each RGB channel to
+        rank k (HW04 · Q4.py) — with real before/after photos shipped in the repo.</p></div>
+      <div class="card"><h3>PCA + KNN on CIFAR-10</h3><p>Projecting 1024-D grayscale images onto the
+        top s singular vectors, then nearest-neighbor classification (HW04 · Q5.py).</p></div>
+      <div class="card"><h3>QR by Gram–Schmidt</h3><p>From-scratch QR factorization and orthogonal
+        projection onto a subspace (HW03 · HW03_Q8_sol.py).</p></div>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <h2>Repository contents</h2>
+      <ul style="margin:0;padding-left:18px" class="muted">
+        <li class="mono">HW04/Q4.py — rank-k SVD image compression + relative-error plot</li>
+        <li class="mono">HW04/Q5.py — CIFAR-10 grayscale → SVD/PCA projection → KNN</li>
+        <li class="mono">HW04 2/images/ — real input photo + 7 compressed outputs (k=5…200)</li>
+        <li class="mono">HW03/HW03_Q8_sol.py — Gram–Schmidt QR &amp; projection</li>
+        <li class="mono">HW01–HW05 *_sol.pdf — written analytical solutions</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- SVD -->
+  <div class="view" id="svd">
+    <div class="panel">
+      <h2>SVD rank-k image compression</h2>
+      <p class="muted">For each color channel A, the code computes the SVD and keeps only the top k
+      singular values: <span class="mono">Aₖ = Uₖ Σₖ Vₖᵀ</span>. These images are the <b>actual outputs
+      saved by the repo's Q4.py</b> at each k. Drag the slider to watch detail return as more
+      singular values are kept.</p>
+      <div class="note" style="margin:10px 0 14px">
+        Note: Q4.py adds Gaussian noise (σ=10) to the photo before compressing, so even the original
+        looks slightly grainy. Low k removes both noise and detail; high k restores the photo.
+      </div>
+      <div class="row" style="margin-bottom:6px">
+        <label>k = </label>
+        <input id="ksl" type="range" min="0" max="7" step="1" value="0" oninput="setK(this.value)">
+        <span class="mono" id="kval" style="color:var(--blue);font-size:1.1rem">5</span>
+        <span class="muted">singular values kept</span>
+      </div>
+      <div class="kbtns" id="kbtns"></div>
+      <div class="imgwrap">
+        <div class="imgcard">
+          <img src="images/GilZak.jpg" alt="original">
+          <div class="cap">original (full rank)</div>
+        </div>
+        <div class="imgcard">
+          <img id="kimg" src="images/GilZak_k=5.jpg" alt="compressed">
+          <div class="cap" id="kcap">rank-5 approximation</div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:16px;background:#0a0f1c">
+        <h2 style="font-size:1rem">The core routine (HW04/Q4.py)</h2>
+        <pre><span class="k">def</span> <span class="b">rank_k_approximation</span>(A, k):
+    U, S, Vt = np.linalg.svd(A, full_matrices=<span class="b">False</span>)
+    U_k  = U[:, :k]            <span class="c"># top-k left singular vectors</span>
+    S_k  = np.diag(S[:k])      <span class="c"># top-k singular values</span>
+    Vt_k = Vt[:k, :]           <span class="c"># top-k right singular vectors</span>
+    A_k  = np.dot(U_k, np.dot(S_k, Vt_k))
+    <span class="k">return</span> A_k, relative_error(S, k)
+
+<span class="k">def</span> <span class="b">relative_error</span>(S, k):
+    <span class="k">return</span> (S[k])**2 / S[0]**2   <span class="c"># (σ_k / σ_0)²</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIVE GRAM-SCHMIDT + PROJECTION -->
+  <div class="view" id="gs">
+    <div class="panel">
+      <h2>Gram–Schmidt orthonormalization + projection (HW03/HW03_Q8_sol.py)</h2>
+      <p class="muted">This runs the repo's <span class="mono">Grand_Shit</span> routine live in 2D.
+      Drag the two basis vectors <b style="color:#14B8A6">a₁</b> and <b style="color:#60A5FA">a₂</b> to
+      change the matrix A = [a₁ a₂]. Classical Gram–Schmidt builds an orthonormal Q exactly as the code
+      does: <span class="mono">z₀=a₁</span>, then subtracts projections
+      (<span class="mono">cal_proj</span>) and normalizes. Drag the white point
+      <b>x</b> to watch <span class="mono">Q·Qᵀ·x</span> (projection onto span A) and
+      <span class="mono">(I−Q·Qᵀ)·x</span> (the complement) recompute.</p>
+      <div class="legend">
+        <span><span class="swatch" style="background:#14B8A6"></span>a₁ (drag)</span>
+        <span><span class="swatch" style="background:#60A5FA"></span>a₂ (drag)</span>
+        <span><span class="swatch" style="background:#fbbf24"></span>q₁,q₂ (orthonormal Q)</span>
+        <span><span class="swatch" style="background:#fff"></span>x (drag)</span>
+        <span><span class="swatch" style="background:#F87171"></span>Q·Qᵀ·x (projection)</span>
+      </div>
+      <div class="row" style="margin-bottom:8px">
+        <button class="btn alt" onclick="gsReset()">Reset vectors</button>
+        <label><input type="checkbox" id="gsspan" checked onchange="gsDraw()"> show span(A)</label>
+      </div>
+      <canvas id="gscv" width="640" height="420"></canvas>
+      <div class="panel" style="margin-top:14px;background:#0a0f1c">
+        <h2 style="font-size:1rem">Live output of QR_division(A)</h2>
+        <pre id="gsout" class="out" style="border:none;background:none;padding:0"></pre>
+      </div>
+      <div class="note" style="margin-top:12px">Faithful to <span class="mono">Grand_Shit</span>,
+        <span class="mono">cal_proj</span>, <span class="mono">inner_mul</span>,
+        <span class="mono">normalize</span> and <span class="mono">find_R</span> in
+        <span class="mono">HW03/HW03_Q8_sol.py</span>. R is upper-triangular with
+        <span class="mono">R[i][i]=‖zᵢ‖</span> and <span class="mono">R[i][j]=⟨qᵢ,aⱼ⟩</span>, and the
+        projection uses the same <span class="mono">Q@Q.T@x</span> / <span class="mono">(I−Q@Q.T)@x</span>
+        identity the homework proves.</div>
+    </div>
+  </div>
+
+  <!-- LIVE PCA + KNN LAB -->
+  <div class="view" id="knnlab">
+    <div class="panel">
+      <h2>PCA + KNN classifier lab (HW04/Q5.py)</h2>
+      <p class="muted">A live, 2D version of the repo's <span class="mono">KNN</span> routine.
+      Class points are placed for you; <b>click empty space to add a query</b> (or drag the white
+      query point). The classifier uses the <i>exact</i> distance trick from the code —
+      <span class="mono">distances = train_norms − 2·(trainᵀ·query)</span> — then takes the
+      <span class="mono">k</span> nearest and a <span class="mono">np.bincount(...).argmax()</span>
+      majority vote. Background shows the decision regions.</p>
+      <div class="row" style="margin-bottom:8px">
+        <label>k neighbors =
+          <select id="knnk" onchange="knnDraw()">
+            <option>1</option><option selected>5</option><option>10</option>
+            <option>20</option><option>50</option>
+          </select>
+        </label>
+        <label><input type="checkbox" id="knnregions" checked onchange="knnDraw()"> decision regions</label>
+        <button class="btn alt" onclick="knnAdd()">+ random class point</button>
+        <button class="btn alt" onclick="knnClear()">reset points</button>
+      </div>
+      <div class="legend" id="knnlegend"></div>
+      <canvas id="knncv" width="640" height="420"></canvas>
+      <div class="panel" style="margin-top:14px;background:#0a0f1c">
+        <h2 style="font-size:1rem">Live KNN trace</h2>
+        <pre id="knnout" class="out" style="border:none;background:none;padding:0"></pre>
+      </div>
+      <div class="note" style="margin-top:12px">k-values
+        <span class="mono">[5,10,50,100,200]</span> are exactly the sweep in
+        <span class="mono">HW04/Q5.py</span>. The distance computation here mirrors the script's
+        <span class="mono">distances = train_norms - 2*inner_products[:, i]</span> (the
+        <span class="mono">‖t‖²</span> term is constant across train points and drops out of the
+        argsort), with the same <span class="mono">np.argsort(...)[:k]</span> +
+        <span class="mono">np.bincount(...).argmax()</span> vote.</div>
+    </div>
+  </div>
+
+  <!-- LIVE RANK-K SVD ON EDITABLE MATRIX -->
+  <div class="view" id="rankk">
+    <div class="panel">
+      <h2>Rank-k SVD of a small matrix (HW04/Q4.py)</h2>
+      <p class="muted">Edit the entries of A, then watch its singular values and the rank-k
+      reconstruction <span class="mono">Aₖ = UₖΣₖVₖᵀ</span> computed live (SVD via Jacobi rotations on
+      AᵀA — no libraries). The relative error reported is the repo's exact formula
+      <span class="mono">relative_error(S,k) = (σₖ/σ₀)²</span> from
+      <span class="mono">rank_k_approximation</span>.</p>
+      <div class="row" style="align-items:flex-start;gap:24px">
+        <div>
+          <div class="muted" style="margin-bottom:4px">A (edit any cell)</div>
+          <div id="matA" class="matgrid"></div>
+          <div class="row" style="margin-top:8px">
+            <button class="btn alt" onclick="rkRandom()">randomize</button>
+            <button class="btn alt" onclick="rkReset()">reset</button>
+          </div>
+        </div>
+        <div>
+          <div class="muted" style="margin-bottom:4px">singular values σᵢ</div>
+          <div class="barwrap" id="rkbars"></div>
+        </div>
+      </div>
+      <div class="row" style="margin:14px 0 6px">
+        <label>k = </label>
+        <input id="rksl" type="range" min="1" max="4" step="1" value="1" oninput="rkSetK(this.value)">
+        <span class="mono" id="rkval" style="color:var(--blue);font-size:1.1rem">1</span>
+        <span class="muted">components kept</span>
+      </div>
+      <div class="row" style="align-items:flex-start;gap:24px;margin-top:8px">
+        <div>
+          <div class="muted" style="margin-bottom:4px">Aₖ (rank-k reconstruction)</div>
+          <div id="matAk" class="matgrid"></div>
+        </div>
+        <div>
+          <div class="muted" style="margin-bottom:4px">live metrics</div>
+          <pre id="rkout" class="out" style="margin:0"></pre>
+        </div>
+      </div>
+      <div class="note" style="margin-top:12px">Mirrors <span class="mono">rank_k_approximation(A,k)</span>
+        and <span class="mono">relative_error(S,k)=(S[k])²/S[0]²</span> in
+        <span class="mono">HW04/Q4.py</span> — the same truncation
+        <span class="mono">U[:,:k]·diag(S[:k])·Vt[:k,:]</span> applied to each color channel of the
+        photo in the SVD-compression demo, here on a matrix you control.</div>
+    </div>
+  </div>
+
+  <!-- KNN -->
+  <div class="view" id="knn">
+    <div class="panel">
+      <h2>PCA dimensionality reduction + KNN (HW04/Q5.py)</h2>
+      <p class="muted">CIFAR-10 images are converted to grayscale (1024 pixels each), mean-centered,
+      and decomposed with the SVD. Keeping the top <span class="mono">s</span> left singular vectors
+      <span class="mono">Uₛ</span> gives a cheap "PCA" vectorization
+      <span class="mono">Uₛᵀ·X</span>; KNN then classifies in that low-dimensional space.</p>
+      <div class="grid" style="margin:6px 0 14px">
+        <div class="card"><h3>1 · Grayscale</h3><p>Each 32×32×3 image → 1024-vector via PIL
+          <span class="mono">convert('L')</span>.</p></div>
+        <div class="card"><h3>2 · Center + SVD</h3><p>Subtract the per-row mean, then
+          <span class="mono">svd(...)</span> → top-s components <span class="mono">Uₛ</span>.</p></div>
+        <div class="card"><h3>3 · Project</h3><p><span class="mono">cheap = Uₛᵀ · X</span> compresses
+          1024-D down to s-D.</p></div>
+        <div class="card"><h3>4 · KNN</h3><p>Distances via <span class="mono">‖t‖² − 2·tᵀx</span>;
+          majority vote over k nearest.</p></div>
+      </div>
+      <p class="muted">The script sweeps these values and prints train/test error for each:</p>
+      <table>
+        <tr><th>parameter</th><th>values swept (from the code)</th></tr>
+        <tr><td>s — # singular vectors</td><td>5, 10, 50, 100, 500, 1000</td></tr>
+        <tr><td>k — # neighbors</td><td>5, 10, 50, 100, 200</td></tr>
+      </table>
+      <div class="note" style="margin-top:14px">It also runs KNN on the original (un-projected) 1024-D
+      data as a baseline, to show the accuracy cost of compression. The CIFAR-10 batches are loaded
+      from disk and are not shipped in the repo, so the printed error numbers are produced at runtime,
+      not stored — they are not reproduced here to avoid inventing values.</div>
+      <div class="panel" style="margin-top:16px;background:#0a0f1c">
+        <h2 style="font-size:1rem">SVD projection (HW04/Q5.py)</h2>
+        <pre><span class="k">def</span> <span class="b">svd_decompose</span>(images, s):
+    images = images - np.mean(images, axis=<span class="b">1</span>)[:, np.newaxis]  <span class="c"># center</span>
+    U, _, _ = svd(images, full_matrices=<span class="b">False</span>)
+    <span class="k">return</span> U[:, :s]                 <span class="c"># first s principal components</span>
+
+<span class="c"># distance trick used inside KNN (norms − 2·inner products):</span>
+distances = train_norms - <span class="b">2</span>*inner_products[:, i]
+nearest   = np.argsort(distances)[:k]
+prediction = np.bincount(train_labels[nearest]).argmax()</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR -->
+  <div class="view" id="qr">
+    <div class="panel">
+      <h2>QR factorization by Gram–Schmidt (HW03/HW03_Q8_sol.py)</h2>
+      <p class="muted">A from-scratch QR: classical Gram–Schmidt orthogonalizes the columns of A into
+      an orthonormal Q, and R is recovered from the inner products. The exercise then uses Q to
+      <b>project a vector onto the subspace</b> spanned by A's columns (<span class="mono">Q·Qᵀ·x</span>)
+      and onto its complement (<span class="mono">(I − Q·Qᵀ)·x</span>).</p>
+      <pre><span class="k">def</span> <span class="b">QR_division</span>(A):
+    z, Q = Grand_Shit(A)        <span class="c"># Gram–Schmidt → orthonormal Q</span>
+    R = find_R(A, Q, z)
+    <span class="k">return</span> Q, R
+
+<span class="c"># Gram–Schmidt core:</span>
+z[0] = A[0]
+<span class="k">for</span> i <span class="k">in</span> range(1, len(A)):
+    series_sum = sum(cal_proj(z[j], A[i]) <span class="k">for</span> j <span class="k">in</span> range(i))
+    z[i] = A[i] - series_sum     <span class="c"># subtract projections onto previous</span>
+W = np.array([normalize(row) <span class="k">for</span> row <span class="k">in</span> z])   <span class="c"># normalize → Q</span>
+
+<span class="c"># applications computed on a 15×10 integer matrix M and vector x:</span>
+print(<span class="b">"part 2:"</span>, Q @ Q.T @ x)               <span class="c"># projection onto span(A)</span>
+print(<span class="b">"part 3"</span>, (np.eye(n) - Q @ Q.T) @ x)    <span class="c"># projection onto complement</span></pre>
+      <p class="muted" style="margin-top:10px">A worked 4×3 example matrix
+      <span class="mono">[[1,−1,4],[1,4,−2],[1,4,2],[1,−1,0]]</span> from a previous homework is also factorized
+      to check Q and R against the analytical solution.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active'); document.getElementById(t.dataset.v).classList.add('active');
+});
+const ks=[5,20,50,70,80,100,200,'full'];
+const kbtns=document.getElementById('kbtns');
+ks.forEach((k,i)=>{
+  const b=document.createElement('div'); b.className='kbtn'+(i===0?' active':'');
+  b.textContent='k='+k; b.onclick=()=>{document.getElementById('ksl').value=i;setK(i);};
+  kbtns.appendChild(b);
+});
+function setK(i){
+  i=+i; const k=ks[i];
+  document.getElementById('kval').textContent=k;
+  const img=document.getElementById('kimg'), cap=document.getElementById('kcap');
+  if(k==='full'){img.src='images/GilZak.jpg';cap.textContent='full-rank original';}
+  else{img.src='images/GilZak_k='+k+'.jpg';cap.textContent='rank-'+k+' approximation';}
+  document.querySelectorAll('.kbtn').forEach((b,j)=>b.classList.toggle('active',j===i));
+}
+
+/* ============================================================
+   Shared tiny linear-algebra helpers (faithful to repo logic)
+   ============================================================ */
+function innerMul(a,b){let s=0;for(let i=0;i<a.length;i++)s+=a[i]*b[i];return s;} // inner_mul
+function normalizeV(v){const n=Math.sqrt(innerMul(v,v));return n===0?v.map(_=>0):v.map(x=>x/n);} // normalize
+function fmt(x){return (Math.abs(x)<1e-9?0:x).toFixed(2);}
+
+/* ============================================================
+   DEMO 1 — Gram–Schmidt + projection (HW03/HW03_Q8_sol.py)
+   Runs Grand_Shit() in 2D: z0=a1, zi=ai-sum(cal_proj), Q=normalize(z)
+   ============================================================ */
+const gscv=document.getElementById('gscv'), gsx=gscv.getContext('2d');
+const GS0={a1:{x:120,y:-40},a2:{x:30,y:120},xp:{x:170,y:60}}; // model coords (y up)
+let GS=JSON.parse(JSON.stringify(GS0)), gsDrag=null;
+const GSorigin={x:gscv.width/2,y:gscv.height/2};
+function toScr(p){return {x:GSorigin.x+p.x,y:GSorigin.y-p.y};}
+function toMod(sx,sy){return {x:sx-GSorigin.x,y:GSorigin.y-sy};}
+// cal_proj(V1,V2): (<V1,V2>/<V1,V1>) * V1
+function calProj(V1,V2){const c=innerMul(V1,V2)/innerMul(V1,V1);return V1.map(v=>c*v);}
+function grandShit(A){ // A: array of columns a_i (each length n); replicates code's column logic
+  const z=[]; z[0]=A[0].slice();
+  for(let i=1;i<A.length;i++){
+    let series=A[i].map(_=>0);
+    for(let j=0;j<i;j++){const p=calProj(z[j],A[i]);series=series.map((v,t)=>v+p[t]);}
+    z[i]=A[i].map((v,t)=>v-series[t]);
+  }
+  const Q=z.map(normalizeV);
+  return {z,Q};
+}
+function gsReset(){GS=JSON.parse(JSON.stringify(GS0));gsDraw();}
+function gsArrow(p,col,lab,wide){
+  const o=toScr({x:0,y:0}),s=toScr(p);
+  gsx.strokeStyle=col;gsx.fillStyle=col;gsx.lineWidth=wide?3:2;
+  gsx.beginPath();gsx.moveTo(o.x,o.y);gsx.lineTo(s.x,s.y);gsx.stroke();
+  const ang=Math.atan2(s.y-o.y,s.x-o.x);
+  gsx.beginPath();gsx.moveTo(s.x,s.y);
+  gsx.lineTo(s.x-10*Math.cos(ang-0.4),s.y-10*Math.sin(ang-0.4));
+  gsx.lineTo(s.x-10*Math.cos(ang+0.4),s.y-10*Math.sin(ang+0.4));
+  gsx.closePath();gsx.fill();
+  if(lab){gsx.font='13px JetBrains Mono, monospace';gsx.fillText(lab,s.x+6,s.y-6);}
+}
+function gsDraw(){
+  gsx.clearRect(0,0,gscv.width,gscv.height);
+  // grid + axes
+  gsx.strokeStyle='#1b2740';gsx.lineWidth=1;
+  for(let gx=GSorigin.x%40;gx<gscv.width;gx+=40){gsx.beginPath();gsx.moveTo(gx,0);gsx.lineTo(gx,gscv.height);gsx.stroke();}
+  for(let gy=GSorigin.y%40;gy<gscv.height;gy+=40){gsx.beginPath();gsx.moveTo(0,gy);gsx.lineTo(gscv.width,gy);gsx.stroke();}
+  gsx.strokeStyle='#3a4a66';gsx.beginPath();gsx.moveTo(0,GSorigin.y);gsx.lineTo(gscv.width,GSorigin.y);
+  gsx.moveTo(GSorigin.x,0);gsx.lineTo(GSorigin.x,gscv.height);gsx.stroke();
+
+  const a1=[GS.a1.x,GS.a1.y], a2=[GS.a2.x,GS.a2.y];
+  const {z,Q}=grandShit([a1,a2]);
+  // span(A): if rank 2, whole plane (shade lightly); if ~rank1, draw the line
+  const det=a1[0]*a2[1]-a1[1]*a2[0];
+  if(document.getElementById('gsspan').checked){
+    if(Math.abs(det)>1e-6){gsx.fillStyle='rgba(20,184,166,0.06)';gsx.fillRect(0,0,gscv.width,gscv.height);}
+    else{ // degenerate: span is a line through a1
+      const d=normalizeV(a1),L=600;const p1=toScr({x:-d[0]*L,y:-d[1]*L}),p2=toScr({x:d[0]*L,y:d[1]*L});
+      gsx.strokeStyle='rgba(20,184,166,0.5)';gsx.setLineDash([6,5]);gsx.beginPath();
+      gsx.moveTo(p1.x,p1.y);gsx.lineTo(p2.x,p2.y);gsx.stroke();gsx.setLineDash([]);
+    }
+  }
+  // orthonormal q's scaled for visibility (x80) — show they're perpendicular & unit
+  const SC=80;
+  gsArrow({x:Q[0][0]*SC,y:Q[0][1]*SC},'#fbbf24','q₁');
+  if(Math.abs(det)>1e-6) gsArrow({x:Q[1][0]*SC,y:Q[1][1]*SC},'#fbbf24','q₂');
+  // basis vectors
+  gsArrow(GS.a1,'#14B8A6','a₁',true);
+  gsArrow(GS.a2,'#60A5FA','a₂',true);
+  // projection of x onto span(A): Q@Q.T@x  (Q here = [q1 q2] columns)
+  const xv=[GS.xp.x,GS.xp.y];
+  const cols=Math.abs(det)>1e-6?Q:[Q[0]]; // basis of the actual span
+  let proj=[0,0];
+  for(const q of cols){const c=innerMul(q,xv);proj=[proj[0]+c*q[0],proj[1]+c*q[1]];}
+  const comp=[xv[0]-proj[0],xv[1]-proj[1]];
+  // draw x, projection, residual
+  const sx=toScr(GS.xp), sp=toScr({x:proj[0],y:proj[1]});
+  gsx.strokeStyle='#64748b';gsx.setLineDash([4,4]);gsx.beginPath();
+  gsx.moveTo(sx.x,sx.y);gsx.lineTo(sp.x,sp.y);gsx.stroke();gsx.setLineDash([]);
+  gsArrow({x:proj[0],y:proj[1]},'#F87171','Q·Qᵀ·x');
+  gsx.fillStyle='#fff';gsx.beginPath();gsx.arc(sx.x,sx.y,6,0,7);gsx.fill();
+  gsx.fillStyle='#fff';gsx.font='13px JetBrains Mono, monospace';gsx.fillText('x',sx.x+8,sx.y-8);
+  gsx.fillStyle='#F87171';gsx.beginPath();gsx.arc(sp.x,sp.y,5,0,7);gsx.fill();
+
+  // text output: Q, R, projections
+  const R=[[0,0],[0,0]];
+  R[0][0]=Math.sqrt(innerMul(z[0],z[0]));
+  R[1][1]=Math.sqrt(innerMul(z[1],z[1]));
+  R[0][1]=innerMul(Q[0],a2); // <q1,a2>
+  const o=document.getElementById('gsout');
+  o.textContent=
+`A = [a₁ a₂] = [[${fmt(a1[0])}, ${fmt(a2[0])}],
+               [${fmt(a1[1])}, ${fmt(a2[1])}]]
+
+Q (orthonormal cols q₁,q₂):
+  q₁ = [${fmt(Q[0][0])}, ${fmt(Q[0][1])}]   ‖q₁‖=${fmt(Math.sqrt(innerMul(Q[0],Q[0])))}
+  q₂ = [${fmt(Q[1][0])}, ${fmt(Q[1][1])}]   ⟨q₁,q₂⟩=${fmt(innerMul(Q[0],Q[1]))}
+R (upper-triangular):
+  [[${fmt(R[0][0])}, ${fmt(R[0][1])}],
+   [0.00, ${fmt(R[1][1])}]]
+det(A)=${fmt(det)}  ${Math.abs(det)<1e-6?'→ a₂ ∥ a₁, span is a LINE':'→ span(A)=ℝ²'}
+
+projection  Q·Qᵀ·x      = [${fmt(proj[0])}, ${fmt(proj[1])}]
+complement (I−Q·Qᵀ)·x   = [${fmt(comp[0])}, ${fmt(comp[1])}]`;
+}
+function gsHit(p,sx,sy){const s=toScr(p);return Math.hypot(s.x-sx,s.y-sy)<14;}
+function gsPos(e){const r=gscv.getBoundingClientRect();const t=e.touches?e.touches[0]:e;
+  return {x:(t.clientX-r.left)*gscv.width/r.width,y:(t.clientY-r.top)*gscv.height/r.height};}
+function gsDown(e){const p=gsPos(e);
+  for(const key of ['xp','a1','a2']){if(gsHit(GS[key],p.x,p.y)){gsDrag=key;break;}}}
+function gsMove(e){if(!gsDrag)return;e.preventDefault();const p=gsPos(e);const m=toMod(p.x,p.y);
+  GS[gsDrag]={x:Math.round(m.x),y:Math.round(m.y)};gsDraw();}
+function gsUp(){gsDrag=null;}
+gscv.addEventListener('mousedown',gsDown);window.addEventListener('mousemove',gsMove);window.addEventListener('mouseup',gsUp);
+gscv.addEventListener('touchstart',gsDown,{passive:false});gscv.addEventListener('touchmove',gsMove,{passive:false});gscv.addEventListener('touchend',gsUp);
+gsDraw();
+
+/* ============================================================
+   DEMO 2 — PCA + KNN lab (HW04/Q5.py)
+   distances = train_norms - 2*inner_products ; argsort[:k] ; bincount.argmax
+   ============================================================ */
+const knncv=document.getElementById('knncv'), knx=knncv.getContext('2d');
+const KCOLORS=['#14B8A6','#60A5FA','#F87171','#fbbf24'];
+const KNAMES=['class 0','class 1','class 2','class 3'];
+let KPTS=[], KQ={x:340,y:200};
+function knnSeed(){
+  KPTS=[];
+  const seed=[[150,120,0],[180,150,0],[140,160,0],[200,110,0],
+              [470,140,1],[500,170,1],[440,120,1],[510,200,1],
+              [300,330,2],[330,300,2],[270,300,2],[340,350,2]];
+  seed.forEach(([x,y,c])=>KPTS.push({x,y,c}));
+}
+function knnLegend(){
+  const used=[...new Set(KPTS.map(p=>p.c))].sort();
+  document.getElementById('knnlegend').innerHTML=
+    used.map(c=>`<span><span class="swatch" style="background:${KCOLORS[c]}"></span>${KNAMES[c]}</span>`).join('')
+    +`<span><span class="swatch" style="background:#fff"></span>query (drag / click)</span>`;
+}
+// faithful KNN: distances = train_norms - 2 * (train · query); argsort[:k]; bincount.argmax
+function knnClassify(qx,qy,k){
+  const dist=KPTS.map(p=>{
+    const tnorm=p.x*p.x+p.y*p.y;            // train_norms (‖t‖²)
+    const inner=p.x*qx+p.y*qy;              // inner_products
+    return tnorm-2*inner;                   // distances (drops constant ‖q‖²)
+  });
+  const idx=dist.map((d,i)=>i).sort((a,b)=>dist[a]-dist[b]).slice(0,k); // np.argsort[:k]
+  const counts={};let best=-1,bestc=-1;
+  idx.forEach(i=>{const c=KPTS[i].c;counts[c]=(counts[c]||0)+1;});
+  // np.bincount(...).argmax(): lowest label wins ties
+  Object.keys(counts).map(Number).sort((a,b)=>a-b).forEach(c=>{if(counts[c]>bestc){bestc=counts[c];best=c;}});
+  return {label:best,idx,dist,counts};
+}
+function knnDraw(){
+  const k=Math.min(+document.getElementById('knnk').value,KPTS.length);
+  knx.clearRect(0,0,knncv.width,knncv.height);
+  if(document.getElementById('knnregions').checked && KPTS.length){
+    const step=10;
+    for(let x=0;x<knncv.width;x+=step)for(let y=0;y<knncv.height;y+=step){
+      const r=knnClassify(x+step/2,y+step/2,k);
+      const col=KCOLORS[r.label];
+      knx.fillStyle=hexA(col,0.13);knx.fillRect(x,y,step,step);
+    }
+  }
+  // highlight k nearest of the query
+  const r=KPTS.length?knnClassify(KQ.x,KQ.y,k):null;
+  if(r){r.idx.forEach(i=>{const p=KPTS[i];
+    knx.strokeStyle='#fff';knx.lineWidth=2;knx.beginPath();knx.arc(p.x,p.y,11,0,7);knx.stroke();
+    knx.strokeStyle=hexA('#ffffff',0.35);knx.beginPath();knx.moveTo(KQ.x,KQ.y);knx.lineTo(p.x,p.y);knx.stroke();
+  });}
+  KPTS.forEach(p=>{knx.fillStyle=KCOLORS[p.c];knx.beginPath();knx.arc(p.x,p.y,7,0,7);knx.fill();
+    knx.strokeStyle='#0a0f1c';knx.lineWidth=1.5;knx.stroke();});
+  if(r){knx.fillStyle=KCOLORS[r.label];knx.beginPath();knx.arc(KQ.x,KQ.y,10,0,7);knx.fill();
+    knx.strokeStyle='#fff';knx.lineWidth=2.5;knx.stroke();
+    knx.fillStyle='#fff';knx.beginPath();knx.arc(KQ.x,KQ.y,3,0,7);knx.fill();}
+  // trace
+  const out=document.getElementById('knnout');
+  if(r){
+    const votes=Object.keys(r.counts).map(Number).sort((a,b)=>a-b)
+      .map(c=>`${KNAMES[c]}:${r.counts[c]}`).join('  ');
+    out.textContent=
+`query x=(${Math.round(KQ.x)}, ${Math.round(KQ.y)}),  k=${k}
+distances[i] = ‖tᵢ‖² − 2·(tᵢ·x)   (np.argsort → ${k} nearest)
+nearest idx  = [${r.idx.join(', ')}]
+vote counts (np.bincount.argmax) = { ${votes} }
+→ prediction = ${KNAMES[r.label]}`;
+  } else out.textContent='add class points to classify.';
+  knnLegend();
+}
+function hexA(h,a){const n=parseInt(h.slice(1),16);return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`;}
+function knnClear(){knnSeed();knnDraw();}
+function knnAdd(){const c=Math.floor(Math.random()*4);
+  KPTS.push({x:40+Math.random()*(knncv.width-80),y:40+Math.random()*(knncv.height-80),c});knnDraw();}
+function knnPos(e){const r=knncv.getBoundingClientRect();const t=e.touches?e.touches[0]:e;
+  return {x:(t.clientX-r.left)*knncv.width/r.width,y:(t.clientY-r.top)*knncv.height/r.height};}
+let kqDrag=false;
+knncv.addEventListener('mousedown',e=>{const p=knnPos(e);
+  if(Math.hypot(p.x-KQ.x,p.y-KQ.y)<16){kqDrag=true;}else{KQ={x:p.x,y:p.y};knnDraw();}});
+window.addEventListener('mousemove',e=>{if(!kqDrag)return;const p=knnPos(e);KQ={x:p.x,y:p.y};knnDraw();});
+window.addEventListener('mouseup',()=>kqDrag=false);
+knncv.addEventListener('touchstart',e=>{const p=knnPos(e);
+  if(Math.hypot(p.x-KQ.x,p.y-KQ.y)<24){kqDrag=true;}else{KQ={x:p.x,y:p.y};knnDraw();}},{passive:true});
+knncv.addEventListener('touchmove',e=>{if(!kqDrag)return;e.preventDefault();const p=knnPos(e);KQ={x:p.x,y:p.y};knnDraw();},{passive:false});
+knncv.addEventListener('touchend',()=>kqDrag=false);
+knnSeed();knnDraw();
+
+/* ============================================================
+   DEMO 3 — Rank-k SVD on editable matrix (HW04/Q4.py)
+   SVD via Jacobi eigen-decomposition of AᵀA (no libraries)
+   relative_error(S,k) = (S[k])²/S[0]²
+   ============================================================ */
+const RK0=[[4,0,1,2],[0,3,2,1],[2,1,3,0],[1,2,0,4]];
+let RKA=RK0.map(r=>r.slice()), rkK=1, rkSVDcache=null;
+// Jacobi eigenvalue decomposition of symmetric matrix S -> {vals, vecs(columns)}
+function jacobiEig(S){
+  const n=S.length;let A=S.map(r=>r.slice());
+  let V=Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>i===j?1:0));
+  for(let sweep=0;sweep<100;sweep++){
+    let off=0;for(let p=0;p<n;p++)for(let q=p+1;q<n;q++)off+=A[p][q]*A[p][q];
+    if(off<1e-18)break;
+    for(let p=0;p<n;p++)for(let q=p+1;q<n;q++){
+      if(Math.abs(A[p][q])<1e-15)continue;
+      const phi=0.5*Math.atan2(2*A[p][q],A[q][q]-A[p][p]);
+      const c=Math.cos(phi),s=Math.sin(phi);
+      for(let i=0;i<n;i++){const aip=A[i][p],aiq=A[i][q];A[i][p]=c*aip-s*aiq;A[i][q]=s*aip+c*aiq;}
+      for(let i=0;i<n;i++){const apinew=A[p][i],aqinew=A[q][i];A[p][i]=c*apinew-s*aqinew;A[q][i]=s*apinew+c*aqinew;}
+      for(let i=0;i<n;i++){const vip=V[i][p],viq=V[i][q];V[i][p]=c*vip-s*viq;V[i][q]=s*vip+c*viq;}
+    }
+  }
+  const vals=A.map((r,i)=>r[i]);
+  return {vals,V};
+}
+function matMul(A,B){const n=A.length,m=B[0].length,p=B.length;
+  const C=Array.from({length:n},()=>Array(m).fill(0));
+  for(let i=0;i<n;i++)for(let j=0;j<m;j++){let s=0;for(let t=0;t<p;t++)s+=A[i][t]*B[t][j];C[i][j]=s;}return C;}
+function transpose(A){return A[0].map((_,j)=>A.map(r=>r[j]));}
+function computeSVD(A){
+  const At=transpose(A), AtA=matMul(At,A);
+  let {vals,V}=jacobiEig(AtA);
+  // sort by eigenvalue desc
+  const order=vals.map((v,i)=>i).sort((a,b)=>vals[b]-vals[a]);
+  const sigma=order.map(i=>Math.sqrt(Math.max(vals[i],0)));
+  const n=A.length;
+  const Vs=order.map(i=>V.map(row=>row[i])); // right sing vectors (rows = vectors)
+  // U_j = A v_j / sigma_j
+  const U=order.map((_,idx)=>{
+    const v=Vs[idx];const Av=A.map(row=>innerMul(row,v));
+    const s=sigma[idx];return s>1e-9?Av.map(x=>x/s):Av.map(_=>0);
+  });
+  return {sigma,U,V:Vs};
+}
+function rankKApprox(svd,A,k){ // mirrors rank_k_approximation
+  const n=A.length,m=A[0].length;
+  const Ak=Array.from({length:n},()=>Array(m).fill(0));
+  for(let t=0;t<k;t++){const s=svd.sigma[t],u=svd.U[t],v=svd.V[t];
+    for(let i=0;i<n;i++)for(let j=0;j<m;j++)Ak[i][j]+=s*u[i]*v[j];}
+  return Ak;
+}
+function buildMatInput(id,A,editable){
+  const g=document.getElementById(id);g.innerHTML='';
+  g.style.gridTemplateColumns=`repeat(${A[0].length},auto)`;
+  A.forEach((row,i)=>row.forEach((val,j)=>{
+    if(editable){const inp=document.createElement('input');inp.value=val;
+      inp.oninput=()=>{const v=parseFloat(inp.value);if(!isNaN(v)){RKA[i][j]=v;rkUpdate();}};
+      g.appendChild(inp);}
+    else{const d=document.createElement('div');d.textContent=fmt(val);
+      d.style.cssText='width:46px;padding:5px 4px;text-align:center;color:#94A3B8;font-size:.82rem;';
+      g.appendChild(d);}
+  }));
+}
+function rkUpdate(){
+  rkSVDcache=computeSVD(RKA);
+  const sig=rkSVDcache.sigma;
+  // bars
+  const bw=document.getElementById('rkbars');bw.innerHTML='';
+  const maxS=Math.max(...sig,1e-9);
+  sig.forEach((s,i)=>{const b=document.createElement('div');b.className='bar';
+    b.style.height=Math.max(2,s/maxS*88)+'px';
+    b.innerHTML=`<span>${fmt(s)}</span><small>σ${i}</small>`;bw.appendChild(b);});
+  const Ak=rankKApprox(rkSVDcache,RKA,rkK);
+  buildMatInput('matAk',Ak,false);
+  // metrics: relative_error(S,k)=(S[k])²/S[0]²  (guard k<n)
+  const n=sig.length;
+  const relErr = rkK<n ? (sig[rkK]*sig[rkK])/(sig[0]*sig[0]) : 0;
+  // Frobenius reconstruction error ‖A-Ak‖_F = sqrt(sum_{i>=k} σ_i²)
+  let tail=0;for(let i=rkK;i<n;i++)tail+=sig[i]*sig[i];
+  const froErr=Math.sqrt(tail);
+  let froA=0;sig.forEach(s=>froA+=s*s);froA=Math.sqrt(froA);
+  document.getElementById('rkout').textContent=
+`σ = [${sig.map(fmt).join(', ')}]
+numerical rank = ${sig.filter(s=>s>1e-6).length}
+
+k = ${rkK}
+relative_error(S,k) = (σ${rkK}/σ0)² = ${rkK<n?fmt(relErr):'0.00 (k=rank)'}
+‖A−Aₖ‖_F  = ${fmt(froErr)}
+‖A−Aₖ‖_F / ‖A‖_F = ${fmt(froA>0?froErr/froA:0)}`;
+}
+function rkSetK(v){rkK=+v;document.getElementById('rkval').textContent=rkK;rkUpdate();}
+function rkRandom(){RKA=RKA.map(r=>r.map(()=>Math.floor(Math.random()*9)));buildMatInput('matA',RKA,true);rkUpdate();}
+function rkReset(){RKA=RK0.map(r=>r.slice());buildMatInput('matA',RKA,true);rkUpdate();}
+buildMatInput('matA',RKA,true);
+document.getElementById('rksl').max=RKA.length;
+rkUpdate();
+</script>
+</body>
+</html>

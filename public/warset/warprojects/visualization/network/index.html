@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Warset — Conflict Network Explorer</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0c10;--panel:#111318;--border:#1e2230;--accent:#a78bfa;
+  --gold:#f5a623;--blue:#4a9eff;--red:#e8453c;--green:#3ecf8e;
+  --text:#e8eaf0;--muted:#6b7280;--card:#161923;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+
+/* ── Header ── */
+header{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0;z-index:10}
+.logo{display:flex;align-items:center;gap:10px}
+.logo h1{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--text)}
+.logo span{background:var(--accent);color:#0a0c10;font-size:.65rem;font-weight:700;padding:2px 6px;border-radius:3px;letter-spacing:.05em}
+.back-link{font-size:.78rem;color:var(--muted);text-decoration:none;transition:color .2s}
+.back-link:hover{color:var(--accent)}
+
+/* ── Layout ── */
+.main{display:flex;flex:1;overflow:hidden}
+#network-container{flex:1;position:relative;background:#06080c;overflow:hidden}
+
+/* ── Sidebar ── */
+.sidebar{width:320px;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.sidebar-section{padding:14px 16px;border-bottom:1px solid var(--border)}
+.sidebar-section h3{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+
+/* Controls & Search */
+.input-row{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.input-row label{font-size:.72rem;color:var(--muted)}
+select,input[type=text]{width:100%;background:#161923;border:1px solid var(--border);color:var(--text);font-size:.78rem;border-radius:6px;padding:6px 10px;outline:none}
+select:focus,input[type=text]:focus{border-color:var(--accent)}
+input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
+
+.slider-val{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted)}
+
+/* Actor/War details */
+.details-section{flex:1;overflow-y:auto;padding:16px}
+.details-section::-webkit-scrollbar{width:4px}
+.details-section::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.actor-title{font-size:1.1rem;font-weight:600;color:var(--accent);margin-bottom:8px}
+.actor-stats{font-size:.72rem;color:var(--muted);margin-bottom:15px;display:flex;gap:12px}
+.actor-stats span strong{color:var(--text)}
+
+.war-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;cursor:pointer;transition:border-color .2s}
+.war-card:hover{border-color:var(--accent)}
+.war-name{font-size:.8rem;font-weight:500;color:var(--text)}
+.war-meta{font-size:.68rem;color:var(--muted);margin-top:4px}
+
+/* ── Tooltip ── */
+#tooltip{position:fixed;background:rgba(10,12,16,.96);border:1px solid var(--border);border-radius:8px;padding:10px;pointer-events:none;z-index:1000;display:none;font-size:.75rem;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+
+/* ── SVG Network elements ── */
+svg{width:100%;height:100%;display:block}
+.node{cursor:pointer;stroke:#0a0c10;stroke-width:1.5;transition:fill-opacity .2s,stroke-width .2s}
+.node:hover{stroke:#fff;stroke-width:2}
+.link{stroke-opacity:.25;transition:stroke-opacity .2s,stroke-width .2s}
+.node-label{font-size:.65rem;fill:var(--text);pointer-events:none;text-anchor:middle;font-weight:500;text-shadow:0 1px 2px #000, 0 -1px 2px #000}
+</style>
+</head>
+<body>
+
+
+<div class="main">
+  <!-- Network Canvas -->
+  <div id="network-container">
+    <svg id="network-svg"></svg>
+    <div id="tooltip"></div>
+  </div>
+
+  <!-- Control Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <h3>Controls & Search</h3>
+      <div class="input-row">
+        <label for="search-actor">Search Actor</label>
+        <input type="text" id="search-actor" placeholder="Search state, empire, rebel group...">
+      </div>
+      <div class="input-row">
+        <label for="filter-period">Historical Period</label>
+        <select id="filter-period">
+          <option value="">All Periods</option>
+          <option>Antiquity</option>
+          <option>Late Antiquity</option>
+          <option>Medieval</option>
+          <option>Early Modern</option>
+          <option>Industrial Age</option>
+          <option>World Wars Era</option>
+          <option>Cold War</option>
+          <option>Contemporary</option>
+        </select>
+      </div>
+      <div class="input-row">
+        <div class="slider-val">
+          <label>Min Conflicts per Actor</label>
+          <span id="min-confl-val">2</span>
+        </div>
+        <input type="range" id="min-confl" min="1" max="15" value="2">
+      </div>
+      <div class="input-row">
+        <div class="slider-val">
+          <label>Link Strength</label>
+          <span id="link-dist-val">40</span>
+        </div>
+        <input type="range" id="link-dist" min="10" max="120" value="40">
+      </div>
+    </div>
+
+    <!-- Node/Relationship details -->
+    <div class="details-section" id="details-panel">
+      <div style="color:var(--muted);text-align:center;margin-top:40px;font-size:.8rem">
+        Click any node to view history,<br>rivalries, and conflict records.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- D3.js -->
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="../wars.js?v=278add4e"></script>
+<script>
+// ─── Constants ──────────────────────────────────────────────────────────────
+const COLORS = {
+  State: "#4a9eff",
+  Empire: "#a78bfa",
+  "Rebel Group": "#f5a623",
+  "Tribal Confederation": "#3ecf8e",
+  "City-State": "#e8453c",
+  Other: "#6b7280"
+};
+
+// ─── State ─────────────────────────────────────────────────────────────────
+let allWars = [];
+let networkData = { nodes: [], links: [] };
+let activePeriod = "";
+let minConflicts = 2;
+let linkDistance = 40;
+let selectedActor = null;
+let simulation = null;
+
+// ─── Load Data ─────────────────────────────────────────────────────────────
+try {
+  if (typeof warsData === 'undefined') {
+    throw new Error("warsData is not defined. Ensure wars.js is present.");
+  }
+  allWars = warsData;
+  initControls();
+  buildAndRenderNetwork();
+} catch (err) {
+  document.getElementById("network-container").innerHTML = `
+    <div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111318;padding:30px;border-radius:12px;border:1px solid #e8453c;color:#e8eaf0;text-align:center">
+      <h2 style="color:#e8453c;margin-bottom:10px">⚠ Data Load Error</h2>
+      <p style="color:#6b7280;font-size:.85rem">Make sure wars.js is generated.<br>${err.message}</p>
+    </div>`;
+}
+
+function initControls() {
+  document.getElementById("filter-period").addEventListener("change", e => {
+    activePeriod = e.target.value;
+    buildAndRenderNetwork();
+  });
+
+  const minConflInput = document.getElementById("min-confl");
+  minConflInput.addEventListener("input", e => {
+    minConflicts = parseInt(e.target.value);
+    document.getElementById("min-confl-val").textContent = minConflicts;
+    buildAndRenderNetwork();
+  });
+
+  const linkDistInput = document.getElementById("link-dist");
+  linkDistInput.addEventListener("input", e => {
+    linkDistance = parseInt(e.target.value);
+    document.getElementById("link-dist-val").textContent = linkDistance;
+    if (simulation) {
+      simulation.force("link").distance(linkDistance);
+      simulation.alpha(0.3).restart();
+    }
+  });
+
+  // Search autocomplete / jump
+  document.getElementById("search-actor").addEventListener("input", e => {
+    const term = e.target.value.toLowerCase();
+    if (!term) return;
+    
+    const matchedNode = d3.selectAll(".node").filter(d => d.id.toLowerCase().includes(term)).datum();
+    if (matchedNode) {
+      selectActorNode(matchedNode);
+    }
+  });
+}
+
+// ─── Network Builder ───────────────────────────────────────────────────────
+function buildAndRenderNetwork() {
+  // 1. Filter wars by period
+  const wars = activePeriod ? allWars.filter(w => w.period === activePeriod) : allWars;
+
+  // 2. Map conflicts to actors and build counts
+  const actorMap = new Map();
+  const rawLinks = [];
+
+  wars.forEach(w => {
+    if (!w.aggressors || !w.defenders) return;
+    
+    // Parse aggressors and defenders
+    const aggs = w.aggressors.split(";").map(s => s.trim()).filter(Boolean);
+    const defs = w.defenders.split(";").map(s => s.trim()).filter(Boolean);
+
+    // Track how many conflicts each actor has
+    const allBelligerents = [...aggs, ...defs];
+    allBelligerents.forEach(actor => {
+      if (!actorMap.has(actor)) {
+        actorMap.set(actor, { id: actor, conflicts: 0, warsList: [] });
+      }
+      const data = actorMap.get(actor);
+      data.conflicts++;
+      data.warsList.push(w);
+    });
+
+    // Create combinations of opposing links
+    aggs.forEach(agg => {
+      defs.forEach(def => {
+        // Sort keys to handle undirected graph consistently
+        const pair = [agg, def].sort();
+        rawLinks.push({
+          source: pair[0],
+          target: pair[1],
+          war: w
+        });
+      });
+    });
+  });
+
+  // Filter nodes by minConflicts threshold
+  const nodes = [];
+  actorMap.forEach((val, key) => {
+    if (val.conflicts >= minConflicts) {
+      nodes.push(val);
+    }
+  });
+
+  const nodeIds = new Set(nodes.map(n => n.id));
+
+  // Consolidate links (sum weights of multiple wars between same actors)
+  const linkMap = new Map();
+  rawLinks.forEach(link => {
+    if (nodeIds.has(link.source) && nodeIds.has(link.target)) {
+      const key = `${link.source}---${link.target}`;
+      if (!linkMap.has(key)) {
+        linkMap.set(key, {
+          source: link.source,
+          target: link.target,
+          weight: 0,
+          wars: []
+        });
+      }
+      const data = linkMap.get(key);
+      data.weight++;
+      data.wars.push(link.war);
+    }
+  });
+
+  const links = Array.from(linkMap.values());
+
+  renderNetwork(nodes, links);
+}
+
+// ─── D3 Render ─────────────────────────────────────────────────────────────
+function renderNetwork(nodes, links) {
+  const container = document.getElementById("network-container");
+  const W = container.clientWidth, H = container.clientHeight;
+
+  const svg = d3.select("#network-svg");
+  svg.selectAll("*").remove(); // clear canvas
+
+  const g = svg.append("g");
+
+  // Zoom behaviour
+  const zoom = d3.zoom().scaleExtent([0.2, 5]).on("zoom", e => {
+    g.attr("transform", e.transform);
+  });
+  svg.call(zoom);
+
+  // Stop previous simulation
+  if (simulation) simulation.stop();
+
+  // Create forces
+  simulation = d3.forceSimulation(nodes)
+    .force("link", d3.forceLink(links).id(d => d.id).distance(linkDistance))
+    .force("charge", d3.forceManyBody().strength(-150))
+    .force("center", d3.forceCenter(W / 2, H / 2))
+    .force("collide", d3.forceCollide().radius(d => Math.sqrt(d.conflicts) * 3 + 8));
+
+  // Render links
+  const link = g.append("g")
+    .attr("class", "links")
+    .selectAll("line")
+    .data(links)
+    .join("line")
+      .attr("class", "link")
+      .attr("stroke", "#4b5563")
+      .attr("stroke-width", d => Math.min(6, d.weight))
+      .attr("stroke-opacity", 0.3)
+      .on("mouseenter", (e, d) => {
+        d3.select(e.target).attr("stroke-opacity", 0.8).attr("stroke", COLORS.Empire);
+        const tooltip = document.getElementById("tooltip");
+        tooltip.style.display = "block";
+        tooltip.style.left = (e.clientX + 10) + "px";
+        tooltip.style.top = (e.clientY - 10) + "px";
+        tooltip.innerHTML = `
+          <strong>Conflicts between:</strong><br>
+          ${d.source.id} & ${d.target.id}<br>
+          <em>${d.weight} war(s)</em>
+        `;
+      })
+      .on("mouseleave", (e, d) => {
+        d3.select(e.target).attr("stroke-opacity", 0.3).attr("stroke", "#4b5563");
+        document.getElementById("tooltip").style.display = "none";
+      });
+
+  // Render nodes
+  const node = g.append("g")
+    .attr("class", "nodes")
+    .selectAll("circle")
+    .data(nodes)
+    .join("circle")
+      .attr("class", "node")
+      .attr("r", d => Math.sqrt(d.conflicts) * 2.5 + 4)
+      .attr("fill", d => COLORS.State)
+      .on("click", (e, d) => {
+        selectActorNode(d);
+        e.stopPropagation();
+      })
+      .on("mouseenter", (e, d) => {
+        const tooltip = document.getElementById("tooltip");
+        tooltip.style.display = "block";
+        tooltip.style.left = (e.clientX + 12) + "px";
+        tooltip.style.top = (e.clientY - 10) + "px";
+        tooltip.innerHTML = `
+          <strong>${d.id}</strong><br>
+          ${d.conflicts} conflict(s)
+        `;
+      })
+      .on("mouseleave", () => {
+        document.getElementById("tooltip").style.display = "none";
+      });
+
+  // Add drag handler
+  node.call(d3.drag()
+    .on("start", dragstarted)
+    .on("drag", dragged)
+    .on("end", dragended));
+
+  // Render Labels for major nodes
+  const label = g.append("g")
+    .attr("class", "labels")
+    .selectAll("text")
+    .data(nodes.filter(n => n.conflicts >= minConflicts * 1.5))
+    .join("text")
+      .attr("class", "node-label")
+      .attr("dy", d => -(Math.sqrt(d.conflicts) * 2.5 + 7))
+      .text(d => d.id);
+
+  // Simulation tick
+  simulation.on("tick", () => {
+    link
+      .attr("x1", d => d.source.x)
+      .attr("y1", d => d.source.y)
+      .attr("x2", d => d.target.x)
+      .attr("y2", d => d.target.y);
+
+    node
+      .attr("cx", d => d.x)
+      .attr("cy", d => d.y);
+
+    label
+      .attr("x", d => d.x)
+      .attr("y", d => d.y);
+  });
+
+  // Drag functions
+  function dragstarted(e, d) {
+    if (!e.active) simulation.alphaTarget(0.3).restart();
+    d.fx = d.x;
+    d.fy = d.y;
+  }
+  function dragged(e, d) {
+    d.fx = e.x;
+    d.fy = e.y;
+  }
+  function dragended(e, d) {
+    if (!e.active) simulation.alphaTarget(0);
+    d.fx = null;
+    d.fy = null;
+  }
+
+  // Restore selection highlighting if applicable
+  if (selectedActor) {
+    highlightSelectedNode();
+  }
+
+  // SVG click clears highlights
+  svg.on("click", () => {
+    selectedActor = null;
+    d3.selectAll(".node").attr("fill-opacity", 1).attr("stroke", "#0a0c10").attr("stroke-width", 1.5);
+    d3.selectAll(".link").attr("stroke-opacity", 0.3).attr("stroke", "#4b5563");
+    document.getElementById("details-panel").innerHTML = `
+      <div style="color:var(--muted);text-align:center;margin-top:40px;font-size:.8rem">
+        Click any node to view history,<br>rivalries, and conflict records.
+      </div>`;
+  });
+}
+
+// ─── Selection details ─────────────────────────────────────────────────────
+function selectActorNode(d) {
+  selectedActor = d.id;
+  highlightSelectedNode();
+  
+  // Update sidebar panel
+  const panel = document.getElementById("details-panel");
+  const uniqueAdversaries = new Set();
+  
+  // Find adversarial actors connected to this node
+  d3.selectAll(".link").each(l => {
+    if (l.source.id === d.id) uniqueAdversaries.add(l.target.id);
+    if (l.target.id === d.id) uniqueAdversaries.add(l.source.id);
+  });
+
+  const sortedWars = [...d.warsList].sort((a,b) => b.start - a.start);
+
+  panel.innerHTML = `
+    <div class="actor-title">${d.id}</div>
+    <div class="actor-stats">
+      <span>Total wars: <strong>${d.conflicts}</strong></span>
+      <span>Rivals: <strong>${uniqueAdversaries.size}</strong></span>
+    </div>
+    
+    <div style="font-size:.68rem;text-transform:uppercase;color:var(--muted);margin-bottom:8px;letter-spacing:.05em">Adversaries:</div>
+    <div style="font-size:.75rem;color:var(--text);margin-bottom:20px;line-height:1.4">
+      ${Array.from(uniqueAdversaries).slice(0, 10).join(", ") || "None recorded"}
+      ${uniqueAdversaries.size > 10 ? "..." : ""}
+    </div>
+
+    <div style="font-size:.68rem;text-transform:uppercase;color:var(--muted);margin-bottom:10px;letter-spacing:.05em">Conflict Log:</div>
+    <div class="war-list">
+      ${sortedWars.map(w => `
+        <div class="war-card" onclick="alertWar('${w.name}', '${w.period}', '${w.type}')">
+          <div class="war-name">${w.name}</div>
+          <div class="war-meta">${w.start < 0 ? Math.abs(w.start)+' BCE' : w.start+' CE'} · ${w.type}</div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function highlightSelectedNode() {
+  d3.selectAll(".node").attr("fill-opacity", n => n.id === selectedActor ? 1 : 0.25);
+  
+  // Highlight links connected to selection
+  d3.selectAll(".link")
+    .attr("stroke-opacity", l => (l.source.id === selectedActor || l.target.id === selectedActor) ? 0.95 : 0.08)
+    .attr("stroke", l => (l.source.id === selectedActor || l.target.id === selectedActor) ? COLORS.Empire : "#4b5563");
+    
+  // Highlight neighbor nodes
+  const neighbors = new Set();
+  d3.selectAll(".link").each(l => {
+    if (l.source.id === selectedActor) neighbors.add(l.target.id);
+    if (l.target.id === selectedActor) neighbors.add(l.source.id);
+  });
+  d3.selectAll(".node").attr("fill-opacity", n => (n.id === selectedActor || neighbors.has(n.id)) ? 1 : 0.15);
+}
+
+function alertWar(name, period, type) {
+  alert(`Conflict Detail:\n\nName: ${name}\nPeriod: ${period}\nType: ${type}`);
+}
+</script>
+</body>
+</html>

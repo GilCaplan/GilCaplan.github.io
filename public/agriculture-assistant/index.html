@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Agri-Advisor Pro — agent walkthrough</title>
+<style>
+  :root{--bg:#0B1220;--surface:#0F172A;--panel:#1E293B;--line:#243044;--text:#E2E8F0;--muted:#94A3B8;--accent:#14B8A6;--ocean:#60A5FA;--spice:#F87171;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;line-height:1.5;padding:20px}
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+  h1{font-size:1.5rem}h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:10px}
+  .muted{color:var(--muted)} a{color:var(--ocean)}
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:16px 0 20px;flex-wrap:wrap}
+  .tab{padding:8px 14px;font-size:.85rem;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent}
+  .tab.active{color:var(--accent);border-color:var(--accent)}
+  .panel{background:rgba(30,41,59,.5);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+  .pill{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:.72rem;color:var(--muted)}
+  .hidden{display:none}
+  .ex-btn{display:block;width:100%;text-align:right;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;color:var(--text);cursor:pointer;margin-bottom:8px;font-size:.95rem;direction:rtl}
+  .ex-btn:hover{border-color:var(--accent)}
+  .ex-btn.active{border-color:var(--accent);background:rgba(20,184,166,.08)}
+  .step{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:10px 12px;margin-bottom:8px;opacity:0;transform:translateY(6px);transition:all .35s}
+  .step.show{opacity:1;transform:none}
+  .step .mod{font-weight:600;font-size:.82rem}
+  .step .mod.weather{color:var(--ocean)}.step .mod.rag{color:var(--accent)}.step .mod.llm{color:var(--spice)}
+  .kv{font-size:.76rem;color:var(--muted);margin-top:4px;word-break:break-word}
+  .answer{background:rgba(20,184,166,.08);border:1px solid rgba(20,184,166,.3);border-radius:10px;padding:12px;margin-top:10px;direction:rtl}
+  .tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+  .tool{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px}
+  table{width:100%;border-collapse:collapse;font-size:.82rem}
+  td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+  td:first-child{color:var(--muted);white-space:nowrap}
+  img{max-width:100%;border:1px solid var(--line);border-radius:10px;background:#fff}
+  /* ---- live demo chat widget ---- */
+  .chatwrap{display:flex;flex-direction:column;gap:10px}
+  .keybar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .keybar select,.keybar input{background:var(--surface);border:1px solid var(--line);border-radius:8px;color:var(--text);padding:8px 10px;font-size:.85rem;outline:none}
+  .keybar input#apikey{flex:1;min-width:200px}
+  .keybar select:focus,.keybar input:focus{border-color:var(--accent)}
+  .remember{font-size:.75rem;color:var(--muted);display:flex;gap:4px;align-items:center}
+  .privacy{font-size:.72rem}
+  .chatlog{height:360px;overflow-y:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
+  .chatlog .empty{text-align:center;margin:auto}
+  .msg{max-width:85%;padding:9px 13px;border-radius:14px;font-size:.9rem;white-space:pre-wrap;line-height:1.5}
+  .msg.user{align-self:flex-end;background:rgba(20,184,166,.15);color:var(--text)}
+  .msg.bot{align-self:flex-start;background:var(--panel);color:var(--text)}
+  .msg.rtl{direction:rtl;text-align:right}
+  .suggest{display:flex;gap:6px;flex-wrap:wrap}
+  .suggest button{background:var(--surface);border:1px solid var(--line);border-radius:999px;color:var(--muted);padding:5px 11px;font-size:.75rem;cursor:pointer;direction:rtl}
+  .suggest button:hover{border-color:var(--accent);color:var(--text)}
+  .composer{display:flex;gap:8px}
+  .composer input{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:8px;color:var(--text);padding:10px 12px;font-size:.9rem;outline:none}
+  .composer input:focus{border-color:var(--accent)}
+  .btn{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:8px;padding:9px 16px;font-size:.85rem;cursor:pointer}
+  .btn.primary{background:var(--accent);color:#04201c;border-color:var(--accent);font-weight:600}
+  .btn:disabled{opacity:.55;cursor:default}
+  .err{color:var(--spice)!important}
+</style>
+</head>
+<body>
+<div style="max-width:980px;margin:0 auto">
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <h1>Agri-Advisor Pro</h1>
+    <span class="pill">LangChain</span><span class="pill">FastAPI</span><span class="pill">Ollama · llama3.1</span><span class="pill">FAISS RAG</span>
+  </div>
+  <p class="muted" style="margin-top:6px">An autonomous agricultural advisory agent for Israeli farmers. It combines real meteorological data for 16 Israeli locations with a RAG knowledge base over agricultural manuals to give location- and date-aware advice <b>in Hebrew</b>. Runs fully locally on Ollama — no API keys.</p>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="examples">Agent walkthrough</div>
+    <div class="tab" data-tab="live">Live demo (BYO key)</div>
+    <div class="tab" data-tab="tools">Tools</div>
+    <div class="tab" data-tab="arch">Architecture</div>
+    <div class="tab" data-tab="about">About</div>
+  </div>
+
+  <!-- WALKTHROUGH (real /api/agent_info examples) -->
+  <section id="examples">
+    <div class="panel">
+      <h2>Real worked examples — click to replay the agent's steps</h2>
+      <p class="muted" style="font-size:.78rem;margin-bottom:12px">These are the actual examples returned by the project's <span class="mono">/api/agent_info</span> endpoint — each shows the tool-call trace (WeatherTool → AgriKnowledgeBase → AgentLLM) and the agent's Hebrew answer.</p>
+      <div id="exButtons"></div>
+    </div>
+    <div class="panel">
+      <h2>Step trace</h2>
+      <div id="trace"><p class="muted" style="font-size:.85rem">Pick an example above.</p></div>
+    </div>
+  </section>
+
+  <!-- LIVE DEMO (BYO key) -->
+  <section id="live" class="hidden">
+    <div class="panel">
+      <h2>Live demo — talk to Agri-Advisor Pro</h2>
+      <p class="muted" style="font-size:.82rem;margin-bottom:4px">A live, in-browser emulation of the agent using <b>your own</b> OpenAI or Anthropic key. The real app runs locally on Ollama (llama3.1:8b) with a FAISS RAG knowledge base and a weather DB for 16 Israeli locations — that runs on a laptop, not on this static site. Here the model is prompted to behave the same way: it reasons over weather, then agronomy knowledge, then answers <b>in Hebrew</b> (or English if you write in English). Without the local weather DB it estimates typical seasonal conditions for the named Israeli location.</p>
+      <div class="chatwrap">
+        <div class="keybar">
+          <select id="prov">
+            <option value="openai">OpenAI</option>
+            <option value="anthropic">Anthropic</option>
+          </select>
+          <select id="model"></select>
+          <input id="apikey" type="password" placeholder="Paste your API key (stays in your browser)" />
+          <label class="remember"><input type="checkbox" id="remember" /> remember</label>
+        </div>
+        <p class="privacy muted">🔒 Your key is sent only to the provider you pick, straight from your browser. This site has no backend and stores nothing.</p>
+
+        <div class="chatlog" id="chatlog">
+          <p class="muted empty">שאל שאלה כדי להתחיל — או לחץ על אחת ההצעות. (דרוש מפתח OpenAI או Anthropic משלך.)</p>
+        </div>
+        <div class="suggest" id="suggest"></div>
+        <div class="composer">
+          <input id="chatin" placeholder="כתוב הודעה… / Type a message…" />
+          <button id="send" class="btn primary">Send</button>
+        </div>
+        <p class="err muted" id="chaterr"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- TOOLS -->
+  <section id="tools" class="hidden">
+    <div class="panel">
+      <h2>The two agent tools (from main.py)</h2>
+      <div class="tools">
+        <div class="tool"><div class="mono" style="color:var(--ocean)">weather_lookup</div><p class="muted" style="font-size:.8rem;margin-top:6px">"MUST be used for any weather or temperature request." Returns real meteorological readings for 16 Israeli locations (ground temp, humidity, rain) by city + date.</p></div>
+        <div class="tool"><div class="mono" style="color:var(--accent)">agri_knowledge_base</div><p class="muted" style="font-size:.8rem;margin-top:6px">"Search agricultural manuals. If it returns NO RESULTS, try again with different words." FAISS RAG (nomic-embed-text, 768-dim) over agricultural PDFs.</p></div>
+      </div>
+      <p class="muted" style="font-size:.78rem;margin-top:12px">The agent is a LangChain <span class="mono">create_openai_tools_agent</span> + <span class="mono">AgentExecutor</span>; module names surfaced in step logs are <span class="mono">AgentLLM</span>, <span class="mono">WeatherTool</span>, <span class="mono">AgriKnowledgeBase</span>. Multi-turn history is persisted in local SQLite.</p>
+    </div>
+  </section>
+
+  <!-- ARCHITECTURE -->
+  <section id="arch" class="hidden">
+    <div class="panel">
+      <h2>Architecture (static/architecture.png from the repo)</h2>
+      <img src="architecture.png" alt="Agri-Advisor architecture diagram" />
+      <table style="margin-top:14px">
+        <tr><td>LLM</td><td>Ollama — llama3.1:8b (agent + Hebrew→English query expansion)</td></tr>
+        <tr><td>Embeddings</td><td>Ollama — nomic-embed-text (768-dim)</td></tr>
+        <tr><td>Vector store</td><td>Local FAISS index over agricultural PDFs</td></tr>
+        <tr><td>Chat history</td><td>Local SQLite (agri_advisor.db)</td></tr>
+        <tr><td>Backend</td><td>FastAPI — /api/execute, /api/agent_info, /api/team_info, /api/model_architecture</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about" class="hidden">
+    <div class="panel">
+      <h2>About</h2>
+      <p>Helps Israeli farmers make data-driven decisions about irrigation, planting, pest management and soil health by grounding every answer in actual weather readings and agricultural literature. Originally used a hosted LLM + Pinecone + Supabase; rebuilt to run entirely locally (Ollama + FAISS + SQLite), removing all API-key dependencies.</p>
+      <p style="margin-top:10px" class="muted">Team (group 3_7): Gil Caplan, Amit Gertner, Rachel Dagan · Technion.</p>
+      <p style="margin-top:10px"><a href="https://github.com/GilCaplan/Agents_960290" target="_blank" rel="noreferrer">GitHub repo ↗</a></p>
+    </div>
+  </section>
+</div>
+
+<script>
+// Real examples copied verbatim from main.py /api/agent_info.
+const EXAMPLES = [
+  {
+    prompt: "מה מצב מזג האוויר בבאר שבע והאם כדאי להשקות?",
+    answer: "תחנת באר שבע מודדת טמפרטורת קרקע בלבד (ללא חיישן טמפרטורת אוויר, לחות או רוח). טמפרטורת הקרקע הממוצעת היום היא כ-13°C ללא משקעים. בתנאים אלו, בעונה החורפית, אין צורך מיידי בהשקיה.",
+    steps: [
+      {module:"WeatherTool", cls:"weather", prompt:'{city:"beer sheva", date:"2025-01-15"}', response:'{ground_temp:"12.9°C", humidity:"N/A", rain:"N/A"}'},
+      {module:"AgriKnowledgeBase", cls:"rag", prompt:'{query:"irrigation scheduling soil moisture cool season"}', response:'{excerpt:"Irrigate based on soil moisture and evapotranspiration..."}'},
+      {module:"AgentLLM", cls:"llm", prompt:'{context:"weather + rag results"}', response:'{answer:"אין צורך מיידי בהשקיה"}'}
+    ]
+  },
+  {
+    prompt: "מתי כדאי לזרוע חיטה בניצן השנה?",
+    answer: "בניצן, עונת הזריעה האופטימלית לחיטה היא בין אוקטובר לנובמבר. לפי הנתונים האקלימיים ולחות הקרקע הצפויה, מומלץ לזרוע בסוף אוקטובר.",
+    steps: [
+      {module:"AgriKnowledgeBase", cls:"rag", prompt:'{query:"wheat sowing season Israel"}', response:'{excerpt:"Optimal wheat sowing in Israel: October–November..."}'},
+      {module:"WeatherTool", cls:"weather", prompt:'{city:"nitzan", date:"2025-10-15"}', response:'{temp:"24°C", humidity:"55%", rain:"3mm"}'},
+      {module:"AgentLLM", cls:"llm", prompt:'{context:"rag + weather"}', response:'{answer:"זרע בסוף אוקטובר"}'}
+    ]
+  }
+];
+
+const btns = document.getElementById('exButtons');
+EXAMPLES.forEach((ex,i)=>{
+  const b=document.createElement('button'); b.className='ex-btn'; b.textContent=ex.prompt;
+  b.onclick=()=>{ document.querySelectorAll('.ex-btn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); replay(i); };
+  btns.appendChild(b);
+});
+
+function replay(i){
+  const ex=EXAMPLES[i]; const t=document.getElementById('trace'); t.innerHTML='';
+  ex.steps.forEach((s,idx)=>{
+    const d=document.createElement('div'); d.className='step';
+    d.innerHTML=`<div class="mod ${s.cls}">${idx+1}. ${s.module}</div>
+      <div class="kv mono">call: ${s.prompt}</div>
+      <div class="kv mono">→ ${s.response}</div>`;
+    t.appendChild(d);
+    setTimeout(()=>d.classList.add('show'), 180*idx+60);
+  });
+  const a=document.createElement('div'); a.className='answer'; a.style.opacity='0'; a.style.transition='opacity .4s';
+  a.innerHTML=`<div style="font-size:.7rem;color:var(--muted);direction:ltr;margin-bottom:4px">AGENT ANSWER (Hebrew)</div>${ex.answer}`;
+  t.appendChild(a); setTimeout(()=>a.style.opacity='1', 180*ex.steps.length+200);
+}
+
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); tab.classList.add('active');
+    ['examples','live','tools','arch','about'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+    document.getElementById(tab.dataset.tab).classList.remove('hidden');
+  };
+});
+replay(0); document.querySelector('.ex-btn')?.classList.add('active');
+
+// ===================== LIVE DEMO: BYO-key Agri-Advisor chat =====================
+// Typical seasonal weather context for the agent's 16 Israeli locations.
+// Used to ground the LLM (emulating the local weather DB) when a location is named.
+const LOCATIONS = {
+  'beer sheva':{he:'באר שבע',region:'Northern Negev',winter:'soil ~12–15°C, occasional light rain, cool nights',summer:'hot & dry, 32–38°C, no rain, high evapotranspiration'},
+  'באר שבע':{ref:'beer sheva'},
+  'nitzan':{he:'ניצן',region:'southern coastal plain',winter:'mild 14–20°C, ~3–8mm rain events, 55–70% humidity',summer:'warm humid 28–32°C, sea breeze, little rain'},
+  'ניצן':{ref:'nitzan'},
+  'negev':{he:'נגב',region:'Negev desert',winter:'cool dry, 10–16°C, sparse rain',summer:'very hot dry, 34–40°C'},
+  'נגב':{ref:'negev'},
+  'arava':{he:'ערבה',region:'Arava valley',winter:'warm days 20–25°C cool nights, almost no rain',summer:'extreme heat 38–42°C, very low humidity'},
+  'ערבה':{ref:'arava'},
+  'jordan valley':{he:'בקעת הירדן',region:'Jordan Valley',winter:'mild 16–22°C, low rain',summer:'hot 35–40°C'},
+  'בקעת הירדן':{ref:'jordan valley'},
+  'jezreel':{he:'עמק יזרעאל',region:'Jezreel Valley',winter:'cool wet 10–17°C, frequent rain',summer:'warm 28–33°C dry'},
+  'עמק יזרעאל':{ref:'jezreel'},
+  'galilee':{he:'גליל',region:'Galilee',winter:'cold wet 6–14°C, abundant rain',summer:'warm 27–32°C'},
+  'גליל':{ref:'galilee'},
+  'golan':{he:'גולן',region:'Golan Heights',winter:'cold 2–10°C, rain & occasional snow',summer:'mild 24–30°C'},
+  'גולן':{ref:'golan'},
+  'sharon':{he:'השרון',region:'Sharon coastal plain',winter:'mild wet 12–18°C',summer:'warm humid 28–31°C'},
+  'השרון':{ref:'sharon'},
+  'tel aviv':{he:'תל אביב',region:'central coast',winter:'mild 12–18°C, rainy',summer:'hot humid 28–31°C'},
+  'תל אביב':{ref:'tel aviv'},
+  'jerusalem':{he:'ירושלים',region:'Judean hills',winter:'cold 5–12°C, rain, rare snow',summer:'warm dry 25–30°C'},
+  'ירושלים':{ref:'jerusalem'},
+  'lakhish':{he:'לכיש',region:'Lakhish region',winter:'mild wet 10–17°C',summer:'hot dry 30–35°C'},
+  'לכיש':{ref:'lakhish'},
+  'gilboa':{he:'גלבוע',region:'Mount Gilboa',winter:'cool wet 8–15°C',summer:'hot 30–35°C'},
+  'גלבוע':{ref:'gilboa'},
+  'emek hefer':{he:'עמק חפר',region:'Hefer Valley',winter:'mild wet 11–18°C',summer:'warm humid 28–32°C'},
+  'עמק חפר':{ref:'emek hefer'},
+  'beit shean':{he:'בית שאן',region:'Beit Shean Valley',winter:'mild 14–20°C, low rain',summer:'very hot 37–42°C'},
+  'בית שאן':{ref:'beit shean'}
+};
+function seasonOf(){ const m=new Date().getMonth()+1; if(m>=12||m<=2)return'winter'; if(m>=3&&m<=5)return'spring'; if(m>=6&&m<=8)return'summer'; return'autumn'; }
+function resolveLoc(k){ let v=LOCATIONS[k]; if(v&&v.ref)v=LOCATIONS[v.ref]; return v; }
+function weatherContext(text){
+  const t=text.toLowerCase(); const hits=[];
+  for(const key in LOCATIONS){ if((key.match(/[a-z]/)?t.includes(key):text.includes(key))){ const v=resolveLoc(key); if(v&&!hits.find(h=>h.region===v.region))hits.push(v); } }
+  if(!hits.length)return '';
+  const s=seasonOf(); const seasonHe={winter:'חורף',spring:'אביב',summer:'קיץ',autumn:'סתיו'}[s];
+  const lines=hits.map(v=>`- ${v.he} (${v.region}): typical ${s} conditions → ${v[s]||v.winter}.`);
+  return `\n[WEATHER_TOOL estimate — current season: ${s}/${seasonHe}]\n${lines.join('\n')}\nNote: these are typical seasonal estimates, not live readings from the local station DB.`;
+}
+
+const STORAGE_KEY='gc_chat_key';
+const SYSTEM_PROMPT=`You are "Agri-Advisor Pro", an autonomous agricultural advisory agent for Israeli farmers, emulating a LangChain agent that has two tools: a weather_lookup tool (meteorological readings — ground temperature, humidity, rain — for 16 Israeli locations) and an agri_knowledge_base tool (a FAISS RAG index over agricultural manuals covering irrigation, sowing/planting timing, pest management and soil health).
+
+Behavior:
+- Answer IN HEBREW by default. If the user writes in English, answer in English. Match the user's language.
+- Give location- and season-aware advice grounded in agronomy. Reason in the agent style: first consider the weather for the named location, then the relevant agronomic knowledge, then give a concrete, actionable recommendation (timing, quantities, thresholds where reasonable).
+- When a [WEATHER_TOOL estimate ...] block is included in the user message, treat it as the weather-tool result and use it. Be honest that without the local weather database you are estimating TYPICAL seasonal conditions for the named Israeli location, not live sensor readings — say this briefly when weather is relevant.
+- If asked about weather/temperature, always factor it in. Cover irrigation, sowing/planting timing, pest management, and soil health.
+- Be concise and practical. Use Israeli agronomic context (e.g. Negev, coastal plain, Arava, Galilee). Do not invent precise sensor numbers as if measured — qualify estimates.`;
+const SUGGESTIONS=[
+  'מה מצב מזג האוויר בבאר שבע והאם כדאי להשקות?',
+  'מתי כדאי לזרוע חיטה בניצן?',
+  'איך מתמודדים עם מזיקים בעגבניות בנגב?',
+  'When should I plant tomatoes in the Negev?'
+];
+const MODELS={
+  openai:['gpt-4o-mini','gpt-4o','gpt-4.1-mini'],
+  anthropic:['claude-haiku-4-5-20251001','claude-sonnet-4-6','claude-opus-4-8'],
+};
+const provEl=document.getElementById('prov'), modelEl=document.getElementById('model'),
+      keyEl=document.getElementById('apikey'), remEl=document.getElementById('remember'),
+      logEl=document.getElementById('chatlog'), inEl=document.getElementById('chatin'),
+      sendEl=document.getElementById('send'), errEl=document.getElementById('chaterr'),
+      sugEl=document.getElementById('suggest');
+let history=[];
+
+function fillModels(){ modelEl.innerHTML=''; MODELS[provEl.value].forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;modelEl.appendChild(o);}); }
+function loadKey(){ try{const s=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null'); if(s){provEl.value=s.provider||'openai';fillModels();modelEl.value=s.model||MODELS[provEl.value][0];keyEl.value=s.apiKey||'';remEl.checked=!!s.remember;return;}}catch(e){} fillModels(); }
+function saveKey(){ const s={provider:provEl.value,model:modelEl.value,apiKey:keyEl.value,remember:remEl.checked}; try{ if(remEl.checked)localStorage.setItem(STORAGE_KEY,JSON.stringify(s)); else localStorage.removeItem(STORAGE_KEY);}catch(e){} }
+provEl.addEventListener('change',()=>{fillModels();saveKey();});
+modelEl.addEventListener('change',saveKey); keyEl.addEventListener('change',saveKey); remEl.addEventListener('change',saveKey);
+loadKey();
+
+SUGGESTIONS.forEach(s=>{const b=document.createElement('button');b.textContent=s;b.onclick=()=>{inEl.value=s;send();};sugEl.appendChild(b);});
+
+const HE=/[֐-׿]/;
+function addMsg(role,text){ const e=logEl.querySelector('.empty'); if(e)e.remove(); const d=document.createElement('div'); d.className='msg '+(role==='user'?'user':'bot'); if(HE.test(text))d.classList.add('rtl'); d.textContent=text; logEl.appendChild(d); logEl.scrollTop=logEl.scrollHeight; return d; }
+
+async function callLLM(messages){
+  const provider=provEl.value, model=modelEl.value, apiKey=keyEl.value.trim();
+  if(!apiKey) throw new Error('Please paste your API key first. / נא להזין מפתח API.');
+  if(provider==='openai'){
+    const res=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},body:JSON.stringify({model,messages:[{role:'system',content:SYSTEM_PROMPT},...messages],temperature:0.7})});
+    if(!res.ok){const b=await res.json().catch(()=>({})); throw new Error(res.status===401?'OpenAI: invalid API key.':(b.error?.message||('OpenAI error '+res.status)));}
+    const d=await res.json(); return d.choices?.[0]?.message?.content?.trim()||'';
+  } else {
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model,max_tokens:1024,temperature:0.7,system:SYSTEM_PROMPT,messages})});
+    if(!res.ok){const b=await res.json().catch(()=>({})); throw new Error(res.status===401?'Anthropic: invalid API key.':(b.error?.message||('Anthropic error '+res.status)));}
+    const d=await res.json(); return (d.content||[]).filter(x=>x.type==='text').map(x=>x.text).join('').trim();
+  }
+}
+
+async function send(){
+  const text=inEl.value.trim(); if(!text||sendEl.disabled)return;
+  errEl.textContent=''; addMsg('user',text); inEl.value='';
+  const grounded=text+weatherContext(text);
+  history.push({role:'user',content:grounded});
+  sendEl.disabled=true; const thinking=addMsg('bot','…');
+  try{ const reply=await callLLM(history); thinking.textContent=reply; if(HE.test(reply))thinking.classList.add('rtl'); history.push({role:'assistant',content:reply}); }
+  catch(e){ thinking.remove(); errEl.textContent=e.message; history.pop(); }
+  finally{ sendEl.disabled=false; }
+}
+sendEl.addEventListener('click',send);
+inEl.addEventListener('keydown',e=>{if(e.key==='Enter')send();});
+</script>
+</body>
+</html>
