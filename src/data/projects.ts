@@ -181,6 +181,28 @@ export const projects: Project[] = [
     tech: ['Tableau', 'Cloudflare Radar', 'Python', 'Data Viz'],
   },
 
+  {
+    slug: 'imgretrieval',
+    title: 'imgRetrieval',
+    type: 'app',
+    interactivity: 'live',
+    highlight: true,
+    year: 2026,
+    tagline: 'Search your own photo library by image, by text, or both — with RANSAC geometric re-ranking.',
+    description:
+      'A local, cross-platform image-retrieval engine: it indexes the photos already on your ' +
+      'machine — without copying them — and finds them by example image, by text, or by text + ' +
+      'image together. Two engines: SIFT → BoW/VLAD (PCA-whitened) for near-duplicate / same-object ' +
+      'search, geometrically re-ranked with RANSAC so coincidental matches sink to the bottom, and ' +
+      'CLIP for semantic image/text/fusion search, with BLIP captions. SQLite metadata, an ' +
+      'incremental content-hashed index, a FastAPI + browser UI, and a CLI. The live demo below ' +
+      'runs the same retrieve → geometrically re-rank pipeline entirely in your browser over 24 ' +
+      'bundled public photos — including a real Harris-corner + RANSAC verifier.',
+    repo: `${GH}/LocalmgRetrieval`,
+    tech: ['Python', 'OpenCV', 'SIFT/VLAD', 'CLIP', 'RANSAC', 'FastAPI'],
+    embed: 'imgretrieval/index.html',
+  },
+
   // ── Standard projects ─────────────────────────────────────────────────────
   {
     slug: 'adversarial-ml-vlm',

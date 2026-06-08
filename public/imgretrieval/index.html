@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>imgRetrieval — in-browser demo</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#181b22; --surface:#11141a; --line:#272c36;
+    --fg:#e6e9ef; --muted:#9aa3b2; --accent:#5b8cff; --green:#5ac88c; --amber:#e0b341;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.55 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;
+    background:var(--bg);color:var(--fg);}
+  .wrap{max-width:1080px;margin:0 auto;padding:18px 18px 60px;}
+  h1{font-size:19px;margin:0;display:flex;align-items:center;gap:8px;}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--accent);margin:0 0 10px;}
+  .muted{color:var(--muted);}
+  .accent{color:var(--accent);} .green{color:var(--green);} .amber{color:var(--amber);}
+  .mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;}
+  header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid var(--line);}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin:16px 0;}
+  .panel.surface{background:var(--surface);}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;}
+  select,input[type=text],input[type=number]{width:100%;padding:8px 10px;background:var(--surface);
+    color:var(--fg);border:1px solid var(--line);border-radius:8px;font:inherit;}
+  button{background:var(--accent);color:#fff;border:0;padding:9px 15px;border-radius:8px;cursor:pointer;font-weight:600;font:inherit;}
+  button.secondary{background:#2a2f3a;color:var(--fg);font-weight:500;}
+  button:disabled{opacity:.5;cursor:not-allowed;}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;}
+  .row>div{flex:1;min-width:150px;}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+  .chip{padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:var(--surface);
+    color:var(--muted);cursor:pointer;font-size:12px;transition:.15s;}
+  .chip:hover{color:var(--fg);border-color:var(--accent);}
+  .chip.on{border-color:var(--accent);color:var(--accent);}
+  .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:8px;margin-top:6px;}
+  .gallery img{width:100%;height:64px;object-fit:cover;border-radius:7px;border:2px solid transparent;
+    cursor:pointer;display:block;background:#000;transition:.12s;}
+  .gallery img:hover{border-color:var(--line);}
+  .gallery img.sel{border-color:var(--accent);}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;position:relative;}
+  .card.q{border-color:var(--green);}
+  .card.win{border-color:var(--accent);}
+  .card img{width:100%;height:140px;object-fit:cover;display:block;background:#000;cursor:zoom-in;}
+  .card .meta{padding:9px 10px;font-size:12px;}
+  .card .score{font-weight:700;font-family:"JetBrains Mono",monospace;}
+  .card .cap{color:var(--muted);margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .tag{position:absolute;top:7px;left:7px;font-size:10px;padding:2px 7px;border-radius:999px;
+    background:rgba(15,17,21,.82);border:1px solid var(--line);font-family:"JetBrains Mono",monospace;}
+  .tag.q{border-color:var(--green);color:var(--green);}
+  .tag.dup{border-color:var(--amber);color:var(--amber);}
+  .drop{border:1.5px dashed var(--line);border-radius:8px;padding:13px;text-align:center;color:var(--muted);cursor:pointer;font-size:13px;}
+  .drop.has{border-color:var(--accent);color:var(--fg);}
+  .slider{display:flex;align-items:center;gap:10px;font-size:12.5px;}
+  .slider input[type=range]{flex:1;accent-color:var(--accent);}
+  .note{font-size:12.5px;color:var(--muted);border-left:2px solid var(--accent);padding:2px 0 2px 11px;margin:10px 0;}
+  .note.green{border-color:var(--green);}
+  .kv{display:inline-flex;gap:5px;align-items:center;background:var(--surface);border:1px solid var(--line);
+    border-radius:8px;padding:5px 10px;font-size:12px;margin:0 6px 6px 0;}
+  .kv b{color:var(--accent);font-family:"JetBrains Mono",monospace;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px;}
+  th,td{text-align:left;padding:6px 9px;border-bottom:1px solid var(--line);}
+  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em;}
+  td.mono{font-family:"JetBrains Mono",monospace;}
+  details{margin-top:6px;} summary{cursor:pointer;color:var(--accent);font-size:13px;}
+  a{color:var(--accent);}
+  dialog{background:var(--panel);border:1px solid var(--line);border-radius:12px;color:var(--fg);padding:12px;max-width:92vw;}
+  dialog img{max-width:86vw;max-height:74vh;border-radius:8px;display:block;cursor:zoom-out;}
+  .dbar{display:flex;align-items:center;gap:10px;margin-bottom:9px;font-size:12px;color:var(--muted);}
+  #status{font-size:12.5px;}
+  .spin{display:inline-block;width:11px;height:11px;border:2px solid var(--line);border-top-color:var(--accent);
+    border-radius:50%;animation:sp .7s linear infinite;vertical-align:-1px;margin-right:5px;}
+  @keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🔎 imgRetrieval</h1>
+    <span class="muted" id="status"><span class="spin"></span>indexing demo images…</span>
+  </header>
+
+  <div class="note">
+    A live, in-browser slice of <b>imgRetrieval</b> — a local image-search engine that indexes the
+    photos on your machine and finds them by <b>example image</b>, by <b>text</b>, or by
+    <b>both</b>. The full system uses SIFT&nbsp;BoW/VLAD + CLIP and a FastAPI server; this demo runs
+    the same <b>retrieve&nbsp;→&nbsp;geometrically re-rank</b> pipeline entirely client-side over
+    24&nbsp;bundled public photos — including a <b>real Harris-corner + RANSAC</b> verifier. No setup,
+    no upload, no server. <i>How it maps to the real engine ↓ at the bottom.</i>
+  </div>
+
+  <!-- Query panel -->
+  <div class="panel">
+    <div class="row">
+      <div style="flex:0 0 230px">
+        <label>Method</label>
+        <select id="method">
+          <option value="visual">Image → Image  ·  visual similarity</option>
+          <option value="ransac">Image → Image  ·  VLAD + RANSAC re-rank</option>
+          <option value="text">Text → Image  ·  caption search</option>
+          <option value="fusion">Fusion  ·  image + text</option>
+        </select>
+      </div>
+      <div style="flex:0 0 90px">
+        <label>Top K</label>
+        <input type="number" id="topk" value="8" min="1" max="23" />
+      </div>
+      <div style="flex:0 0 auto;align-self:flex-end">
+        <button id="go">Search</button>
+      </div>
+    </div>
+
+    <!-- image query -->
+    <div id="imgQ" style="margin-top:14px">
+      <label id="imgLabel">Query image — pick one below, or drop your own</label>
+      <div class="drop" id="drop">📎 Drop an image here / click to upload</div>
+      <input type="file" id="file" accept="image/*" style="display:none" />
+      <div class="gallery" id="gallery"></div>
+    </div>
+
+    <!-- text query -->
+    <div id="textQ" style="margin-top:14px;display:none">
+      <label>Query text — searches the auto-generated captions (TF-IDF cosine)</label>
+      <input type="text" id="text" placeholder="e.g. a wave in the ocean" />
+      <div class="chips" id="presets"></div>
+    </div>
+
+    <!-- fusion weight -->
+    <div id="alphaQ" style="margin-top:14px;display:none">
+      <label>Text ↔ Image weight · α = <span id="alphaVal" class="mono accent">0.50</span>
+        (0 = image only, 1 = text only)</label>
+      <div class="slider">
+        <span class="muted">image</span>
+        <input type="range" id="alpha" min="0" max="1" step="0.05" value="0.5" />
+        <span class="muted">text</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="resultHead" style="display:none;margin:4px 2px 10px">
+    <h2 id="rhTitle">Results</h2>
+    <div id="rhMeta" class="muted" style="font-size:12.5px"></div>
+  </div>
+  <div id="results" class="grid"></div>
+
+  <!-- Explainer -->
+  <div class="panel surface" style="margin-top:26px">
+    <h2>How this demo maps to the real engine</h2>
+    <table>
+      <tr><th>This demo (in-browser)</th><th>imgRetrieval (the real system)</th></tr>
+      <tr><td>Visual similarity — a color-grid + HOG-style gradient embedding, cosine ranked</td>
+          <td><span class="mono">CLIP</span> image embeddings &amp; <span class="mono">SIFT→VLAD</span> (PCA-whitened) vectors, cosine</td></tr>
+      <tr><td><b>VLAD + RANSAC</b> — real Harris corners + patch matches + RANSAC affine, re-ranked by inlier count</td>
+          <td>SIFT keypoints + RANSAC homography (<span class="mono">geomverify.py</span>), identical re-rank rule</td></tr>
+      <tr><td>Text → image — TF-IDF cosine over the bundled captions</td>
+          <td><span class="mono">CLIP</span> shared text/image space <i>and</i> the same caption TF-IDF path (<span class="mono">search.py</span>)</td></tr>
+      <tr><td>Fusion — α-weighted blend of the text and image scores</td>
+          <td>α-weighted blend of CLIP text + image embeddings, then cosine</td></tr>
+    </table>
+    <div class="note green" style="margin-top:14px">
+      The headline is the <b>RANSAC re-rank</b>: appearance search alone confuses similarly-coloured
+      scenes, but geometric verification proves a true match by fitting a transform between the two
+      images' keypoints. Search the <span class="mono">cafe</span> or <span class="mono">library</span>
+      photo with <b>VLAD + RANSAC</b> — their rotated / cropped / scaled / brightened near-duplicates
+      rise to the top with high inlier counts, exactly as in the real engine.
+    </div>
+    <p class="muted" style="font-size:12px;margin:12px 0 0">
+      Photos: 24 freely-usable images from picsum.photos (Unsplash license) + synthesized geometric
+      variants of two of them. No personal data anywhere — the same demo set the repo ships.
+    </p>
+  </div>
+</div>
+
+<dialog id="modal">
+  <div class="dbar">
+    <span class="mono" id="modalName"></span><span style="flex:1"></span>
+    <button class="secondary" id="modalClose">✕ Close</button>
+  </div>
+  <img id="modalImg" />
+</dialog>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const WORK = 224;          // working square size for features
+const GRID = 6;            // color grid (GRID x GRID x 3)
+const HOG_CELLS = 4, HOG_BINS = 8;
+
+// ── Image manifest ─────────────────────────────────────────────────────────
+// name = picsum seed (a label only); caption describes the actual content and
+// feeds the text search. Variants are near-duplicates of their base.
+const BASE = [
+  ["alps","a wave breaks into the blue ocean sea water"],
+  ["harbor","the golden gate bridge at sunset over the water sky"],
+  ["market","a sea of clouds and fog above the mountains"],
+  ["forest","an abandoned concrete building in ruins"],
+  ["desert","a silver car parked on the street"],
+  ["bridge","a woman sitting outside reading a book"],
+  ["cafe","a colourful abstract splash of blue and orange paint"],
+  ["library","a dirt path winding through a green forest"],
+  ["canyon","people walking a park path in autumn with fallen leaves"],
+  ["waterfall","layers of foggy mountains above a sea of clouds"],
+  ["skyline","a turquoise vintage camper van parked by the trees"],
+  ["pier","a person sitting on a rock in the forest"],
+  ["meadow","a person walking on the beach in bright sunlight"],
+  ["glacier","a calm misty sea under a pale sky"],
+  ["lagoon","a person swimming in clear water"],
+  ["vineyard","the golden gate bridge spanning the bay water"],
+];
+const VARIANTS = { cafe:1, library:1 };
+const VLABEL = { rot8:"rotated 8°", crop:"cropped 68%", scale75:"scaled 75%", bright:"brighter 1.35×" };
+
+let IMAGES = [];   // {id,name,file,caption,base,variant,el,emb,tfidf,kp}
+let DICT = {idf:null, vocab:null};
+let DESC_CACHE = {}; // id -> {pts, desc} for RANSAC (lazy)
+
+// ── Bootstrap ──────────────────────────────────────────────────────────────
+(function buildManifest(){
+  let id = 0;
+  for (const [name,cap] of BASE){
+    IMAGES.push({id:id++, name, file:`images/${name}.jpg`, caption:cap, base:name, variant:null});
+    if (VARIANTS[name]){
+      for (const v of ["rot8","crop","scale75","bright"])
+        IMAGES.push({id:id++, name:`${name}__${v}`, file:`images/${name}__${v}.jpg`,
+                     caption:cap, base:name, variant:v});
+    }
+  }
+})();
+
+function loadImg(src){
+  return new Promise((res,rej)=>{ const im=new Image(); im.crossOrigin="anonymous";
+    im.onload=()=>res(im); im.onerror=()=>rej(new Error("load "+src)); im.src=src; });
+}
+
+// draw an image into a WORKxWORK canvas (letterbox-free: cover) -> ImageData
+function toWork(img){
+  const c=document.createElement("canvas"); c.width=WORK; c.height=WORK;
+  const x=c.getContext("2d",{willReadFrequently:true});
+  // "cover" crop to square so scale/aspect is normalised across the set
+  const s=Math.max(WORK/img.width, WORK/img.height);
+  const w=img.width*s, h=img.height*s;
+  x.drawImage(img,(WORK-w)/2,(WORK-h)/2,w,h);
+  return x.getImageData(0,0,WORK,WORK);
+}
+
+// ── Visual embedding: color grid + HOG-style gradients ─────────────────────
+function embed(idata){
+  const {data}=idata, N=WORK;
+  // 1) colour grid (mean RGB per cell), in 0..1
+  const col=new Float32Array(GRID*GRID*3);
+  const cs=N/GRID;
+  for (let gy=0;gy<GRID;gy++) for(let gx=0;gx<GRID;gx++){
+    let r=0,g=0,b=0,cnt=0;
+    for(let y=(gy*cs)|0;y<((gy+1)*cs)|0;y++) for(let x=(gx*cs)|0;x<((gx+1)*cs)|0;x++){
+      const i=(y*N+x)*4; r+=data[i];g+=data[i+1];b+=data[i+2];cnt++;
+    }
+    const o=(gy*GRID+gx)*3; col[o]=r/cnt/255; col[o+1]=g/cnt/255; col[o+2]=b/cnt/255;
+  }
+  // 2) grayscale + gradients -> HOG cells
+  const gray=new Float32Array(N*N);
+  for(let i=0,p=0;i<data.length;i+=4,p++) gray[p]=(0.299*data[i]+0.587*data[i+1]+0.114*data[i+2])/255;
+  const hog=new Float32Array(HOG_CELLS*HOG_CELLS*HOG_BINS);
+  const hc=N/HOG_CELLS;
+  for(let y=1;y<N-1;y++) for(let x=1;x<N-1;x++){
+    const gxv=gray[y*N+x+1]-gray[y*N+x-1];
+    const gyv=gray[(y+1)*N+x]-gray[(y-1)*N+x];
+    const mag=Math.hypot(gxv,gyv); if(mag<1e-4) continue;
+    let ang=Math.atan2(gyv,gxv); if(ang<0) ang+=Math.PI;        // 0..pi (unsigned)
+    let bin=(ang/Math.PI*HOG_BINS)|0; if(bin>=HOG_BINS) bin=HOG_BINS-1;
+    const cy=Math.min(HOG_CELLS-1,(y/hc)|0), cx=Math.min(HOG_CELLS-1,(x/hc)|0);
+    hog[(cy*HOG_CELLS+cx)*HOG_BINS+bin]+=mag;
+  }
+  // block-normalise HOG, L2-normalise colour
+  l2(col); l2(hog);
+  // concat with weights (colour 0.6, structure 0.85) then full L2
+  const out=new Float32Array(col.length+hog.length);
+  for(let i=0;i<col.length;i++) out[i]=col[i]*0.6;
+  for(let i=0;i<hog.length;i++) out[col.length+i]=hog[i]*0.85;
+  l2(out); return out;
+}
+function l2(v){let n=0;for(let i=0;i<v.length;i++)n+=v[i]*v[i];n=Math.sqrt(n)||1;for(let i=0;i<v.length;i++)v[i]/=n;}
+function dot(a,b){let s=0;for(let i=0;i<a.length;i++)s+=a[i]*b[i];return s;}
+
+// ── Caption TF-IDF (mirrors search.py search_text) ─────────────────────────
+const STOP=new Set("a an the of in on at to and or with into under over by is".split(" "));
+const tok=s=>s.toLowerCase().match(/[a-z0-9]+/g)||[];
+function buildTfidf(){
+  const docs=IMAGES.map(im=>tok(im.caption).filter(t=>!STOP.has(t)));
+  const vocab={}; docs.forEach(d=>d.forEach(t=>{if(!(t in vocab))vocab[t]=Object.keys(vocab).length;}));
+  const V=Object.keys(vocab).length, Ndoc=docs.length;
+  const df=new Float32Array(V);
+  docs.forEach(d=>{const seen=new Set();d.forEach(t=>{if(!seen.has(t)){df[vocab[t]]++;seen.add(t);}});});
+  const idf=new Float32Array(V);
+  for(let j=0;j<V;j++) idf[j]=Math.log((Ndoc+1)/(df[j]+1))+1;
+  docs.forEach((d,i)=>{
+    const tf=new Float32Array(V); d.forEach(t=>tf[vocab[t]]++);
+    const sum=d.length||1; const vec=new Float32Array(V);
+    for(let j=0;j<V;j++) vec[j]=(tf[j]/sum)*idf[j];
+    l2(vec); IMAGES[i].tfidf=vec;
+  });
+  DICT={idf,vocab,V};
+}
+function textVec(text){
+  const {idf,vocab,V}=DICT; if(!V) return null;
+  const tf=new Float32Array(V); let any=false;
+  tok(text).forEach(t=>{const j=vocab[t]; if(j!==undefined){tf[j]++;any=true;}});
+  if(!any) return null;
+  const sum=tok(text).length||1; const v=new Float32Array(V);
+  for(let j=0;j<V;j++) v[j]=(tf[j]/sum)*idf[j];
+  l2(v); return v;
+}
+
+// ── Harris corners + patch descriptors + RANSAC (real geometric verify) ────
+function grayFrom(idata){
+  const {data}=idata, N=WORK, g=new Float32Array(N*N);
+  for(let i=0,p=0;i<data.length;i+=4,p++) g[p]=(0.299*data[i]+0.587*data[i+1]+0.114*data[i+2]);
+  return g;
+}
+function harris(gray, maxPts=110){
+  const N=WORK, Ix=new Float32Array(N*N), Iy=new Float32Array(N*N);
+  for(let y=1;y<N-1;y++) for(let x=1;x<N-1;x++){
+    Ix[y*N+x]=gray[y*N+x+1]-gray[y*N+x-1];
+    Iy[y*N+x]=gray[(y+1)*N+x]-gray[(y-1)*N+x];
+  }
+  // structure tensor with a 3x3 box window
+  const R=new Float32Array(N*N), k=0.04;
+  for(let y=2;y<N-2;y++) for(let x=2;x<N-2;x++){
+    let a=0,b=0,c=0;
+    for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++){
+      const i=(y+dy)*N+(x+dx); a+=Ix[i]*Ix[i]; b+=Iy[i]*Iy[i]; c+=Ix[i]*Iy[i];
+    }
+    R[y*N+x]=(a*b-c*c)-k*(a+b)*(a+b);
+  }
+  // non-max suppression on a 7px window, keep strongest
+  const pts=[], win=3;
+  for(let y=8;y<N-8;y++) for(let x=8;x<N-8;x++){
+    const r=R[y*N+x]; if(r<=0) continue; let best=true;
+    for(let dy=-win;dy<=win&&best;dy++) for(let dx=-win;dx<=win;dx++){
+      if(R[(y+dy)*N+(x+dx)]>r){best=false;break;}
+    }
+    if(best) pts.push([x,y,r]);
+  }
+  pts.sort((p,q)=>q[2]-p[2]);
+  return pts.slice(0,maxPts);
+}
+// normalised 9x9 intensity patch descriptor (mean 0, unit norm) — brightness invariant
+function describe(gray, pts){
+  const N=WORK, P=4, out=[];
+  for(const [x,y] of pts){
+    const d=new Float32Array((2*P+1)*(2*P+1)); let m=0,n=0;
+    for(let dy=-P;dy<=P;dy++) for(let dx=-P;dx<=P;dx++){
+      const v=gray[(y+dy)*N+(x+dx)]; d[n++]=v; m+=v;
+    }
+    m/=d.length; let s=0; for(let i=0;i<d.length;i++){d[i]-=m;s+=d[i]*d[i];}
+    s=Math.sqrt(s)||1; for(let i=0;i<d.length;i++) d[i]/=s;
+    out.push(d);
+  }
+  return out;
+}
+function features(idata){
+  const g=grayFrom(idata); const pts=harris(g); const desc=describe(g,pts);
+  return {pts:pts.map(p=>[p[0],p[1]]), desc};
+}
+// match descriptors with Lowe ratio test
+function match(qd, cd){
+  const m=[];
+  for(let i=0;i<qd.desc.length;i++){
+    let b1=1e9,b2=1e9,bj=-1; const di=qd.desc[i];
+    for(let j=0;j<cd.desc.length;j++){
+      const dj=cd.desc[j]; let s=0; for(let k=0;k<di.length;k++){const e=di[k]-dj[k];s+=e*e;}
+      if(s<b1){b2=b1;b1=s;bj=j;} else if(s<b2) b2=s;
+    }
+    if(bj>=0 && b1<0.8*b2) m.push([qd.pts[i],cd.pts[bj]]);
+  }
+  return m;
+}
+// RANSAC affine, return inlier count
+function ransacInliers(matches){
+  if(matches.length<3) return 0;
+  const thr=6, iters=260; let best=0;
+  for(let it=0;it<iters;it++){
+    const s=[0,0,0].map(()=>matches[(Math.random()*matches.length)|0]);
+    const A=affineFrom(s); if(!A) continue;
+    let inl=0;
+    for(const [p,q] of matches){
+      const px=A[0]*p[0]+A[1]*p[1]+A[2], py=A[3]*p[0]+A[4]*p[1]+A[5];
+      if((px-q[0])**2+(py-q[1])**2 < thr*thr) inl++;
+    }
+    if(inl>best) best=inl;
+  }
+  return best;
+}
+function affineFrom(s){ // solve 2x3 affine from 3 point pairs
+  const [[p0,q0],[p1,q1],[p2,q2]]=s;
+  const det=(p1[0]-p0[0])*(p2[1]-p0[1])-(p2[0]-p0[0])*(p1[1]-p0[1]);
+  if(Math.abs(det)<1e-6) return null;
+  const solve=(t0,t1,t2)=>{
+    const a=((t1-t0)*(p2[1]-p0[1])-(t2-t0)*(p1[1]-p0[1]))/det;
+    const b=((t2-t0)*(p1[0]-p0[0])-(t1-t0)*(p2[0]-p0[0]))/det;
+    const c=t0-a*p0[0]-b*p0[1]; return [a,b,c];
+  };
+  const [a,b,c]=solve(q0[0],q1[0],q2[0]);
+  const [d,e,f]=solve(q0[1],q1[1],q2[1]);
+  return [a,b,c,d,e,f];
+}
+function getFeatures(im){
+  if(DESC_CACHE[im.id]) return DESC_CACHE[im.id];
+  const f=features(im._idata); DESC_CACHE[im.id]=f; return f;
+}
+
+// ── Init: load + index everything ──────────────────────────────────────────
+async function init(){
+  for(const im of IMAGES){
+    try{
+      const img=await loadImg(im.file);
+      im._idata=toWork(img); im.emb=embed(im._idata);
+    }catch(e){ console.warn(e); }
+  }
+  buildTfidf();
+  renderGallery(); buildPresets();
+  $("#status").innerHTML =
+    `indexed <b>${IMAGES.length}</b> images · ${DICT.V} caption terms · visual + RANSAC + TF-IDF ready`;
+  setMode(); selectQuery(IMAGES.find(i=>i.name==="cafe").id);
+}
+
+// ── UI wiring ──────────────────────────────────────────────────────────────
+let queryId = null, uploaded = null; // uploaded = {emb,_idata}
+function renderGallery(){
+  $("#gallery").innerHTML = IMAGES.filter(i=>!i.variant).map(i=>
+    `<img src="${i.file}" data-id="${i.id}" title="${i.name} — ${i.caption}" loading="lazy">`).join("");
+  $("#gallery").querySelectorAll("img").forEach(el=>
+    el.addEventListener("click",()=>selectQuery(+el.dataset.id)));
+}
+function selectQuery(id){
+  queryId=id; uploaded=null;
+  $("#drop").classList.remove("has"); $("#drop").textContent="📎 Drop an image here / click to upload";
+  $("#gallery").querySelectorAll("img").forEach(el=>el.classList.toggle("sel",+el.dataset.id===id));
+}
+function buildPresets(){
+  const ps=["a wave in the ocean","golden gate bridge","sea of clouds","forest path",
+            "autumn leaves","a camper van","sitting reading a book","sunset over water"];
+  $("#presets").innerHTML=ps.map(p=>`<span class="chip">${p}</span>`).join("");
+  $("#presets").querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{
+    $("#text").value=c.textContent; run();
+  }));
+}
+function setMode(){
+  const m=$("#method").value;
+  const img=["visual","ransac","fusion"].includes(m), txt=["text","fusion"].includes(m);
+  $("#imgQ").style.display=img?"block":"none";
+  $("#textQ").style.display=txt?"block":"none";
+  $("#alphaQ").style.display=(m==="fusion")?"block":"none";
+}
+$("#method").addEventListener("change",setMode);
+$("#alpha").addEventListener("input",e=>$("#alphaVal").textContent=(+e.target.value).toFixed(2));
+$("#go").addEventListener("click",run);
+$("#text").addEventListener("keydown",e=>{if(e.key==="Enter")run();});
+
+// upload
+$("#drop").addEventListener("click",()=>$("#file").click());
+$("#file").addEventListener("change",e=>{ if(e.target.files[0]) ingestUpload(e.target.files[0]); });
+["dragover","dragenter"].forEach(ev=>$("#drop").addEventListener(ev,e=>{e.preventDefault();$("#drop").classList.add("has");}));
+["dragleave"].forEach(ev=>$("#drop").addEventListener(ev,e=>{e.preventDefault();$("#drop").classList.remove("has");}));
+$("#drop").addEventListener("drop",e=>{e.preventDefault(); if(e.dataTransfer.files[0]) ingestUpload(e.dataTransfer.files[0]);});
+async function ingestUpload(f){
+  const url=URL.createObjectURL(f);
+  try{
+    const img=await loadImg(url); const idata=toWork(img);
+    uploaded={emb:embed(idata),_idata:idata,url}; queryId=null;
+    $("#gallery").querySelectorAll("img").forEach(el=>el.classList.remove("sel"));
+    $("#drop").classList.add("has"); $("#drop").textContent="📎 "+f.name+" — your image is the query";
+    run();
+  }catch(e){ alert("Could not read that image."); }
+  finally{ /* keep url for modal */ }
+}
+
+// ── Search dispatch ────────────────────────────────────────────────────────
+function run(){
+  const m=$("#method").value, k=Math.max(1,Math.min(23,+$("#topk").value||8));
+  if(m==="text") return runText(k);
+  if(m==="fusion") return runFusion(k);
+  return runImage(k, m==="ransac");
+}
+function queryImage(){
+  if(uploaded) return {emb:uploaded.emb,_idata:uploaded._idata,id:-1,self:null};
+  const im=IMAGES.find(i=>i.id===queryId); return im?{emb:im.emb,_idata:im._idata,id:im.id,self:im}:null;
+}
+function runImage(k, rerank){
+  const q=queryImage(); if(!q) return alert("Pick or drop a query image.");
+  let scored=IMAGES.filter(i=>i.id!==q.id).map(i=>({im:i,score:dot(q.emb,i.emb)}))
+                   .sort((a,b)=>b.score-a.score);
+  if(!rerank){
+    show(scored.slice(0,k),{mode:"visual",q});
+    return;
+  }
+  // RANSAC re-rank over top candidates (mirrors rerank_candidates / min_inliers)
+  $("#status").innerHTML=`<span class="spin"></span>running RANSAC geometric verification…`;
+  setTimeout(()=>{
+    const cand=scored.slice(0,Math.min(14,scored.length));
+    const qf=q._idata?{...features(q._idata)}:null;
+    for(const c of cand){
+      const cf=getFeatures(c.im);
+      const matches=match(qf,cf);
+      c.matches=matches.length; c.inliers=ransacInliers(matches);
+    }
+    const MIN=8;
+    const verified=cand.filter(c=>c.inliers>=MIN).sort((a,b)=>b.inliers-a.inliers||b.score-a.score);
+    const rest=cand.filter(c=>c.inliers<MIN).sort((a,b)=>b.score-a.score);
+    show([...verified,...rest].slice(0,k),{mode:"ransac",q,verified:verified.length});
+    $("#status").innerHTML=`indexed <b>${IMAGES.length}</b> images · RANSAC verified ${verified.length} match(es)`;
+  },20);
+}
+function runText(k){
+  const t=$("#text").value.trim(); if(!t) return alert("Type a text query.");
+  const qv=textVec(t);
+  if(!qv){ show([],{mode:"text",text:t,empty:true}); return; }
+  const scored=IMAGES.map(i=>({im:i,score:dot(qv,i.tfidf)})).filter(s=>s.score>1e-6)
+                     .sort((a,b)=>b.score-a.score).slice(0,k);
+  show(scored,{mode:"text",text:t});
+}
+function runFusion(k){
+  const q=queryImage(); const t=$("#text").value.trim();
+  if(!q) return alert("Pick or drop a query image.");
+  if(!t) return alert("Type a text query for fusion.");
+  const a=+$("#alpha").value, qv=textVec(t);
+  const scored=IMAGES.filter(i=>i.id!==q.id).map(i=>{
+    const vis=dot(q.emb,i.emb), txt=qv?dot(qv,i.tfidf):0;
+    return {im:i,score:a*txt+(1-a)*vis,vis,txt};
+  }).sort((x,y)=>y.score-x.score).slice(0,k);
+  show(scored,{mode:"fusion",q,text:t,alpha:a});
+}
+
+// ── Render results ─────────────────────────────────────────────────────────
+const fmt=x=>x.toFixed(3);
+function show(rows, ctx){
+  $("#resultHead").style.display="block";
+  const titles={visual:"Image → Image · visual similarity",ransac:"Image → Image · VLAD + RANSAC",
+                text:"Text → Image · caption search",fusion:"Fusion · image + text"};
+  $("#rhTitle").textContent=titles[ctx.mode];
+  let meta="";
+  if(ctx.q){
+    const qn=ctx.q.self?ctx.q.self.name:"your uploaded image";
+    meta+=`<span class="kv">query <b>${qn}</b></span>`;
+  }
+  if(ctx.text) meta+=`<span class="kv">text <b>“${ctx.text}”</b></span>`;
+  if(ctx.mode==="fusion") meta+=`<span class="kv">α <b>${ctx.alpha.toFixed(2)}</b></span>`;
+  if(ctx.mode==="ransac") meta+=`<span class="kv">min inliers <b>8</b></span><span class="kv">verified <b>${ctx.verified}</b></span>`;
+  $("#rhMeta").innerHTML=meta;
+
+  const out=[];
+  // query card first for image modes
+  if(ctx.q && ctx.q.self){
+    out.push(card(ctx.q.self,{tag:"QUERY",qcard:true}));
+  } else if(ctx.q && !ctx.q.self && uploaded){
+    out.push(`<div class="card q"><img src="${uploaded.url}" onclick="zoomUrl('${uploaded.url}','your upload')">
+      <div class="meta"><span class="tag q">QUERY</span><div class="cap">your uploaded image</div></div></div>`);
+  }
+  if(!rows.length){
+    out.push(`<div class="muted" style="grid-column:1/-1;padding:18px">${ctx.empty?
+      "None of those words are in the captions — try the preset chips.":"No results."}</div>`);
+  }
+  rows.forEach((r,i)=>{
+    const im=r.im; let line="";
+    if(ctx.mode==="ransac"){
+      const ver=r.inliers>=8;
+      line=`<span class="score ${ver?'accent':'muted'}">${r.inliers} inliers</span>`+
+           `<span class="muted mono"> · ${r.matches} matches · cos ${fmt(r.score)}</span>`;
+    } else if(ctx.mode==="fusion"){
+      line=`<span class="score accent">${fmt(r.score)}</span>`+
+           `<span class="muted mono"> · img ${fmt(r.vis)} · txt ${fmt(r.txt)}</span>`;
+    } else {
+      line=`<span class="score accent">${fmt(r.score)}</span>`;
+    }
+    out.push(card(im,{line,win:(ctx.mode==="ransac"&&r.inliers>=8)}));
+  });
+  $("#results").innerHTML=out.join("");
+  bindZoom();
+}
+function card(im,{tag,line,qcard,win}={}){
+  const dup=im.variant?`<span class="tag dup">near-dup · ${VLABEL[im.variant]}</span>`:"";
+  const qt=tag?`<span class="tag q">${tag}</span>`:"";
+  const body=qcard?`<div class="cap">${im.caption}</div>`:`<div>${line||""}</div><div class="cap">${im.caption}</div>`;
+  return `<div class="card ${qcard?'q':''} ${win?'win':''}">
+    <img src="${im.file}" data-id="${im.id}" loading="lazy">
+    <div class="meta">${qt||dup}${body}</div></div>`;
+}
+
+// ── Modal zoom ─────────────────────────────────────────────────────────────
+function bindZoom(){
+  $("#results").querySelectorAll("img[data-id]").forEach(el=>el.onclick=()=>{
+    const im=IMAGES.find(i=>i.id===+el.dataset.id); if(im) zoomUrl(im.file, im.name+" — "+im.caption);
+  });
+}
+window.zoomUrl=(url,name)=>{ $("#modalImg").src=url; $("#modalName").textContent=name; $("#modal").showModal(); };
+$("#modalClose").addEventListener("click",()=>$("#modal").close());
+$("#modalImg").addEventListener("click",()=>$("#modal").close());
+
+init().catch(e=>{$("#status").textContent="⚠️ "+e.message;});
+</script>
+</body>
+</html>
