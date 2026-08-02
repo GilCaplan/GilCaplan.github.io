@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Causal Inference — Does Military Service Raise Income?</title>
+<title>Causal Inference — Does Maternal Smoking Raise Infant Mortality?</title>
 <style>
   :root{
     --bg:#0B1220; --surface:#0F172A; --panel:#1E293B; --border:#243044;
@@ -41,42 +41,39 @@
   .pill{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-family:"JetBrains Mono",monospace;
     border:1px solid var(--border);background:var(--surface);}
   .pill.sig{border-color:var(--teal);color:var(--teal);} .pill.no{border-color:var(--red);color:var(--red);}
-  .proj-nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
-  .pn{padding:6px 11px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);
-    cursor:pointer;font-size:12.5px;}
-  .pn.active{border-color:var(--blue);color:var(--blue);background:var(--panel);}
-  .pview{display:none;} .pview.active{display:block;}
   pre{background:#0A0F1A;border:1px solid var(--border);border-radius:10px;padding:13px 15px;overflow:auto;font-size:12px;}
   pre .c{color:var(--muted);} pre .k{color:var(--blue);} pre .s{color:var(--teal);}
   a{color:var(--blue);}
   canvas{display:block;max-width:100%;border-radius:10px;background:var(--surface);border:1px solid var(--border);}
-  input[type=range]{accent-color:var(--teal);}
+  input[type=range]{accent-color:var(--teal);width:100%;}
   .ctrl{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:12.5px;}
-  .ctrl>span:first-child{width:160px;color:var(--muted);}
+  .ctrl>span:first-child{width:170px;color:var(--muted);flex:0 0 auto;}
   .ctrl input[type=range]{flex:1;}
-  .ctrl .val{width:64px;text-align:right;font-family:"JetBrains Mono",monospace;color:var(--teal);}
+  .ctrl .val{width:110px;text-align:right;font-family:"JetBrains Mono",monospace;color:var(--teal);flex:0 0 auto;}
   .est-row{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;}
   .est{flex:1 1 200px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
   .est .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);}
   .est .num{font-size:26px;font-family:"JetBrains Mono",monospace;margin-top:2px;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
 </style>
 </head>
 <body>
 <div class="wrap">
   <span class="badge">Technion · 097400</span>
-  <span class="badge">Introduction to Causal Inference</span>
-  <h1>Does Military Service Causally Raise Personal Income?</h1>
-  <p class="sub">A causal-inference course project on real <b>ACS 2018</b> US Census microdata
-  (folktables PUMS, all 50 states + DC + PR). Treatment <span class="mono">MIL</span> = ever served on
-  active duty; outcome <span class="mono">PINCP</span> binarized at <b>$50k</b> personal income. The naive
-  served-vs-civilian gap is <b class="teal">+13.7 pp</b> — but most of that is confounding. The demos below
-  let you take it apart.</p>
+  <span class="badge">Introduction to Causal Inference — Final Project</span>
+  <h1>Does Maternal Smoking During Pregnancy Cause Infant Death?</h1>
+  <p class="sub">A causal-inference course project (with Jeremy Jornet) on the CDC's <b>2015 Cohort Linked
+  Birth/Infant Death Data Set</b> — <b>3,988,733</b> US births. Treatment = sustained daily smoking
+  (&ge;1 cigarette/day, &ge;1 trimester); outcome = death before age one. The naive gap is
+  <b class="amber">+0.52 pp</b> — seven causal estimators agree the real effect is about
+  <b class="teal">+0.25 pp</b>. The demos below let you take it apart.</p>
 
   <div class="tabs">
     <div class="tab active" data-v="overview">Overview</div>
     <div class="tab" data-v="dag">The DAG</div>
-    <div class="tab" data-v="confound">Live · Confounding</div>
-    <div class="tab" data-v="match">Live · Matching</div>
+    <div class="tab" data-v="estimators">Live · Estimators</div>
+    <div class="tab" data-v="sensitivity">Live · Sensitivity</div>
+    <div class="tab" data-v="robustness">Robustness checks</div>
     <div class="tab" data-v="methods">Methods</div>
   </div>
 
@@ -84,206 +81,253 @@
   <div class="view active" id="overview">
     <div class="panel">
       <p>The course (097400, <i>Introduction to Causal Inference</i>) covers the modern toolkit for recovering
-      cause-and-effect from <b>observational</b> data: potential outcomes &amp; counterfactuals, causal graphs
-      (DAGs) and identification via backdoor adjustment, propensity-score matching &amp; weighting (IPW),
-      instrumental variables / 2SLS, regression discontinuity, and causal ML. The project applies it to one
-      concrete question drawn from US Census data.</p>
+      cause-and-effect from <b>observational</b> data. The final project applies it to a real public-health
+      question on the CDC's linked birth/infant-death microdata — one of the largest cohorts ever used for
+      this question in a formal causal-identification framework.</p>
       <div class="kvs">
-        <span class="kv">Treatment <b>MIL</b> — ever served</span>
-        <span class="kv">Outcome <b>PINCP &gt; $50k</b></span>
-        <span class="kv">Data <b>ACS 2018 PUMS</b></span>
-        <span class="kv">Source <b>folktables</b></span>
+        <span class="kv">Treatment <b>sustained smoking</b> — &ge;1 cig/day, &ge;1 trimester</span>
+        <span class="kv">Outcome <b>death before age 1</b></span>
+        <span class="kv">Data <b>2015 CDC Linked Birth/Infant Death</b></span>
+        <span class="kv">n <b>3,988,733</b> births</span>
       </div>
     </div>
 
     <h2>The causal question</h2>
     <div class="panel surface">
-      <p style="margin:0 0 8px"><b>Does serving in the US military causally increase a veteran's personal income
-      compared to otherwise similar civilians?</b></p>
+      <p style="margin:0 0 8px"><b>Does daily cigarette smoking during at least one trimester of pregnancy
+      causally increase the probability of infant death before the first birthday?</b></p>
       <ul class="muted" style="margin:0;font-size:13.5px">
-        <li><b class="teal">Temporal ordering</b> is structurally guaranteed — service is a completed past event;
-          current income cannot have caused it.</li>
-        <li><b class="amber">Confounding</b> is the whole challenge. Enlistment is non-random: people who serve
-          disproportionately come from lower-income, rural backgrounds with lower pre-service education — all of
-          which independently depress income — while service itself confers job training, federal hiring
-          preference, and GI&nbsp;Bill benefits that raise it.</li>
+        <li><b class="teal">Temporal ordering</b> is structurally guaranteed — smoking occurs before or during
+          birth, while death can only occur afterward.</li>
+        <li><b class="amber">Confounding</b> is the whole challenge. Mothers who smoke tend to already be in
+          less favorable socioeconomic and health conditions than non-smoking mothers, independently of
+          smoking itself — education, insurance status, marital status, and pre-pregnancy health all shift
+          both who smokes and infant-mortality risk.</li>
       </ul>
     </div>
 
     <h2>What the gap actually looks like</h2>
     <div class="panel">
-      <p class="muted" style="margin:0 0 6px">Computed directly from the committed
-      <span class="mono">acs_2018_slim.csv</span> (adults 25–64, valid income, n = 1,657,499):</p>
+      <p class="muted" style="margin:0 0 6px">From the final analytic sample (one observation with a missing
+      outcome excluded):</p>
       <table>
-        <tr><th>Group</th><th class="mono">n</th><th class="mono">P(income ≥ $50k)</th></tr>
-        <tr class="hi"><td>Served (MIL 1–3)</td><td class="mono">108,027</td><td class="mono teal">0.488</td></tr>
-        <tr><td>Never served (MIL 4)</td><td class="mono">1,549,472</td><td class="mono blue">0.352</td></tr>
-        <tr><td><b>Naive difference</b></td><td class="mono">—</td><td class="mono amber">+0.137 (+13.7 pp)</td></tr>
+        <tr><th>Group</th><th class="mono">n</th><th class="mono">P(death before age 1)</th></tr>
+        <tr class="hi"><td>Sustained smokers</td><td class="mono">338,960 (8.50%)</td><td class="mono teal">1.0346%</td></tr>
+        <tr><td>Non-smokers</td><td class="mono">3,649,773 (91.50%)</td><td class="mono blue">0.5162%</td></tr>
+        <tr><td><b>Naive difference</b></td><td class="mono">—</td><td class="mono amber">+0.5184 pp (≈5.2 / 1,000)</td></tr>
       </table>
-      <p class="note">After standardizing over <b>age × sex</b> (a partial backdoor adjustment), the gap falls to
-      <b class="teal">+7.7 pp</b> — nearly half the naive number was confounding by who serves, not the effect of
-      serving. Adjusting further for the unobserved background confounders in the DAG (family SES, pre-service
-      ability/health) would move it more. <b>This is the project's core lesson, and it is exactly what the live
-      demos let you reproduce.</b></p>
+      <p class="note">Across seven adjusted causal estimators (next tab), the effect comes out to
+      <b class="teal">≈+0.25 pp</b> (≈2.5 extra deaths per 1,000 births) — roughly <b>half</b> of the naive gap
+      is confounding by who smokes, not the causal effect of smoking. <b>That gap, and how confident we should
+      be in what's left, is exactly what the live demos let you reproduce.</b></p>
     </div>
 
-    <h2>Repository contents</h2>
+    <h2>Confounders, mediators &amp; the one fragile assumption</h2>
     <div class="panel surface">
       <table>
-        <tr><th>File</th><th>Role</th></tr>
-        <tr><td class="mono">README.md</td><td class="muted">Causal question, treatment/outcome/confounder mapping</td></tr>
-        <tr><td class="mono">acs_2018_slim.csv.zip</td><td class="muted">Combined ACS 2018 PUMS, slimmed to ~25 relevant columns, all states</td></tr>
-        <tr><td class="mono">scripts/download_folktables.py</td><td class="muted">Pulls per-state ACS PUMS via the folktables <span class="mono">ACSDataSource</span></td></tr>
-        <tr><td class="mono">scripts/prepare_dataset.py</td><td class="muted">Reduces the raw file to treatment / outcome / confounders / mediators</td></tr>
-        <tr><td class="mono">scripts/causal_graph.py</td><td class="muted">Renders the project DAG with graphviz → <span class="mono">causal_graph.png</span></td></tr>
-        <tr><td class="mono">docs/</td><td class="muted">Assignment spec (PDF) + two alternate project ideas (education→employment, citizenship→income)</td></tr>
+        <tr><th>Role</th><th>Variables</th></tr>
+        <tr><td class="teal">Observed confounders (adjusted)</td><td class="muted">Education, age, race, marital status, WIC participation, insurance, pre-pregnancy diabetes/hypertension/BMI, father's age &amp; education</td></tr>
+        <tr><td class="amber">Unobserved confounders (not adjusted — sensitivity-tested)</td><td class="muted">Maternal mental health / stress, alcohol &amp; drug use</td></tr>
+        <tr><td class="blue">Mediators (excluded from adjustment)</td><td class="muted">Birth weight, gestational age — post-treatment, on the causal path</td></tr>
       </table>
+      <p class="note">The dataset is rich, but <b>none</b> of the unobserved confounders are directly measured —
+      this is flagged in the report as the single most consequential and fragile assumption of the analysis.</p>
     </div>
   </div>
 
   <!-- DAG -->
   <div class="view" id="dag">
     <div class="panel">
-      <h4 class="teal">The project DAG — drawn from <span class="mono">scripts/causal_graph.py</span></h4>
-      <p class="muted" style="margin:0 0 4px;font-size:13.5px">Built exactly as the repo's graphviz script does:
-      background confounders (some <span class="amber">unobserved</span>, dashed) feed into both treatment and
-      outcome; post-treatment <span class="blue">mediators</span> sit on the causal path. The
-      <span class="teal">teal edge</span> is the direct treatment effect we want to identify; the confounding
-      backdoor paths are what adjustment has to block.</p>
-      <canvas id="dagCanvas" width="1000" height="480"></canvas>
+      <h4 class="teal">The project's causal graph</h4>
+      <p class="muted" style="margin:0 0 4px;font-size:13.5px">Observed confounders (green) and unobserved ones
+      (beige, dashed) feed into both treatment and outcome. Gestational age and birth weight (grey) are
+      post-treatment <b>mediators</b> — excluded from adjustment because conditioning on them would block part
+      of the very effect being estimated. The <span class="teal">red edge</span> is the total causal effect the
+      project identifies.</p>
+      <canvas id="dagCanvas" width="1000" height="460"></canvas>
       <div class="kvs" style="margin-top:10px">
         <span class="kv"><span class="teal">■</span> treatment / outcome &amp; direct effect</span>
         <span class="kv"><span style="color:#cbd5e1">■</span> observed confounders</span>
         <span class="kv"><span class="amber">■</span> unobserved confounders (dashed)</span>
-        <span class="kv"><span class="blue">■</span> mediators (post-treatment)</span>
+        <span class="kv"><span class="blue">■</span> mediators (post-treatment, excluded)</span>
       </div>
     </div>
     <div class="panel surface">
-      <h4 class="blue">Why the structure matters</h4>
-      <p class="muted" style="margin:0;font-size:13.5px">Backdoor adjustment says: to identify MIL → PINCP, condition
-      on the <b>pre-treatment</b> confounders (age, sex, race, place of birth, nativity, and ideally the unobserved
-      SES/ability/health) — but <b>not</b> on the mediators (education attained, occupation, class of worker), since
-      those lie on the causal path and conditioning on them would block part of the very effect we are estimating.
-      The repo's DAG cleanly separates the two roles.</p>
+      <h4 class="blue">The four causal assumptions</h4>
+      <table>
+        <tr><th>Assumption</th><th>Status</th><th>Note</th></tr>
+        <tr><td>SUTVA (no interference)</td><td class="pill sig">holds</td><td class="muted">One mother's smoking can't affect another's infant.</td></tr>
+        <tr><td>Consistency</td><td class="pill sig">holds</td><td class="muted">Binary threshold preserves the sustained-exposure vs. non-smoking contrast; alternative definitions tested.</td></tr>
+        <tr><td>Positivity / overlap</td><td class="pill sig">holds</td><td class="muted">Confirmed via calibration &amp; overlap diagnostics; trimmed at [0.01, 0.99].</td></tr>
+        <tr><td>No unmeasured confounding</td><td class="pill no">fragile</td><td class="muted">Rich covariates, but stress / alcohol / drug use stay unobserved — tested via tipping-point analysis.</td></tr>
+      </table>
     </div>
   </div>
 
-  <!-- CONFOUNDING (live) -->
-  <div class="view" id="confound">
+  <!-- ESTIMATORS (live) -->
+  <div class="view" id="estimators">
     <div class="panel">
-      <h4 class="teal">Live · Simpson's paradox in the military-income data</h4>
-      <p class="muted" style="margin:0 0 10px;font-size:13.5px">Each bar is a real age band from the ACS file with its
-      real served/civilian income rates. The <b>naive</b> estimate pools everyone; the <b>adjusted</b> estimate is a
-      backdoor adjustment — a weighted average of the within-band gaps (standardization). Slide the weights to see how
-      a confounder that shifts <i>who serves</i> across bands inflates the naive number while the adjusted one stays
-      honest.</p>
-      <div class="ctrl"><span>Confounder strength</span>
-        <input id="cf_strength" type="range" min="0" max="100" value="55"><span class="val" id="cf_strength_v">0.55</span></div>
-      <p class="muted" style="font-size:11.5px;margin:0 0 10px">At 0 the served population mirrors the civilian age mix
-      (no selection); higher values pile the treated into the bands where the raw gap looks biggest.</p>
-      <canvas id="cfCanvas" width="1000" height="300"></canvas>
+      <h4 class="teal">Live · Seven estimators, one effect</h4>
+      <p class="muted" style="margin:0 0 10px;font-size:13.5px">Real point estimates and 95% bootstrap CIs
+      (B=10 replications, full model refit each time) from the project report. Hover a bar for its exact number.
+      Toggle the naive (unadjusted) baseline to see how much of it is confounding.</p>
+      <div class="ctrl"><label style="display:flex;align-items:center;gap:6px;color:var(--muted)">
+        <input type="checkbox" id="showNaive" checked style="width:auto;accent-color:var(--amber)"> show naive baseline (+0.5184 pp)</label></div>
+      <canvas id="estCanvas" width="1000" height="360"></canvas>
+      <div id="estTip" class="note" style="min-height:18px">Hover a bar to see its estimate.</div>
       <div class="est-row">
-        <div class="est"><div class="lbl">Naive difference (pooled)</div><div class="num amber" id="cf_naive">—</div>
-          <div class="muted" style="font-size:11px">P(≥50k | served) − P(≥50k | civ)</div></div>
-        <div class="est"><div class="lbl">Backdoor-adjusted (standardized)</div><div class="num teal" id="cf_adj">—</div>
-          <div class="muted" style="font-size:11px">Σ wₖ · (gapₖ), weights = civilian age mix</div></div>
-        <div class="est"><div class="lbl">Confounding bias</div><div class="num red" id="cf_bias">—</div>
-          <div class="muted" style="font-size:11px">naive − adjusted</div></div>
+        <div class="est"><div class="lbl">Mean across 7 adjusted methods</div><div class="num teal">+0.2466 pp</div>
+          <div class="muted" style="font-size:11px">95% CI [0.1935, 0.3216] · SD 0.0224 pp</div></div>
+        <div class="est"><div class="lbl">≈ additional infant deaths</div><div class="num blue">2.47 / 1,000</div>
+          <div class="muted" style="font-size:11px">among exposed mothers, vs. naive 5.2 / 1,000</div></div>
+        <div class="est"><div class="lbl">Estimators agreeing in sign, CI excl. zero</div><div class="num teal">7 / 7</div>
+          <div class="muted" style="font-size:11px">common CI intersection: [0.2199, 0.2560] pp</div></div>
       </div>
-      <p class="note">Real anchor: at the data's actual served-age distribution the naive gap is +13.7 pp and the
-      age×sex-adjusted gap is +7.7 pp — so roughly <b>6 pp of the headline number is confounding</b>, not the effect of
-      service.</p>
+    </div>
+    <div class="panel surface">
+      <h4 class="blue">Model selection (log loss / Brier score, lower is better)</h4>
+      <table>
+        <tr><th>Component</th><th>Selected model</th><th class="mono">Metric</th></tr>
+        <tr class="hi"><td>S-learner outcome model</td><td>Neural network (MLP)</td><td class="mono">log loss 0.033216 (vs LR 0.033271)</td></tr>
+        <tr><td>T-learner μ₁ (treated)</td><td>Logistic regression</td><td class="mono">log loss 0.056103 (vs MLP 0.056121)</td></tr>
+        <tr class="hi"><td>T-learner μ₀ (control)</td><td>Neural network (MLP)</td><td class="mono">log loss 0.031140 (vs LR 0.031142)</td></tr>
+        <tr class="hi"><td>Propensity model (IPW/PSM/AIPW)</td><td>Neural network (MLP)</td><td class="mono">Brier 0.062562 (vs LR 0.064838)</td></tr>
+      </table>
+      <p class="note">The MLP propensity model gives good calibration and broad common support; no control
+      observation has an estimated propensity above 0.90, so extreme IPW weights come only from a small number
+      of very-low-propensity treated mothers — the reason for symmetric trimming at [0.01, 0.99].</p>
     </div>
   </div>
 
-  <!-- MATCHING (live) -->
-  <div class="view" id="match">
+  <!-- SENSITIVITY (live) -->
+  <div class="view" id="sensitivity">
     <div class="panel">
-      <h4 class="teal">Live · Propensity-score matching &amp; the ATT</h4>
-      <p class="muted" style="margin:0 0 10px;font-size:13.5px">A 2-D synthetic-but-illustrative cohort:
-      <span class="teal">treated (served)</span> vs <span class="blue">control (civilian)</span> units placed by two
-      pre-treatment covariates (an age/SES axis). Treated units are selected toward the lower-left — the classic
-      enlistment-selection pattern. Nearest-neighbour matching within a <b>caliper</b> pairs each treated unit to the
-      closest control; the <b>ATT</b> is averaged over the matched pairs only. Tighten the caliper to trade bias for
-      sample.</p>
-      <div class="ctrl"><span>Caliper (max match distance)</span>
-        <input id="m_cal" type="range" min="3" max="60" value="22"><span class="val" id="m_cal_v">0.22</span></div>
-      <div class="ctrl"><span>Selection strength</span>
-        <input id="m_sel" type="range" min="0" max="100" value="60"><span class="val" id="m_sel_v">0.60</span></div>
-      <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start">
-        <canvas id="mCanvas" width="560" height="380" style="flex:1 1 360px"></canvas>
-        <div style="flex:1 1 220px">
-          <div class="est"><div class="lbl">Matched ATT</div><div class="num teal" id="m_att">—</div>
-            <div class="muted" style="font-size:11px">mean (Y₁ − Y₀) over matched pairs</div></div>
-          <div class="est" style="margin-top:10px"><div class="lbl">Naive (unmatched) diff</div><div class="num amber" id="m_naive">—</div></div>
-          <div class="est" style="margin-top:10px"><div class="lbl">Matched / dropped</div><div class="num blue" id="m_cov">—</div>
-            <div class="muted" style="font-size:11px">treated units inside caliper</div></div>
-        </div>
+      <h4 class="teal">Live · IPW sensitivity to propensity-score trimming</h4>
+      <p class="muted" style="margin:0 0 10px;font-size:13.5px">Drag to sweep the trimming threshold from "no
+      trimming" to the most aggressive [0.1, 0.9] window. The estimate climbs as extreme-propensity controls
+      are dropped, then plateaus — and never crosses zero.</p>
+      <div class="ctrl"><span>Trimming threshold</span>
+        <input id="trimSlider" type="range" min="0" max="7" step="1" value="3">
+        <span class="val" id="trimLabel">[0.01, 0.99]</span></div>
+      <canvas id="trimCanvas" width="1000" height="260"></canvas>
+      <div class="est-row">
+        <div class="est"><div class="lbl">IPW estimate at this threshold</div><div class="num teal" id="trimEst">+0.262 pp</div></div>
+        <div class="est"><div class="lbl">Treated mothers dropped</div><div class="num blue" id="trimDropped">1.87%</div></div>
       </div>
-      <p class="note">Tighter calipers cut bias (better covariate balance) but drop treated units that have no nearby
-      control — the <b>common-support</b> trade-off. The true synthetic effect baked into the data is
-      <b class="teal">+0.10</b>; the naive diff overshoots because of selection, and matching pulls the estimate back
-      toward truth.</p>
+      <p class="note">The [0.01, 0.99] window used in the main analysis retains <b>98.13%</b> of treated mothers
+      and bounds the maximum theoretical IPW weight at 100.</p>
+    </div>
+
+    <div class="panel">
+      <h4 class="teal">Live · How much hidden confounding would erase the effect?</h4>
+      <p class="muted" style="margin:0 0 10px;font-size:13.5px">Each estimator has a <b>tipping point</b> λ* — the
+      smallest hidden-confounding strength (in residual-SD units) at which its 95% CI would start to include
+      zero. Drag the slider to test an assumed bias strength against all seven.</p>
+      <div class="ctrl"><span>Assumed hidden-confounding λ</span>
+        <input id="lamSlider" type="range" min="0" max="300" step="1" value="0">
+        <span class="val" id="lamLabel">0.000 SD</span></div>
+      <canvas id="tipCanvas" width="1000" height="280"></canvas>
+      <div class="chips" id="tipChips"></div>
+      <p class="note">All seven tip at small, similar values (λ* between 0.0189 and 0.0264) — a required bias of
+      only <b>0.155–0.220 pp</b>, about <b>30–43%</b> of the baseline non-smoker mortality risk (0.5162%). That
+      magnitude is plausible for unobserved confounders like maternal stress, chronic distress, or alcohol/drug
+      use — which is why confidence in the result is <i>moderate</i>, not high.</p>
+    </div>
+  </div>
+
+  <!-- ROBUSTNESS -->
+  <div class="view" id="robustness">
+    <div class="panel">
+      <h4 class="teal">Sensitivity to the treatment definition (smoking intensity)</h4>
+      <p class="muted" style="margin:0 0 10px;font-size:13.5px">The primary analysis treats any sustained smoking
+      as equally exposed. Redefining treatment by the highest smoking-intensity category reported in any
+      trimester gives:</p>
+      <table>
+        <tr><th>Highest intensity</th><th class="mono">1–5/day</th><th class="mono">6–10/day</th><th class="mono">11–20/day</th><th class="mono">21–40/day</th><th class="mono">41+/day</th></tr>
+        <tr><td>Treated mothers (n)</td><td class="mono">100,907</td><td class="mono">118,366</td><td class="mono">74,144</td><td class="mono">7,047</td><td class="mono">1,584</td></tr>
+        <tr><td>Treated share of sample</td><td class="mono">2.69%</td><td class="mono">3.14%</td><td class="mono">1.99%</td><td class="mono">0.19%</td><td class="mono">0.04%</td></tr>
+        <tr><td>Naive risk difference (pp)</td><td class="mono">0.467</td><td class="mono">0.494</td><td class="mono">0.486</td><td class="mono">0.647</td><td class="mono">0.999</td></tr>
+      </table>
+      <p class="muted" style="font-size:13px;margin:10px 0 0">For the three common categories (1–5, 6–10,
+      11–20/day) estimates stay <b class="teal">stable and positive</b>, with most estimators showing a modest
+      increasing dose-response trend (PSM is the exception). From 21–40/day onward results become unstable —
+      several CIs include zero, and at 41+/day the trimmed IPW and AIPW estimates turn negative. That category
+      is 0.19% and 0.04% of the sample respectively, too rare to resolve reliably. The report also flags that
+      the PSM confidence interval for the 6–10/day category is internally inconsistent with its point estimate
+      and should be treated with caution.</p>
+    </div>
+    <div class="panel surface">
+      <h4 class="blue">Sensitivity to treatment imbalance (undersampling controls)</h4>
+      <p class="muted" style="margin:0;font-size:13.5px">Only 8.5% of mothers are treated. Re-running the full
+      analysis under random and propensity-score-guided undersampling of controls (ratios down to 1:1), most
+      estimates and CIs stay close to the full-sample results. Two exceptions: <b>IPW (no trimming)</b> gives
+      consistently larger estimates under propensity-guided undersampling, and the <b>S-learner</b> is more
+      sensitive to random undersampling at a 1:1 ratio. The <b>T-learner</b> — which fits separate outcome
+      models per treatment group — is the most stable estimator across every undersampling scheme, consistent
+      with it being least affected by the treatment imbalance in the first place.</p>
+    </div>
+    <div class="panel">
+      <h4 class="teal">Limitations (from the report)</h4>
+      <ul class="muted" style="margin:0;font-size:13.5px">
+        <li>No direct measures of maternal mental health, stress, alcohol or drug use — exactly the tipping-point risk.</li>
+        <li>Bootstrap uncertainty from only B=10 replications (refitting all models on ~4M rows per replication is expensive).</li>
+        <li>The two heaviest smoking-intensity categories stay inconclusive — too few treated mothers.</li>
+        <li>A single 2015 US birth cohort; generalization to other years or countries is untested.</li>
+      </ul>
     </div>
   </div>
 
   <!-- METHODS -->
   <div class="view" id="methods">
     <div class="panel">
-      <h4 class="teal">Methods &amp; tools from the course</h4>
-      <p class="muted" style="margin:0 0 8px;font-size:13.5px">The identification strategy and estimators the course
-      covers, with the ones directly used in this project marked.</p>
+      <h4 class="teal">Seven estimators, three families</h4>
       <table>
-        <tr><th>Technique</th><th>Role here</th></tr>
-        <tr class="hi"><td>Potential outcomes / counterfactuals</td><td class="muted">Defines the estimand: ATE / ATT of MIL on P(PINCP ≥ 50k)</td></tr>
-        <tr class="hi"><td>Causal graphs (DAGs)</td><td class="muted">Encodes confounders vs mediators; justifies the backdoor set</td></tr>
-        <tr class="hi"><td>Backdoor adjustment / standardization</td><td class="muted">Age×sex-adjusted gap (+7.7 pp) vs naive (+13.7 pp)</td></tr>
-        <tr><td>Propensity-score matching</td><td class="muted">Pairs treated/control on P(serve | X); ATT over matches (live demo)</td></tr>
-        <tr><td>Inverse-probability weighting (IPW)</td><td class="muted">Reweights to a pseudo-population balanced on X</td></tr>
-        <tr><td>Instrumental variables / 2SLS</td><td class="muted">Course tool for unobserved confounding (e.g. draft-lottery-style instruments)</td></tr>
-        <tr><td>Regression discontinuity (RDD)</td><td class="muted">LATE at a cutoff in a running variable</td></tr>
-        <tr><td>Causal ML</td><td class="muted">Flexible outcome / propensity models (e.g. forests) for heterogeneous effects</td></tr>
+        <tr><th>Family</th><th>Estimator</th><th>Note</th></tr>
+        <tr><td rowspan="2" class="muted">Outcome modelling</td><td>S-learner</td><td class="muted">Single shared outcome model with T as a feature; MLP selected over logistic regression.</td></tr>
+        <tr><td>T-learner</td><td class="muted">Separate μ₁/μ₀ models per treatment group; less sensitive to the 8.5%/91.5% imbalance.</td></tr>
+        <tr><td rowspan="2" class="muted">Propensity-based</td><td>IPW (± trimming)</td><td class="muted">Reweights to a pseudo-population balanced on X; trimmed at [0.01, 0.99] to bound extreme weights.</td></tr>
+        <tr><td>PSM (ATT)</td><td class="muted">1-nearest-neighbour on the propensity logit, caliper 0.2×SD, with replacement; estimates the ATT on matched treated mothers (99.11% retained).</td></tr>
+        <tr><td colspan="2" class="muted">Doubly robust</td><td>AIPW (± trimming)</td></tr>
       </table>
+      <p class="note">All seven share the same four identification assumptions and rely on the same MLP propensity
+      model (for IPW/PSM/AIPW) — agreement across genuinely different statistical models is itself evidence of
+      robustness, independent of any single model being exactly right.</p>
     </div>
     <div class="cols">
       <div class="panel surface">
-        <h4 class="blue">Data pipeline (from the repo)</h4>
-        <pre><span class="c"># scripts/download_folktables.py</span>
-<span class="k">from</span> folktables <span class="k">import</span> ACSDataSource
-src = ACSDataSource(survey_year=<span class="s">"2018"</span>,
-        horizon=<span class="s">"1-Year"</span>, survey=<span class="s">"person"</span>)
-data = src.get_data(states=STATES, download=<span class="k">True</span>)
+        <h4 class="blue">Treatment &amp; outcome definitions</h4>
+        <pre><span class="c"># T: sustained smoking (report §1)</span>
+T = <span class="n">1</span> <span class="k">if</span> CIG1&gt;=<span class="n">1</span> <span class="k">or</span> CIG2&gt;=<span class="n">1</span> <span class="k">or</span> CIG3&gt;=<span class="n">1</span>
+T = <span class="n">0</span> <span class="k">if</span> CIG1==CIG2==CIG3==<span class="n">0</span>
 
-<span class="c"># scripts/prepare_dataset.py — slim to relevant cols</span>
-KEEP = [<span class="s">"MIL"</span>,<span class="s">"PINCP"</span>,<span class="s">"AGEP"</span>,<span class="s">"SEX"</span>,
-        <span class="s">"RAC1P"</span>,<span class="s">"NATIVITY"</span>,<span class="s">"SCHL"</span>, ...]
-slim = df[KEEP]
-slim.to_csv(<span class="s">"acs_2018_slim.csv.gz"</span>)</pre>
+<span class="c"># Y: infant mortality</span>
+Y = <span class="n">1</span> <span class="k">if</span> infant died before age one <span class="k">else</span> <span class="n">0</span></pre>
       </div>
       <div class="panel surface">
-        <h4 class="blue">Libraries</h4>
+        <h4 class="blue">Data &amp; libraries</h4>
         <div class="kvs">
-          <span class="kv"><b>folktables</b> ACS PUMS loader</span>
-          <span class="kv"><b>pandas</b> / <b>pyarrow</b> data wrangling</span>
-          <span class="kv"><b>graphviz</b> DAG rendering</span>
-          <span class="kv"><b>numpy</b></span>
+          <span class="kv">NCHS/CDC <b>2015 Cohort Linked B/ID</b></span>
+          <span class="kv"><b>~3.99M</b> births, 99.4% linkage rate</span>
+          <span class="kv">scikit-learn propensity / outcome models</span>
+          <span class="kv">bootstrap, B=10, full model refit</span>
         </div>
-        <p class="muted" style="font-size:13px;margin:10px 0 0">The causal-inference course toolkit also draws on
-        <b>statsmodels</b> (regression, 2SLS), <b>scikit-learn</b> (propensity models), and the causal libraries
-        <b>DoWhy</b> and <b>EconML</b> for identification + estimation workflows.</p>
+        <p class="muted" style="font-size:13px;margin:10px 0 0">Full write-up, notebook, and every sensitivity
+        script are in the repo's <span class="mono">Project/</span> folder — the primary consolidated analysis is
+        <span class="mono">Project/final/Causal_Inference_project.ipynb</span>.</p>
       </div>
     </div>
     <div class="panel surface">
-      <h4 class="blue">Variable mapping (README)</h4>
+      <h4 class="blue">Comparison with the literature</h4>
       <table>
-        <tr><th>Role</th><th>Columns</th></tr>
-        <tr><td class="teal">Treatment</td><td class="mono">MIL</td></tr>
-        <tr><td class="amber">Outcome</td><td class="mono">PINCP (binarized at $50k)</td></tr>
-        <tr><td>Pre-treatment confounders</td><td class="mono">AGEP, SEX, RAC1P, HISP, POBP, NATIVITY, CIT, LANX, ENG</td></tr>
-        <tr><td class="blue">Mediators / outcome-side</td><td class="mono">SCHL, MAR, ESR, COW, OCCP, WKHP, WAGP, DIS, DEAR, DEYE</td></tr>
-        <tr><td>Veteran-specific</td><td class="mono">DRAT, VPS</td></tr>
-        <tr><td>Geography / weights</td><td class="mono">ST, PWGTP</td></tr>
+        <tr><th>Study</th><th>Design</th><th>Finding</th></tr>
+        <tr><td class="muted">Wisborg et al. (Denmark, n=25,102)</td><td class="muted">Logistic regression, adjusted association</td><td class="muted">Adjusted OR 1.8 [1.3, 2.6] — no formal causal identification or sensitivity analysis</td></tr>
+        <tr><td class="muted">Sun et al. (US, n=13,524,204)</td><td class="muted">Poisson regression, adjusted association</td><td class="muted">Adjusted risk ratios; no potential-outcomes framework or doubly-robust estimation</td></tr>
+        <tr><td class="muted">Johansson et al. / Ahlqvist et al.</td><td class="muted">Family/sibling-based comparisons</td><td class="muted">Smoking raises infant mortality risk; cessation lowers it — consistent direction</td></tr>
+        <tr><td class="muted">Anderson et al. (US, n&gt;20M, SUID only)</td><td class="muted">Covariate adjustment, dose-response</td><td class="muted">Dose-response with smoking exposure — consistent, narrower outcome (SUID)</td></tr>
       </table>
+      <p class="note">This project's contribution: rather than one adjusted-association model, it combines seven
+      causal estimators under an explicit identification strategy with an extensive sensitivity-analysis suite —
+      quantifying not just the effect, but how much hidden confounding it would take to explain it away.</p>
     </div>
   </div>
 </div>
@@ -296,32 +340,33 @@ document.querySelectorAll('.tab[data-v]').forEach(function(t){t.onclick=function
   t.classList.add('active');
   document.getElementById(t.dataset.v).classList.add('active');
   if(t.dataset.v==='dag') drawDAG();
-  if(t.dataset.v==='confound') cfDraw();
-  if(t.dataset.v==='match') mDraw();
+  if(t.dataset.v==='estimators') drawEst();
+  if(t.dataset.v==='sensitivity'){ drawTrim(); drawTip(); }
 };});
 
 // ====================== DAG ======================
 function drawDAG(){
   var c=document.getElementById('dagCanvas'); if(!c) return;
   var x=c.getContext('2d'); x.font='12px Inter,sans-serif';
-  // build node table with widths
   var defs={
-    AGE:{x:90,y:70,t:'Age',k:'obs'}, SEX:{x:90,y:150,t:'Sex',k:'obs'},
-    RACE:{x:95,y:230,t:'Race/Origin',k:'obs'}, NAT:{x:100,y:310,t:'Nativity/CIT',k:'obs'},
-    SES:{x:95,y:390,t:'Family SES',k:'unobs'}, ABIL:{x:105,y:445,t:'Pre-svc ability',k:'unobs'},
-    MIL:{x:440,y:140,t:'Military svc (MIL)',k:'treat'},
-    SCHL:{x:445,y:300,t:'Education (SCHL)',k:'med'}, OCCP:{x:445,y:370,t:'Occupation',k:'med'},
-    COW:{x:445,y:440,t:'Class of worker',k:'med'},
-    PINCP:{x:830,y:240,t:'Income > $50k (PINCP)',k:'out'}
+    EDU:{x:150,y:55,t:'Education, Age, Race',k:'obs'},
+    MAR:{x:175,y:115,t:'Marital Status, WIC, Insurance',k:'obs'},
+    PRE:{x:205,y:180,t:'Pre-Pregnancy Diabetes, Hypertension, BMI',k:'obs'},
+    MH:{x:660,y:45,t:'Mental Health, Stress',k:'unobs'},
+    ALC:{x:850,y:45,t:'Alcohol / Drug Consumption',k:'unobs'},
+    SMOKE:{x:150,y:280,t:'Sustained Smoking',k:'treat'},
+    DEATH:{x:830,y:280,t:'Infant Death Before 1 Year',k:'out'},
+    BW:{x:490,y:355,t:'Birth Weight',k:'med'},
+    GA:{x:490,y:420,t:'Gestational Age',k:'med'}
   };
-  Object.keys(defs).forEach(function(k){defs[k].w=x.measureText(defs[k].t).width+22; defs[k].h=26;});
+  Object.keys(defs).forEach(function(k){defs[k].w=x.measureText(defs[k].t).width+22; defs[k].h=28;});
   var edges=[
-    ['AGE','MIL'],['SEX','MIL'],['RACE','MIL'],['NAT','MIL'],['SES','MIL'],['ABIL','MIL'],
-    ['AGE','PINCP'],['SEX','PINCP'],['RACE','PINCP'],['NAT','PINCP'],['SES','PINCP'],['ABIL','PINCP'],
-    ['MIL','SCHL'],['MIL','OCCP'],['MIL','COW'],['SCHL','PINCP'],['OCCP','PINCP'],['COW','PINCP']
+    ['EDU','SMOKE'],['EDU','DEATH'],['MAR','SMOKE'],['MAR','DEATH'],['PRE','SMOKE'],['PRE','DEATH'],
+    ['MH','SMOKE'],['MH','DEATH'],['MH','ALC'],['ALC','SMOKE'],['ALC','DEATH'],
+    ['SMOKE','DEATH'],['SMOKE','GA'],['GA','BW'],['GA','DEATH'],['BW','DEATH']
   ];
   function col(k){return k==='treat'||k==='out'?'#14B8A6':k==='unobs'?'#FBBF24':k==='med'?'#60A5FA':'#cbd5e1';}
-  function edgePt(n,tx,ty){ // point on box border toward (tx,ty)
+  function edgePt(n,tx,ty){
     var dx=tx-n.x, dy=ty-n.y, hw=n.w/2, hh=n.h/2;
     var sx=dx===0?Infinity:Math.abs(hw/dx), sy=dy===0?Infinity:Math.abs(hh/dy);
     var s=Math.min(sx,sy);
@@ -338,7 +383,7 @@ function drawDAG(){
   edges.forEach(function(e){
     var a=defs[e[0]],b=defs[e[1]];
     var p1=edgePt(a,b.x,b.y), p2=edgePt(b,a.x,a.y);
-    var direct=(e[0]==='MIL'&&e[1]==='PINCP');
+    var direct=(e[0]==='SMOKE'&&e[1]==='DEATH');
     x.beginPath(); x.moveTo(p1[0],p1[1]); x.lineTo(p2[0],p2[1]);
     x.strokeStyle=direct?'#14B8A6':'rgba(148,163,184,.32)';
     x.lineWidth=direct?2.4:1; x.stroke();
@@ -357,145 +402,169 @@ function drawDAG(){
     x.font='12px Inter,sans-serif';
     x.fillText(n.t,n.x,n.y);
   });
-};
+}
 
-// ============ CONFOUNDING (Simpson) ============
-// Real age bands from acs_2018_slim.csv (served vs civilian P(inc>=50k), and base age mix)
-var BANDS=[
-  {lbl:'20s', ps:0.279, pc:0.215, civMix:184903},
-  {lbl:'30s', ps:0.487, pc:0.350, civMix:370801},
-  {lbl:'40s', ps:0.592, pc:0.403, civMix:360085},
-  {lbl:'50s', ps:0.521, pc:0.383, civMix:417012},
-  {lbl:'60s', ps:0.399, pc:0.325, civMix:216671}
+// ====================== ESTIMATORS (forest plot) ======================
+var EST=[
+  {name:'S-learner', est:0.2489, lo:0.1991, hi:0.2653},
+  {name:'T-learner', est:0.2394, lo:0.1953, hi:0.3009},
+  {name:'IPW (no trim)', est:0.2045, lo:0.1546, hi:0.2560},
+  {name:'IPW (trim [.01,.99])', est:0.2622, lo:0.2177, hi:0.3130},
+  {name:'PSM (ATT)', est:0.2679, lo:0.1903, hi:0.5208},
+  {name:'AIPW (no trim)', est:0.2366, lo:0.1779, hi:0.2885},
+  {name:'AIPW (trim [.01,.99])', est:0.2666, lo:0.2199, hi:0.3065}
 ];
-var civTot=BANDS.reduce(function(a,b){return a+b.civMix;},0);
-function cfCompute(strength){
-  // served weight per band: blend civilian mix with a "gap-seeking" mix that overweights big-gap bands
-  var gaps=BANDS.map(function(b){return b.ps-b.pc;});
-  var gmax=Math.max.apply(null,gaps);
-  var raw=BANDS.map(function(b,i){
-    var base=b.civMix/civTot;
-    var seek=Math.pow(gaps[i]/gmax,2.2); // concentrate on biggest gaps
-    return (1-strength)*base + strength*seek;
-  });
-  var rs=raw.reduce(function(a,b){return a+b;},0);
-  var sw=raw.map(function(r){return r/rs;});           // served weights
-  var cw=BANDS.map(function(b){return b.civMix/civTot;}); // civilian weights (fixed)
-  // pooled (naive) rates
-  var servedP=0, civP=0;
-  BANDS.forEach(function(b,i){servedP+=sw[i]*b.ps; civP+=cw[i]*b.pc;});
-  var naive=servedP-civP;
-  // standardized (adjust): weight within-band gap by civilian mix
-  var adj=0; BANDS.forEach(function(b,i){adj+=cw[i]*(b.ps-b.pc);});
-  return {naive:naive, adj:adj, sw:sw, cw:cw};
-}
-function cfDraw(){
-  var c=document.getElementById('cfCanvas'); if(!c) return;
-  var s=(+document.getElementById('cf_strength').value)/100;
-  document.getElementById('cf_strength_v').textContent=s.toFixed(2);
-  var r=cfCompute(s);
+var NAIVE=0.5184;
+function drawEst(){
+  var c=document.getElementById('estCanvas'); if(!c) return;
+  var showNaive=document.getElementById('showNaive').checked;
   var x=c.getContext('2d'); x.clearRect(0,0,c.width,c.height);
-  var n=BANDS.length, pad=60, bw=(c.width-pad*1.5-pad)/n, maxP=0.65;
-  var baseY=c.height-46, topY=24;
-  function yOf(p){return baseY-(p/maxP)*(baseY-topY);}
-  // axis
-  x.strokeStyle='rgba(148,163,184,.25)'; x.lineWidth=1;
-  [0,0.2,0.4,0.6].forEach(function(g){var yy=yOf(g);
-    x.beginPath();x.moveTo(pad,yy);x.lineTo(c.width-20,yy);x.stroke();
-    x.fillStyle='#94A3B8';x.font='10px JetBrains Mono,monospace';x.textAlign='right';x.fillText(g.toFixed(1),pad-6,yy+3);});
-  BANDS.forEach(function(b,i){
-    var cx=pad+10+i*bw;
-    // served bar (teal) and civilian bar (blue) side by side
-    var w2=bw*0.30;
-    x.fillStyle='#14B8A6'; var sh=baseY-yOf(b.ps); x.fillRect(cx,yOf(b.ps),w2,sh);
-    x.fillStyle='#60A5FA'; var ch=baseY-yOf(b.pc); x.fillRect(cx+w2+6,yOf(b.pc),w2,ch);
-    // served-weight indicator (how much this band contributes to pooled served)
-    x.fillStyle='rgba(20,184,166,'+(0.25+0.6*r.sw[i])+')';
-    x.fillRect(cx, baseY+6, w2*2+6, 5+r.sw[i]*22);
-    x.fillStyle='#E2E8F0'; x.font='11px Inter,sans-serif'; x.textAlign='center';
-    x.fillText(b.lbl, cx+w2+3, baseY+18);
-    x.fillStyle='#94A3B8'; x.font='9px JetBrains Mono,monospace';
-    x.fillText('w='+r.sw[i].toFixed(2), cx+w2+3, baseY+38);
-  });
-  // legend
-  x.textAlign='left'; x.font='11px Inter,sans-serif';
-  x.fillStyle='#14B8A6'; x.fillRect(c.width-200,12,10,10); x.fillStyle='#E2E8F0'; x.fillText('served',c.width-185,21);
-  x.fillStyle='#60A5FA'; x.fillRect(c.width-120,12,10,10); x.fillStyle='#E2E8F0'; x.fillText('civilian',c.width-105,21);
-  // outputs
-  var pp=function(v){return (v>=0?'+':'')+(v*100).toFixed(1)+' pp';};
-  document.getElementById('cf_naive').textContent=pp(r.naive);
-  document.getElementById('cf_adj').textContent=pp(r.adj);
-  document.getElementById('cf_bias').textContent=pp(r.naive-r.adj);
-}
-document.getElementById('cf_strength').addEventListener('input',cfDraw);
-
-// ============ MATCHING (PSM / ATT) ============
-var M_N_T=120, M_N_C=320, M_TRUE=0.10, mPts=null;
-function rnd(seed){ // deterministic-ish per build
-  var s=seed||1; return function(){s=(s*1103515245+12345)&0x7fffffff; return s/0x7fffffff;};
-}
-function mGen(sel){
-  var R=rnd(7); var treated=[], control=[];
-  // control: spread over unit square
-  for(var i=0;i<M_N_C;i++){var a=R(),b=R(); control.push({a:a,b:b});}
-  // treated: pulled toward lower-left by selection strength
-  for(var j=0;j<M_N_T;j++){
-    var a=R(),b=R();
-    a=a*(1-sel*0.7); b=b*(1-sel*0.7);
-    treated.push({a:a,b:b});
+  var pad={l:190,r:40,t:16,b:32};
+  var maxV=0.58, n=EST.length;
+  var rowH=(c.height-pad.t-pad.b)/n;
+  function xOf(v){return pad.l+(v/maxV)*(c.width-pad.l-pad.r);}
+  // gridlines
+  x.strokeStyle='rgba(148,163,184,.2)'; x.font='10px JetBrains Mono,monospace'; x.fillStyle='#94A3B8';
+  for(var g=0;g<=0.5;g+=0.1){
+    var gx=xOf(g);
+    x.beginPath();x.moveTo(gx,pad.t);x.lineTo(gx,c.height-pad.b);x.stroke();
+    x.textAlign='center'; x.fillText(g.toFixed(1),gx,c.height-pad.b+14);
   }
-  // outcome model: Y = baseline(a,b) + treatEffect*T + noise ; baseline higher upper-right
-  function base(p){return 0.20+0.55*((p.a+p.b)/2);}
-  treated.forEach(function(p){p.y=base(p)+M_TRUE+(R()-0.5)*0.05;});
-  control.forEach(function(p){p.y=base(p)+(R()-0.5)*0.05;});
-  return {treated:treated,control:control};
-}
-function mDraw(){
-  var cal=(+document.getElementById('m_cal').value)/100;
-  var sel=(+document.getElementById('m_sel').value)/100;
-  document.getElementById('m_cal_v').textContent=cal.toFixed(2);
-  document.getElementById('m_sel_v').textContent=sel.toFixed(2);
-  mPts=mGen(sel);
-  var T=mPts.treated, C=mPts.control;
-  // nearest-neighbour match within caliper (with replacement) in covariate space
-  var pairs=[], matched=0;
-  var meanT=0; T.forEach(function(p){meanT+=p.y;}); meanT/=T.length;
-  var meanC=0; C.forEach(function(p){meanC+=p.y;}); meanC/=C.length;
-  var attSum=0;
-  T.forEach(function(t){
-    var best=null,bd=1e9;
-    C.forEach(function(c){var d=Math.hypot(t.a-c.a,t.b-c.b); if(d<bd){bd=d;best=c;}});
-    if(best && bd<=cal){pairs.push([t,best]); attSum+=(t.y-best.y); matched++;}
+  // naive line
+  if(showNaive){
+    var nx=xOf(NAIVE);
+    x.strokeStyle='#FBBF24'; x.setLineDash([5,4]); x.lineWidth=1.4;
+    x.beginPath();x.moveTo(nx,pad.t);x.lineTo(nx,c.height-pad.b);x.stroke();
+    x.setLineDash([]);
+    x.fillStyle='#FBBF24'; x.textAlign='left'; x.font='11px Inter,sans-serif';
+    x.fillText('naive +0.518pp',nx+4,pad.t+12);
+  }
+  window._estBars=[];
+  EST.forEach(function(e,i){
+    var cy=pad.t+rowH*i+rowH/2;
+    x.fillStyle='#E2E8F0'; x.textAlign='right'; x.font='12px Inter,sans-serif';
+    x.fillText(e.name,pad.l-12,cy+4);
+    // CI line
+    x.strokeStyle='rgba(96,165,250,.55)'; x.lineWidth=2;
+    x.beginPath();x.moveTo(xOf(e.lo),cy);x.lineTo(xOf(e.hi),cy);x.stroke();
+    // whiskers
+    [e.lo,e.hi].forEach(function(v){x.beginPath();x.moveTo(xOf(v),cy-5);x.lineTo(xOf(v),cy+5);x.stroke();});
+    // point
+    x.fillStyle='#14B8A6'; x.beginPath(); x.arc(xOf(e.est),cy,5,0,6.28); x.fill();
+    x.strokeStyle='#0B1220'; x.lineWidth=1.5; x.stroke();
+    window._estBars.push({x1:xOf(e.lo)-6,x2:xOf(e.hi)+6,y1:cy-8,y2:cy+8,e:e});
   });
-  var att=matched?attSum/matched:0;
-  // draw
-  var cv=document.getElementById('mCanvas'); var x=cv.getContext('2d');
-  x.clearRect(0,0,cv.width,cv.height);
-  var pad=30, W=cv.width-pad*2, H=cv.height-pad*2;
-  function px(a){return pad+a*W;} function py(b){return pad+(1-b)*H;}
-  // axes
-  x.strokeStyle='rgba(148,163,184,.2)'; x.strokeRect(pad,pad,W,H);
-  x.fillStyle='#94A3B8'; x.font='10px Inter'; x.textAlign='center';
-  x.fillText('covariate X₁ (age / SES axis →)', pad+W/2, cv.height-6);
-  x.save(); x.translate(12,pad+H/2); x.rotate(-Math.PI/2); x.fillText('covariate X₂ →',0,0); x.restore();
-  // match lines
-  x.strokeStyle='rgba(20,184,166,.28)'; x.lineWidth=1;
-  pairs.forEach(function(pr){x.beginPath();x.moveTo(px(pr[0].a),py(pr[0].b));x.lineTo(px(pr[1].a),py(pr[1].b));x.stroke();});
-  // control dots
-  C.forEach(function(c){x.fillStyle='rgba(96,165,250,.55)';x.beginPath();x.arc(px(c.a),py(c.b),2.6,0,6.28);x.fill();});
-  // treated dots
-  T.forEach(function(t){x.fillStyle='#14B8A6';x.beginPath();x.arc(px(t.a),py(t.b),3.2,0,6.28);x.fill();});
-  // outputs
-  var f=function(v){return (v>=0?'+':'')+v.toFixed(3);};
-  document.getElementById('m_att').textContent=f(att);
-  document.getElementById('m_naive').textContent=f(meanT-meanC);
-  document.getElementById('m_cov').textContent=matched+' / '+(T.length-matched);
 }
-document.getElementById('m_cal').addEventListener('input',mDraw);
-document.getElementById('m_sel').addEventListener('input',mDraw);
+(function(){
+  var c=document.getElementById('estCanvas');
+  c.addEventListener('mousemove',function(ev){
+    var r=c.getBoundingClientRect();
+    var mx=(ev.clientX-r.left)*(c.width/r.width), my=(ev.clientY-r.top)*(c.height/r.height);
+    var hit=(window._estBars||[]).find(function(b){return mx>=b.x1&&mx<=b.x2&&my>=b.y1&&my<=b.y2;});
+    var tip=document.getElementById('estTip');
+    tip.textContent = hit ? (hit.e.name+': +'+hit.e.est.toFixed(4)+' pp  [95% CI '+hit.e.lo.toFixed(4)+', '+hit.e.hi.toFixed(4)+']') : 'Hover a bar to see its estimate.';
+  });
+  document.getElementById('showNaive').addEventListener('change',drawEst);
+})();
 
-// initial render of the default-visible view + warm others lazily
-cfDraw(); // safe even if hidden
+// ====================== TRIMMING SENSITIVITY ======================
+var TRIM=[
+  {lbl:'no trimming', ate:0.2045, dropped:0.0000},
+  {lbl:'[.001,.999]', ate:0.2048, dropped:0.2234},
+  {lbl:'[.005,.995]', ate:0.2300, dropped:9.8879},
+  {lbl:'[.01,.99]', ate:0.2622, dropped:27.0760},
+  {lbl:'[.025,.975]', ate:0.2930, dropped:41.8601},
+  {lbl:'[.05,.95]', ate:0.3114, dropped:61.1086},
+  {lbl:'[.075,.925]', ate:0.3244, dropped:67.4},
+  {lbl:'[.1,.9]', ate:0.3200, dropped:73.8469}
+];
+function drawTrim(){
+  var c=document.getElementById('trimCanvas'); if(!c) return;
+  var idx=+document.getElementById('trimSlider').value;
+  var sel=TRIM[idx];
+  document.getElementById('trimLabel').textContent=sel.lbl;
+  document.getElementById('trimEst').textContent='+'+sel.ate.toFixed(3)+' pp';
+  document.getElementById('trimDropped').textContent=sel.dropped.toFixed(2)+'%';
+  var x=c.getContext('2d'); x.clearRect(0,0,c.width,c.height);
+  var pad={l:90,r:20,t:18,b:34};
+  var n=TRIM.length, maxV=0.55;
+  var innerW=c.width-pad.l-pad.r, innerH=c.height-pad.t-pad.b;
+  function xOf(i){return pad.l+ (i/(n-1))*innerW;}
+  function yOf(v){return pad.t+innerH-(v/maxV)*innerH;}
+  // gridlines + naive
+  x.strokeStyle='rgba(148,163,184,.2)'; x.font='10px JetBrains Mono,monospace'; x.fillStyle='#94A3B8';
+  [0,0.1,0.2,0.3,0.4,0.5].forEach(function(g){
+    var gy=yOf(g);
+    x.beginPath();x.moveTo(pad.l,gy);x.lineTo(c.width-pad.r,gy);x.stroke();
+    x.textAlign='right'; x.fillText(g.toFixed(1),pad.l-6,gy+3);
+  });
+  var ny=yOf(NAIVE);
+  x.strokeStyle='#FBBF24'; x.setLineDash([5,4]);
+  x.beginPath();x.moveTo(pad.l,ny);x.lineTo(c.width-pad.r,ny);x.stroke(); x.setLineDash([]);
+  // line
+  x.strokeStyle='#60A5FA'; x.lineWidth=2; x.beginPath();
+  TRIM.forEach(function(t,i){ var px=xOf(i), py=yOf(t.ate); if(i===0) x.moveTo(px,py); else x.lineTo(px,py); });
+  x.stroke();
+  TRIM.forEach(function(t,i){
+    var px=xOf(i), py=yOf(t.ate);
+    x.fillStyle= i===idx ? '#14B8A6' : '#60A5FA';
+    x.beginPath(); x.arc(px,py,i===idx?6:3.5,0,6.28); x.fill();
+    x.fillStyle='#94A3B8'; x.font='9px JetBrains Mono,monospace'; x.textAlign='center';
+    x.save(); x.translate(px, c.height-pad.b+10); x.rotate(-0.5); x.textAlign='right'; x.fillText(t.lbl,0,0); x.restore();
+  });
+}
+document.getElementById('trimSlider').addEventListener('input',drawTrim);
+
+// ====================== TIPPING-POINT SENSITIVITY ======================
+var TIP=[
+  {name:'S-learner', lam:0.0244, bias:0.1991},
+  {name:'T-learner', lam:0.0252, bias:0.2071},
+  {name:'IPW (no trim)', lam:0.0189, bias:0.1546},
+  {name:'IPW (trim [.01,.99])', lam:0.0264, bias:0.2177},
+  {name:'PSM (ATT)', lam:0.0190, bias:0.1903},
+  {name:'AIPW (no trim)', lam:0.0214, bias:0.1757},
+  {name:'AIPW (trim [.01,.99])', lam:0.0247, bias:0.2199}
+];
+function drawTip(){
+  var c=document.getElementById('tipCanvas'); if(!c) return;
+  var lam=(+document.getElementById('lamSlider').value)/10000;
+  document.getElementById('lamLabel').textContent=lam.toFixed(4)+' SD';
+  var x=c.getContext('2d'); x.clearRect(0,0,c.width,c.height);
+  var pad={l:190,r:60,t:16,b:32};
+  var maxV=0.03, n=TIP.length;
+  var rowH=(c.height-pad.t-pad.b)/n;
+  function xOf(v){return pad.l+(v/maxV)*(c.width-pad.l-pad.r);}
+  x.strokeStyle='rgba(148,163,184,.2)'; x.font='10px JetBrains Mono,monospace'; x.fillStyle='#94A3B8';
+  [0,0.01,0.02,0.03].forEach(function(g){
+    var gx=xOf(g);
+    x.beginPath();x.moveTo(gx,pad.t);x.lineTo(gx,c.height-pad.b);x.stroke();
+    x.textAlign='center'; x.fillText(g.toFixed(2),gx,c.height-pad.b+14);
+  });
+  // assumed lambda line
+  var lx=xOf(Math.min(lam,maxV));
+  x.strokeStyle='#F87171'; x.lineWidth=1.6; x.beginPath(); x.moveTo(lx,pad.t); x.lineTo(lx,c.height-pad.b); x.stroke();
+  var robustCount=0;
+  var chips=[];
+  TIP.forEach(function(t,i){
+    var cy=pad.t+rowH*i+rowH/2;
+    var robust = lam < t.lam;
+    if(robust) robustCount++;
+    x.fillStyle='#E2E8F0'; x.textAlign='right'; x.font='12px Inter,sans-serif';
+    x.fillText(t.name,pad.l-12,cy+4);
+    var bw=xOf(t.lam)-pad.l;
+    x.fillStyle= robust ? 'rgba(20,184,166,.75)' : 'rgba(248,113,113,.6)';
+    x.fillRect(pad.l, cy-9, bw, 18);
+    x.fillStyle='#94A3B8'; x.font='10px JetBrains Mono,monospace'; x.textAlign='left';
+    x.fillText('λ*='+t.lam.toFixed(4), xOf(t.lam)+6, cy+3);
+    chips.push('<span class="pill '+(robust?'sig':'no')+'">'+t.name+' — '+(robust?'robust':'CI would include zero')+'</span>');
+  });
+  document.getElementById('tipChips').innerHTML =
+    '<span class="pill '+(robustCount===7?'sig':'no')+'" style="margin-right:8px">'+robustCount+' / 7 estimators still exclude zero at λ='+lam.toFixed(4)+'</span>' + chips.join('');
+}
+document.getElementById('lamSlider').addEventListener('input',drawTip);
+
+// initial render of the default-visible view
+drawEst();
 </script>
 </body>
 </html>
