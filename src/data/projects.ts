@@ -374,22 +374,25 @@ export const projects: Project[] = [
   // ── Coursework (Technion) — rendered as compact cards ─────────────────────
   {
     slug: 'causal-inference',
-    title: 'Causal Inference — Military Service & Income',
+    title: 'Causal Inference — Maternal Smoking & Infant Mortality',
     type: 'coursework',
     interactivity: 'live',
     year: 2026,
     tagline:
-      'Does serving in the US military causally raise income? Untangling confounding on real ACS Census data.',
+      'Does smoking during pregnancy causally raise infant mortality? Seven estimators, one CDC cohort of 3.99M births.',
     description:
-      'A Technion causal-inference course project (097400) estimating the causal effect of US ' +
-      'military service (MIL) on the probability of earning over $50k (PINCP), using real ACS ' +
-      '2018 PUMS Census microdata (all states, via folktables). The naive served-vs-civilian ' +
-      'gap is +13.7 pp, but age×sex backdoor adjustment cuts it to +7.7 pp — most of the ' +
-      'headline number is confounding by who serves, not the effect of serving. The live demos ' +
-      'reproduce the DAG, a Simpson’s-paradox confounding view on the real age-band rates, ' +
-      'and a propensity-score matching estimator of the ATT.',
+      'A Technion causal-inference course final project (097400, with Jeremy Jornet) estimating the ' +
+      'causal effect of sustained daily cigarette smoking during pregnancy on infant death before age ' +
+      'one, using the CDC’s 2015 Cohort Linked Birth/Infant Death Data Set (~3.99M US births). The ' +
+      'naive gap is +0.52 pp, but seven estimators — S-/T-learner, IPW (± trimming), propensity-score ' +
+      'matching, and AIPW (± trimming) — agree it’s really about +0.25 pp (≈2.5 extra deaths per 1,000 ' +
+      'births), with 95% CIs that all exclude zero. The one soft spot: a tipping-point analysis shows a ' +
+      'hidden confounder worth just 0.16–0.22 pp of bias — plausibly maternal stress, alcohol, or drug ' +
+      'use, none of which are in the data — would erase the effect. The live demos reproduce the DAG, ' +
+      'the seven-estimator forest plot, and the propensity-trimming and hidden-confounding sensitivity ' +
+      'checks.',
     repo: `${GH}/Causal_Inference`,
-    tech: ['Causal Inference', 'Python', 'folktables', 'DAGs', 'Propensity Scores'],
+    tech: ['Causal Inference', 'Python', 'Propensity Scores', 'Doubly Robust', 'Sensitivity Analysis'],
     embed: 'causal-inference/index.html',
   },
   {
@@ -428,7 +431,31 @@ export const projects: Project[] = [
     tech: ['Python', 'Flask', 'REST', 'Jinja2', 'Pillow'],
     embed: 'fullstack/index.html',
   },
-  course('lab-data-viz', 'Data Analysis & Visualization', '094295', 'LabProject_940295', ['Python', 'BM25', 'IR'], true),
+  {
+    slug: 'lab-data-viz',
+    title: 'Data Analysis & Visualization Lab — Three Deliverables',
+    type: 'coursework',
+    interactivity: 'live',
+    year: 2026,
+    tagline: 'Technion · 094295 — a vector index, a Wikipedia retrieval pipeline, active learning + GNNs, and an entity-resolution hackathon.',
+    description:
+      'Technion’s Data Analysis & Visualization Lab (094295, with Guy Dukas and Murad Rahimli), three ' +
+      'self-contained deliverables. Project A: a from-scratch dynamic vector index (insert/delete/' +
+      'search, each ≤20 lines, sampled-threshold top-k ~10x faster than argpartition), plus a ' +
+      'Wikipedia-style retrieval pipeline — the winning trick was forensically detecting that all 100 ' +
+      'relevant pages in the public queries are among 200 template-generated synthetic pages hidden in ' +
+      'a 27,074-page corpus, via five regexes with zero false negatives, collapsing search from ' +
+      '27k noisy pages to 200 candidates (NDCG@10 0.4116 → 0.4651). Project B: active learning for ' +
+      'employee attrition (margin sampling + a late "positive hunt" + 3x minority oversampling, mean ' +
+      'F1 0.647) and a 2-layer GraphSAGE GNN for node classification. Hackathon: a multi-agent entity-' +
+      'resolution pipeline — six blocking strategies (rules, TF-IDF, LSH, embeddings, sorted-' +
+      'neighborhood, DeepBlocker) run in parallel and merged by a learned scorer, hitting ~90% recall ' +
+      'inside a 2,000-pair budget. The live demo below covers all three, with an interactive rebuild of ' +
+      'the retrieval pipeline’s query-processing rules.',
+    repo: `${GH}/LabProject_940295`,
+    tech: ['Python', 'Information Retrieval', 'Active Learning', 'GNN', 'Entity Resolution'],
+    embed: 'lab-data-viz/index.html',
+  },
   course('hagorem', 'The Human Factor in Data Collection', '960275', 'HaGorem_960275', ['A/B Testing', 'Webscraping'], true),
   course('nlp', 'NLP', '970215', 'NLP_970215', ['Python', 'NLP'], true),
   course('safa', 'Language & Computation', '960222', 'Safa_960222', ['NLP'], true),
