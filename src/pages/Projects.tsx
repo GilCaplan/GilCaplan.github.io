@@ -7,6 +7,8 @@ import { INTERACTIVITY_META, TYPE_LABELS } from '../data/types';
 
 type TypeFilter = ProjectType | 'all';
 type LiveFilter = Interactivity | 'all';
+type YearFilter = number | 'undated' | 'all';
+type SortOrder = 'relevance' | 'newest' | 'oldest';
 
 const TYPE_OPTIONS: TypeFilter[] = [
   'all',
@@ -24,6 +26,21 @@ const PRESENT = new Set(projects.map((p) => p.interactivity));
 const LIVE_OPTIONS: LiveFilter[] = (['all', 'live', 'potential', 'showcase'] as LiveFilter[]).filter(
   (l) => l === 'all' || PRESENT.has(l as Interactivity),
 );
+// Distinct years present in the registry (newest first), with an "Undated"
+// bucket for projects that never set `year`.
+const PRESENT_YEARS = [...new Set(projects.map((p) => p.year).filter((y): y is number => y != null))].sort(
+  (a, b) => b - a,
+);
+const YEAR_OPTIONS: YearFilter[] = [
+  'all',
+  ...PRESENT_YEARS,
+  ...(projects.some((p) => p.year == null) ? (['undated'] as const) : []),
+];
+const SORT_OPTIONS: { value: SortOrder; label: string }[] = [
+  { value: 'relevance', label: 'Relevance' },
+  { value: 'newest', label: 'Newest updated' },
+  { value: 'oldest', label: 'Oldest updated' },
+];
 
 // How many tech tags to show before the "More tags" toggle.
 const VISIBLE_TAGS = 14;
@@ -31,6 +48,8 @@ const VISIBLE_TAGS = 14;
 export default function Projects() {
   const [type, setType] = useState<TypeFilter>('all');
   const [live, setLive] = useState<LiveFilter>('all');
+  const [year, setYear] = useState<YearFilter>('all');
+  const [sort, setSort] = useState<SortOrder>('relevance');
   const [q, setQ] = useState('');
   const [showAllTags, setShowAllTags] = useState(false);
 
@@ -71,34 +90,49 @@ export default function Projects() {
 
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
-    // Display order: most-live first (live → coming-soon → showcase), then
-    // featured (highlight) projects, then newest year first, then by title.
+    // Default display order: most-live first (live → coming-soon →
+    // showcase), then featured (highlight) projects, then newest year
+    // first, then by title. Overridden by an explicit newest/oldest sort.
     const liveRank: Record<Interactivity, number> = { live: 0, potential: 1, showcase: 2 };
-    return projects
-      .filter((p) => {
-        if (type !== 'all' && p.type !== type) return false;
-        if (live !== 'all' && p.interactivity !== live) return false;
-        // Tags use OR semantics: keep a project if it carries any selected tag.
-        if (
-          selectedLower.size &&
-          !p.tech.some((t) => selectedLower.has(t.toLowerCase()))
-        )
-          return false;
-        if (
-          query &&
-          !`${p.title} ${p.tagline} ${p.tech.join(' ')}`.toLowerCase().includes(query)
-        )
-          return false;
-        return true;
-      })
-      .sort(
+    const result = projects.filter((p) => {
+      if (type !== 'all' && p.type !== type) return false;
+      if (live !== 'all' && p.interactivity !== live) return false;
+      if (year !== 'all') {
+        if (year === 'undated' ? p.year != null : p.year !== year) return false;
+      }
+      // Tags use OR semantics: keep a project if it carries any selected tag.
+      if (
+        selectedLower.size &&
+        !p.tech.some((t) => selectedLower.has(t.toLowerCase()))
+      )
+        return false;
+      if (
+        query &&
+        !`${p.title} ${p.tagline} ${p.tech.join(' ')}`.toLowerCase().includes(query)
+      )
+        return false;
+      return true;
+    });
+
+    if (sort === 'relevance') {
+      return result.sort(
         (a, b) =>
           liveRank[a.interactivity] - liveRank[b.interactivity] ||
           Number(Boolean(b.highlight)) - Number(Boolean(a.highlight)) ||
           (b.year ?? 0) - (a.year ?? 0) ||
           a.title.localeCompare(b.title),
       );
-  }, [type, live, q, selectedLower]);
+    }
+    // Newest/oldest by year — undated projects have no known update date, so
+    // they sink to the bottom regardless of direction.
+    const dir = sort === 'newest' ? -1 : 1;
+    return result.sort((a, b) => {
+      if (a.year == null && b.year == null) return a.title.localeCompare(b.title);
+      if (a.year == null) return 1;
+      if (b.year == null) return -1;
+      return dir * (a.year - b.year) || a.title.localeCompare(b.title);
+    });
+  }, [type, live, year, sort, q, selectedLower]);
 
   return (
     <div className="container-x animate-fade-up py-14">
@@ -136,6 +170,31 @@ export default function Projects() {
               )}
             </FilterChip>
           ))}
+        </div>
+
+        {/* Date filter: which year a project was last updated, plus sort order */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-2">
+            {YEAR_OPTIONS.map((y) => (
+              <FilterChip key={y} active={year === y} onClick={() => setYear(y)}>
+                {y === 'all' ? 'All years' : y === 'undated' ? 'Undated' : y}
+              </FilterChip>
+            ))}
+          </div>
+          <label className="flex items-center gap-2 text-xs text-muted">
+            Sort
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortOrder)}
+              className="rounded-lg border border-line bg-app px-2 py-1.5 text-sm text-ink2 outline-none focus:border-accent"
+            >
+              {SORT_OPTIONS.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
 
         {/* Tag filter (OR — match any selected tag) */}
