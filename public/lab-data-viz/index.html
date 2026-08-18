@@ -76,6 +76,33 @@
   .est .num{font-size:24px;font-family:"JetBrains Mono",monospace;margin-top:2px;}
   .match-yes{color:var(--teal);font-weight:600;}
   .match-no{color:var(--muted);}
+
+  /* active-learning live demo */
+  .al-stage{display:grid;grid-template-columns:1.5fr 1fr;gap:14px;margin-top:14px;}
+  @media(max-width:720px){.al-stage{grid-template-columns:1fr;}}
+  .al-scatter-card{display:flex;flex-direction:column;gap:8px;}
+  #alScatter{width:100%;height:300px;}
+  .al-legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11px;color:var(--muted);}
+  .al-legend span{display:inline-flex;align-items:center;gap:6px;}
+  .al-legend i{width:8px;height:8px;border-radius:999px;display:inline-block;}
+  .al-stats-card{display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;}
+  .stat-row{display:flex;justify-content:space-between;align-items:baseline;}
+  .stat-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);}
+  .stat-value{font-family:"JetBrains Mono",monospace;font-size:14px;color:var(--text);}
+  .stat-value.big{font-size:22px;color:#fff;font-weight:600;}
+  .stat-value.accent{color:var(--teal);}
+  .delta{font-family:"JetBrains Mono",monospace;font-size:11px;padding:1px 7px;border-radius:999px;}
+  .delta.up{color:var(--teal);background:rgba(20,184,166,.12);}
+  .delta.down{color:var(--red);background:rgba(248,113,113,.1);}
+  .delta.flat{color:var(--muted);background:rgba(148,163,184,.08);}
+  .al-stats-card .divider{height:1px;background:var(--border);margin:2px 0;}
+  #alF1Canvas{width:100%;height:80px;margin-top:4px;}
+  .controls-row{display:flex;align-items:center;gap:10px;margin-top:12px;}
+  .transport{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:10px;padding:5px 8px 5px 5px;background:var(--surface);}
+  .transport button{appearance:none;border:1px solid transparent;background:var(--panel);color:var(--text);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:.8rem;display:inline-flex;align-items:center;justify-content:center;transition:.15s;}
+  .transport button:hover{border-color:var(--teal);color:#5eead4;}
+  .transport button:disabled{opacity:.35;cursor:default;}
+  .transport button.playing{background:#0E8C81;color:#04211d;border-color:var(--teal);}
 </style>
 </head>
 <body>
@@ -231,13 +258,42 @@ artifacts/synth_meta.json                    score = norm(1) + norm(2) + norm(3)
       Pipeline: <b>margin sampling</b> (9 rounds × 500 — query the pool closest to the decision boundary),
       then a <b>positive hunt</b> (final 500 queries go to highest predicted P(Left) instead), then
       <b>3x minority oversampling</b> at the final fit only.</p>
-      <div class="ctrl"><span>Left-row oversampling factor</span>
-        <input id="osSlider" type="range" min="0" max="5" step="1" value="2">
-        <span class="val" id="osLabel">×3</span></div>
-      <canvas id="osCanvas" width="1000" height="220"></canvas>
-      <p class="note" id="osNote">Duplicating minority rows shifts the fixed 0.5 threshold implicitly — F1
-      peaks at ×3 (0.642); the framework fixes RF hyperparameters and encoding, so the training distribution
-      is the only real tuning lever.</p>
+      <p class="muted" style="margin:10px 0 0;font-size:12px">The real employee dataset isn't public — this
+      runs the real strategy (margin sampling → positive hunt → ×3 oversampling, a real Random Forest
+      retrained each round) live against a representative synthetic attrition dataset with a comparable
+      ~1/3 positive rate, so the mechanics are real even though the exact numbers below the milestones aren't
+      the submission's.</p>
+
+      <div class="al-stage">
+        <div class="al-scatter-card">
+          <canvas id="alScatter"></canvas>
+          <div class="al-legend">
+            <span><i style="background:#F87171"></i>labeled · Left</span>
+            <span><i style="background:#60A5FA"></i>labeled · Stayed</span>
+            <span><i style="background:#94A3B8"></i>unlabeled pool</span>
+            <span><i style="background:transparent;border:1.5px solid #2DD4BF;border-radius:999px"></i>queried this round</span>
+          </div>
+        </div>
+        <div class="al-stats-card">
+          <div class="stat-row"><span class="stat-label" id="alRoundLabel">Round</span><span class="stat-value big" id="alRoundValue">0 / 10</span></div>
+          <div class="divider"></div>
+          <div class="stat-row"><span class="stat-label">Labeled so far</span><span class="stat-value" id="alLabeledValue">—</span></div>
+          <div class="stat-row"><span class="stat-label">F1 (Left) on held-out test</span><span class="stat-value accent" id="alF1Value">—</span></div>
+          <div class="stat-row"><span class="stat-label">vs. previous round</span><span class="delta flat" id="alDeltaBadge">—</span></div>
+          <div class="divider"></div>
+          <span class="stat-label">F1 over rounds</span>
+          <canvas id="alF1Canvas"></canvas>
+        </div>
+      </div>
+      <div class="controls-row">
+        <div class="transport">
+          <button id="alRestartBtn" title="Restart">&#8635;</button>
+          <button id="alStepBtn" title="Step">&#9197;</button>
+          <button id="alPlayBtn" title="Play / pause">&#9654;</button>
+        </div>
+      </div>
+      <div class="note" id="alNarration" style="margin-top:10px">Ready — press play to run the real active-learning loop.</div>
+
       <div class="est-row">
         <div class="est"><div class="lbl">Baseline (no queries)</div><div class="num muted">0.407</div></div>
         <div class="est"><div class="lbl">+ margin sampling (4,500q)</div><div class="num blue">0.589</div></div>
@@ -347,7 +403,7 @@ document.querySelectorAll('.tab[data-v]').forEach(t=>t.onclick=()=>{
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
   t.classList.add('active');
   document.getElementById(t.dataset.v).classList.add('active');
-  if(t.dataset.v==='projectb') drawOS();
+  if(t.dataset.v==='projectb' && window.__initActiveLearning) window.__initActiveLearning();
 });
 
 // ====================== LIVE DETECTOR ======================
@@ -403,53 +459,276 @@ function runQuery(){
 function setQ(v){document.getElementById('q').value=v;runQuery();}
 document.getElementById('q').addEventListener('input',runQuery);
 
-// ====================== PROJECT B — oversampling curve ======================
-const OS=[
-  {x:'×1 (none)', f1:0.589},
-  {x:'×2', f1:0.635},
-  {x:'×3', f1:0.642},
-  {x:'×4', f1:0.641},
-  {x:'×5', f1:0.636},
-  {x:'×6', f1:0.634}
-];
-function drawOS(){
-  const c=document.getElementById('osCanvas'); if(!c) return;
-  const idx=+document.getElementById('osSlider').value;
-  document.getElementById('osLabel').textContent=OS[idx].x;
-  const notes={
-    0:'No oversampling: recall on the minority class is too low for the fixed 0.5 threshold.',
-    1:'Between recall-too-low and the optimum — F1 climbing fast.',
-    2:'Peak: ×3 duplication = 0.642, the best trade-off the threshold allows.',
-    3:'Past the optimum — precision starts trading away for no more recall.',
-    4:'Further oversampling keeps giving up precision.',
-    5:'Diminishing returns — F1 drifting back down from the ×3 peak.'
+// ====================== PROJECT B — live active learning ======================
+(function () {
+  var FEATURES = ['overtime', 'jobSat', 'wlb', 'years', 'distance', 'incomeK'];
+  var N_TOTAL = 1000, N_TEST = 200, N_INITIAL = 40;
+  var BATCH_SIZE = 40, MARGIN_ROUNDS = 9, POSITIVE_HUNT_BUDGET = 40, TOTAL_ROUNDS = MARGIN_ROUNDS + 1;
+  var MINORITY_OVERSAMPLE = 3;
+  var N_TREES = 25, MAX_DEPTH = 6, MIN_LEAF = 3;
+
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+  function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; }
+    return a;
+  }
+
+  // synthetic employee attrition dataset — real course dataset isn't public;
+  // this generates a comparable problem (real feature/label relationship +
+  // noise, ~1/3 positive rate) so the ALGORITHM below is genuinely real.
+  function makeDataset(n) {
+    var X = [], y = [];
+    for (var i = 0; i < n; i++) {
+      var overtime = Math.random() < 0.3 ? 1 : 0;
+      var jobSat = Math.floor(rnd(1, 5));
+      var wlb = Math.floor(rnd(1, 5));
+      var years = rnd(0, 20);
+      var distance = rnd(1, 30);
+      var incomeK = rnd(2, 20);
+      var logit = -1.7 + 1.7 * overtime + 0.85 * (2.5 - jobSat) + 0.7 * (2.5 - wlb)
+        - 0.1 * years + 0.04 * distance - 0.05 * incomeK + rnd(-0.35, 0.35);
+      var prob = 1 / (1 + Math.exp(-logit));
+      var label = Math.random() < prob ? 1 : 0;
+      X.push([overtime, jobSat, wlb, years, distance, incomeK]);
+      y.push(label);
+    }
+    return { X: X, y: y };
+  }
+
+  // ---- compact real Random Forest: bootstrap + random feature subset + Gini splits ----
+  function gini(y, idxs) {
+    var n = idxs.length; if (!n) return 0;
+    var pos = 0; for (var i = 0; i < n; i++) if (y[idxs[i]] === 1) pos++;
+    var p = pos / n; return 1 - p * p - (1 - p) * (1 - p);
+  }
+  function buildTree(X, y, idxs, depth) {
+    var n = idxs.length;
+    var pos = 0; for (var i = 0; i < n; i++) if (y[idxs[i]] === 1) pos++;
+    var leafProb = n ? pos / n : 0.5;
+    if (depth >= MAX_DEPTH || n < MIN_LEAF * 2 || pos === 0 || pos === n) return { leaf: true, prob: leafProb };
+    var subsetSize = Math.max(1, Math.round(Math.sqrt(FEATURES.length)));
+    var feats = shuffle(FEATURES.map(function (_, fi) { return fi; })).slice(0, subsetSize);
+    var parentGini = gini(y, idxs);
+    var bestGain = -Infinity, bestFeat = null, bestThresh = null;
+    feats.forEach(function (f) {
+      var vals = idxs.map(function (i) { return X[i][f]; }).sort(function (a, b) { return a - b; });
+      [0.25, 0.5, 0.75].forEach(function (q) {
+        var t = vals[Math.floor(q * (vals.length - 1))];
+        var left = [], right = [];
+        idxs.forEach(function (i) { (X[i][f] <= t ? left : right).push(i); });
+        if (left.length < MIN_LEAF || right.length < MIN_LEAF) return;
+        var weighted = (left.length * gini(y, left) + right.length * gini(y, right)) / n;
+        var gainVal = parentGini - weighted;
+        if (gainVal > bestGain) { bestGain = gainVal; bestFeat = f; bestThresh = t; }
+      });
+    });
+    if (bestFeat === null) return { leaf: true, prob: leafProb };
+    var leftIdxs = [], rightIdxs = [];
+    idxs.forEach(function (i) { (X[i][bestFeat] <= bestThresh ? leftIdxs : rightIdxs).push(i); });
+    return { leaf: false, feat: bestFeat, thresh: bestThresh, left: buildTree(X, y, leftIdxs, depth + 1), right: buildTree(X, y, rightIdxs, depth + 1) };
+  }
+  function predictTree(tree, x) {
+    var node = tree;
+    while (!node.leaf) node = x[node.feat] <= node.thresh ? node.left : node.right;
+    return node.prob;
+  }
+  function trainForest(X, y, trainIdxs) {
+    var trees = [];
+    for (var t = 0; t < N_TREES; t++) {
+      var boot = [];
+      for (var i = 0; i < trainIdxs.length; i++) boot.push(trainIdxs[Math.floor(Math.random() * trainIdxs.length)]);
+      trees.push(buildTree(X, y, boot, 0));
+    }
+    return trees;
+  }
+  function forestProba(trees, x) {
+    var sum = 0; for (var t = 0; t < trees.length; t++) sum += predictTree(trees[t], x);
+    return sum / trees.length;
+  }
+  function f1Score(trees, X, y, idxs) {
+    var tp = 0, fp = 0, fn = 0;
+    idxs.forEach(function (i) {
+      var pred = forestProba(trees, X[i]) >= 0.5 ? 1 : 0;
+      if (pred === 1 && y[i] === 1) tp++;
+      else if (pred === 1 && y[i] === 0) fp++;
+      else if (pred === 0 && y[i] === 1) fn++;
+    });
+    var prec = tp + fp ? tp / (tp + fp) : 0, rec = tp + fn ? tp / (tp + fn) : 0;
+    return prec + rec ? (2 * prec * rec) / (prec + rec) : 0;
+  }
+
+  // scatter-plot projection axes — two real features, chosen for visual spread
+  function hashJitter(i, salt) { return (Math.sin(i * 12.9898 + salt * 78.233) * 43758.5453) % 1 * 0.85; }
+  function xOf(row, i) { return row[2] + row[1] + hashJitter(i, 1); }   // wlb + jobSat (wellbeing, 2..8) + jitter
+  function yOf(row, i) { return row[3] - row[0] * 3 + hashJitter(i, 2) * 2; } // years - overtime*3 (stability) + jitter
+
+  var dataset, testIdxs, poolIdxs, labeledIdxs, forest, round, f1History, done;
+  var queriedThisRound = [];
+
+  function init() {
+    dataset = makeDataset(N_TOTAL);
+    var order = shuffle(Array.from({ length: N_TOTAL }, function (_, i) { return i; }));
+    testIdxs = order.slice(0, N_TEST);
+    var rest = order.slice(N_TEST);
+    labeledIdxs = rest.slice(0, N_INITIAL);
+    poolIdxs = rest.slice(N_INITIAL);
+    round = 0; done = false; queriedThisRound = [];
+    forest = trainForest(dataset.X, dataset.y, labeledIdxs);
+    var f1 = f1Score(forest, dataset.X, dataset.y, testIdxs);
+    f1History = [f1];
+  }
+
+  function stepRound() {
+    if (done) return;
+    var isMargin = round < MARGIN_ROUNDS;
+    var scored = poolIdxs.map(function (i) {
+      var p = forestProba(forest, dataset.X[i]);
+      return { i: i, score: isMargin ? Math.abs(p - 0.5) : -p };
+    });
+    scored.sort(function (a, b) { return a.score - b.score; });
+    var batchN = Math.min(isMargin ? BATCH_SIZE : POSITIVE_HUNT_BUDGET, scored.length);
+    var chosen = scored.slice(0, batchN).map(function (s) { return s.i; });
+    queriedThisRound = chosen;
+    var chosenSet = {}; chosen.forEach(function (i) { chosenSet[i] = true; });
+    poolIdxs = poolIdxs.filter(function (i) { return !chosenSet[i]; });
+    labeledIdxs = labeledIdxs.concat(chosen);
+
+    forest = trainForest(dataset.X, dataset.y, labeledIdxs);
+    var f1 = f1Score(forest, dataset.X, dataset.y, testIdxs);
+    f1History.push(f1);
+    round++;
+    if (round >= TOTAL_ROUNDS || poolIdxs.length === 0) {
+      // final refit with 3x minority oversampling, matching the real pipeline
+      var oversampled = labeledIdxs.slice();
+      labeledIdxs.forEach(function (i) { if (dataset.y[i] === 1) for (var k = 1; k < MINORITY_OVERSAMPLE; k++) oversampled.push(i); });
+      forest = trainForest(dataset.X, dataset.y, oversampled);
+      var finalF1 = f1Score(forest, dataset.X, dataset.y, testIdxs);
+      f1History.push(finalF1);
+      done = true;
+    }
+  }
+
+  function drawScatter() {
+    var c = document.getElementById('alScatter');
+    var dpr = window.devicePixelRatio || 1;
+    var w = c.clientWidth, h = 300;
+    c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
+    var ctx = c.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+
+    var allX = dataset.X.map(xOf), allY = dataset.X.map(yOf);
+    var minX = Math.min.apply(null, allX), maxX = Math.max.apply(null, allX);
+    var minY = Math.min.apply(null, allY), maxY = Math.max.apply(null, allY);
+    var pad = 14;
+    function px(v) { return pad + ((v - minX) / (maxX - minX || 1)) * (w - pad * 2); }
+    function py(v) { return h - pad - ((v - minY) / (maxY - minY || 1)) * (h - pad * 2); }
+
+    var labeledSet = {}; labeledIdxs.forEach(function (i) { labeledSet[i] = true; });
+    var queriedSet = {}; queriedThisRound.forEach(function (i) { queriedSet[i] = true; });
+
+    poolIdxs.forEach(function (i) {
+      ctx.beginPath(); ctx.arc(px(xOf(dataset.X[i], i)), py(yOf(dataset.X[i], i)), 2, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(148,163,184,.45)'; ctx.fill();
+    });
+    labeledIdxs.forEach(function (i) {
+      var x = px(xOf(dataset.X[i], i)), y = py(yOf(dataset.X[i], i));
+      var isQueried = queriedSet[i];
+      ctx.beginPath(); ctx.arc(x, y, isQueried ? 4.5 : 3.2, 0, Math.PI * 2);
+      ctx.fillStyle = dataset.y[i] === 1 ? '#F87171' : '#60A5FA';
+      ctx.fill();
+      if (isQueried) { ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI * 2); ctx.strokeStyle = '#2DD4BF'; ctx.lineWidth = 1.4; ctx.stroke(); }
+    });
+  }
+
+  function drawF1Chart() {
+    var c = document.getElementById('alF1Canvas');
+    var dpr = window.devicePixelRatio || 1;
+    var w = c.clientWidth, h = 80;
+    c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
+    var ctx = c.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    if (f1History.length < 2) return;
+    var pad = 6;
+    var min = Math.min.apply(null, f1History), max = Math.max.apply(null, f1History);
+    if (max - min < 0.02) { max += 0.02; min -= 0.02; }
+    function px(i) { return pad + (i * (w - pad * 2)) / (f1History.length - 1); }
+    function py(v) { return h - pad - ((v - min) / (max - min)) * (h - pad * 2); }
+    ctx.beginPath(); ctx.moveTo(px(0), h - pad);
+    for (var i = 0; i < f1History.length; i++) ctx.lineTo(px(i), py(f1History[i]));
+    ctx.lineTo(px(f1History.length - 1), h - pad); ctx.closePath();
+    var grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, 'rgba(20,184,166,.35)'); grad.addColorStop(1, 'rgba(20,184,166,0)');
+    ctx.fillStyle = grad; ctx.fill();
+    ctx.beginPath();
+    for (var j = 0; j < f1History.length; j++) { var X = px(j), Y = py(f1History[j]); if (j === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y); }
+    ctx.strokeStyle = '#14B8A6'; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
+    var lx = px(f1History.length - 1), ly = py(f1History[f1History.length - 1]);
+    ctx.beginPath(); ctx.arc(lx, ly, 3, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
+  }
+
+  function render() {
+    drawScatter(); drawF1Chart();
+    var curF1 = f1History[f1History.length - 1];
+    var prevF1 = f1History.length > 1 ? f1History[f1History.length - 2] : curF1;
+    document.getElementById('alRoundValue').textContent = Math.min(round, TOTAL_ROUNDS) + ' / ' + TOTAL_ROUNDS + (done ? ' (+oversample)' : '');
+    document.getElementById('alLabeledValue').textContent = labeledIdxs.length + ' / ' + (labeledIdxs.length + poolIdxs.length);
+    document.getElementById('alF1Value').textContent = curF1.toFixed(4);
+    var delta = curF1 - prevF1;
+    var badge = document.getElementById('alDeltaBadge');
+    if (round === 0) { badge.className = 'delta flat'; badge.textContent = 'starting point'; }
+    else if (delta > 0.001) { badge.className = 'delta up'; badge.textContent = '+' + delta.toFixed(4); }
+    else if (delta < -0.001) { badge.className = 'delta down'; badge.textContent = delta.toFixed(4); }
+    else { badge.className = 'delta flat'; badge.textContent = '±0.0000'; }
+
+    var narr = document.getElementById('alNarration');
+    if (round === 0 && !done) {
+      narr.innerHTML = 'Starting from <b>' + N_INITIAL + '</b> randomly labeled employees. F1(Left) on the held-out test set: <b>' + curF1.toFixed(4) + '</b>.';
+    } else if (done) {
+      narr.innerHTML = 'Final refit with <b>' + MINORITY_OVERSAMPLE + '×</b> minority oversampling (real submission\'s single largest lever) — F1 <b>' + curF1.toFixed(4) + '</b>. Real submission (real data, real 5,000-query budget): <b>0.647</b>.';
+    } else {
+      var isMargin = round <= MARGIN_ROUNDS;
+      narr.innerHTML = '<b>Round ' + round + '</b> — queried the ' + queriedThisRound.length + ' pool employees ' +
+        (round <= MARGIN_ROUNDS ? 'closest to the decision boundary (margin sampling)' : 'most likely to be "Left" (positive hunt)') +
+        '. F1 now <b>' + curF1.toFixed(4) + '</b>.';
+    }
+  }
+
+  var playing = false, timer = null;
+  function tick() {
+    clearTimeout(timer);
+    timer = setTimeout(function () {
+      if (!playing) return;
+      stepRound(); render();
+      if (done) { stopPlay(); return; }
+      tick();
+    }, 700);
+  }
+  function stopPlay() {
+    playing = false; clearTimeout(timer);
+    var btn = document.getElementById('alPlayBtn');
+    btn.classList.remove('playing'); btn.innerHTML = '&#9654;';
+  }
+  function startPlay() {
+    if (playing || done) return;
+    playing = true;
+    var btn = document.getElementById('alPlayBtn');
+    btn.classList.add('playing'); btn.innerHTML = '&#10074;&#10074;';
+    tick();
+  }
+  document.getElementById('alPlayBtn').addEventListener('click', function () { if (playing) stopPlay(); else startPlay(); });
+  document.getElementById('alStepBtn').addEventListener('click', function () { stopPlay(); if (!done) { stepRound(); render(); } });
+  document.getElementById('alRestartBtn').addEventListener('click', function () { stopPlay(); queriedThisRound = []; init(); render(); });
+  window.addEventListener('resize', function () { if (dataset) { drawScatter(); drawF1Chart(); } });
+
+  window.__initActiveLearning = function () {
+    if (window.__alInited) return;
+    window.__alInited = true;
+    init(); render();
   };
-  document.getElementById('osNote').textContent = notes[idx] + ' RF hyperparameters and encoding are fixed by the framework — the training distribution is the only tuning lever.';
-  const x=c.getContext('2d'); x.clearRect(0,0,c.width,c.height);
-  const pad={l:50,r:20,t:16,b:30};
-  const n=OS.length, minV=0.58, maxV=0.65;
-  const innerW=c.width-pad.l-pad.r, innerH=c.height-pad.t-pad.b;
-  function xOf(i){return pad.l+(i/(n-1))*innerW;}
-  function yOf(v){return pad.t+innerH-((v-minV)/(maxV-minV))*innerH;}
-  x.strokeStyle='rgba(148,163,184,.2)'; x.font='10px JetBrains Mono,monospace'; x.fillStyle='#94A3B8';
-  [0.58,0.60,0.62,0.64].forEach(g=>{
-    const gy=yOf(g);
-    x.beginPath();x.moveTo(pad.l,gy);x.lineTo(c.width-pad.r,gy);x.stroke();
-    x.textAlign='right'; x.fillText(g.toFixed(2),pad.l-6,gy+3);
-  });
-  x.strokeStyle='#60A5FA'; x.lineWidth=2; x.beginPath();
-  OS.forEach((o,i)=>{const px=xOf(i),py=yOf(o.f1); if(i===0) x.moveTo(px,py); else x.lineTo(px,py);});
-  x.stroke();
-  OS.forEach((o,i)=>{
-    const px=xOf(i), py=yOf(o.f1);
-    x.fillStyle= i===idx ? '#14B8A6' : '#60A5FA';
-    x.beginPath(); x.arc(px,py,i===idx?7:4,0,6.28); x.fill();
-    x.fillStyle='#E2E8F0'; x.font='10px Inter,sans-serif'; x.textAlign='center';
-    x.fillText(o.x, px, c.height-pad.b+14);
-    if(i===idx){ x.font='11px JetBrains Mono,monospace'; x.fillStyle='#14B8A6'; x.fillText(o.f1.toFixed(3), px, py-12); }
-  });
-}
-document.getElementById('osSlider').addEventListener('input',drawOS);
+})();
 
 // initial render
 runDetector();
