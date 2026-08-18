@@ -73,6 +73,14 @@
   .spin{display:inline-block;width:11px;height:11px;border:2px solid var(--line);border-top-color:var(--accent);
     border-radius:50%;animation:sp .7s linear infinite;vertical-align:-1px;margin-right:5px;}
   @keyframes sp{to{transform:rotate(360deg)}}
+  .inspect-link{background:none;border:none;color:var(--accent);font:inherit;font-size:11.5px;cursor:pointer;padding:0;margin-top:4px;display:inline-block;}
+  .inspect-link:hover{text-decoration:underline;}
+  #ransacInspect canvas{display:block;max-width:100%;border-radius:8px;background:#000;border:1px solid var(--line);}
+  .rtransport{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:9px;padding:5px 8px 5px 5px;background:var(--surface);}
+  .rtransport button{appearance:none;border:1px solid transparent;background:var(--panel);color:var(--fg);width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:.78rem;display:inline-flex;align-items:center;justify-content:center;transition:.15s;padding:0;font-weight:400;}
+  .rtransport button:hover{border-color:var(--accent);color:var(--accent);}
+  .rtransport button.playing{background:var(--accent);color:#fff;border-color:var(--accent);}
+  #rChart{width:100%;height:64px;}
 </style>
 </head>
 <body>
@@ -180,6 +188,25 @@
     <button class="secondary" id="modalClose">✕ Close</button>
   </div>
   <img id="modalImg" />
+</dialog>
+
+<dialog id="ransacInspect" style="width:600px">
+  <div class="dbar">
+    <span class="mono" id="rName">RANSAC search</span><span style="flex:1"></span>
+    <button class="secondary" id="rClose">✕ Close</button>
+  </div>
+  <canvas id="rCanvas" width="560" height="230"></canvas>
+  <div class="dbar" style="margin:9px 0 4px">
+    <div class="rtransport">
+      <button id="rRestart" title="Restart">&#8635;</button>
+      <button id="rStep" title="Step">&#9197;</button>
+      <button id="rPlay" title="Play / pause">&#9654;</button>
+    </div>
+    <span style="flex:1"></span>
+    <span class="mono" id="rStat">—</span>
+  </div>
+  <canvas id="rChart" width="560" height="64"></canvas>
+  <div class="note" id="rNarration" style="margin-top:8px">Press play to replay the real per-iteration RANSAC search for this pair.</div>
 </dialog>
 
 <script>
@@ -393,6 +420,29 @@ function ransacInliers(matches){
   }
   return best;
 }
+// Same algorithm as ransacInliers, but records a per-iteration trace for the
+// "inspect" playback. Kept as a separate function so the real re-ranking
+// loop (14 candidates x 260 iters) stays exactly as fast as before.
+function ransacInliersTraced(matches){
+  const thr=6, iters=260; let best=0, bestS=null;
+  const trace=[];
+  if(matches.length<3) return {best:0,trace:[]};
+  for(let it=0;it<iters;it++){
+    const idx=[0,0,0].map(()=>(Math.random()*matches.length)|0);
+    const s=idx.map(i=>matches[i]);
+    const A=affineFrom(s);
+    if(!A){ trace.push({idx,degenerate:true,curInl:0,isBest:false,bestCount:best,bestA:bestS}); continue; }
+    let inl=0; const inlSet=[];
+    matches.forEach(([p,q],mi)=>{
+      const px=A[0]*p[0]+A[1]*p[1]+A[2], py=A[3]*p[0]+A[4]*p[1]+A[5];
+      if((px-q[0])**2+(py-q[1])**2 < thr*thr){ inl++; inlSet.push(mi); }
+    });
+    let isBest=false;
+    if(inl>best){ best=inl; bestS=inlSet; isBest=true; }
+    trace.push({idx,degenerate:false,curInl:inl,isBest,bestCount:best,bestA:bestS?bestS.slice():null});
+  }
+  return {best,trace};
+}
 function affineFrom(s){ // solve 2x3 affine from 3 point pairs
   const [[p0,q0],[p1,q1],[p2,q2]]=s;
   const det=(p1[0]-p0[0])*(p2[1]-p0[1])-(p2[0]-p0[0])*(p1[1]-p0[1]);
@@ -428,6 +478,7 @@ async function init(){
 
 // ── UI wiring ──────────────────────────────────────────────────────────────
 let queryId = null, uploaded = null; // uploaded = {emb,_idata}
+let RANSAC_CTX = null; // {qf,qData,qName} — set after a RANSAC re-rank, used by "inspect" playback
 function renderGallery(){
   $("#gallery").innerHTML = IMAGES.filter(i=>!i.variant).map(i=>
     `<img src="${i.file}" data-id="${i.id}" title="${i.name} — ${i.caption}" loading="lazy">`).join("");
@@ -511,6 +562,7 @@ function runImage(k, rerank){
     const rest=cand.filter(c=>c.inliers<MIN).sort((a,b)=>b.score-a.score);
     show([...verified,...rest].slice(0,k),{mode:"ransac",q,verified:verified.length});
     $("#status").innerHTML=`indexed <b>${IMAGES.length}</b> images · RANSAC verified ${verified.length} match(es)`;
+    RANSAC_CTX={qf,qData:q._idata,qName:q.self?q.self.name:"your upload"};
   },20);
 }
 function runText(k){
@@ -567,7 +619,8 @@ function show(rows, ctx){
     if(ctx.mode==="ransac"){
       const ver=r.inliers>=8;
       line=`<span class="score ${ver?'accent':'muted'}">${r.inliers} inliers</span>`+
-           `<span class="muted mono"> · ${r.matches} matches · cos ${fmt(r.score)}</span>`;
+           `<span class="muted mono"> · ${r.matches} matches · cos ${fmt(r.score)}</span>`+
+           `<br><button class="inspect-link" data-inspect="${im.id}">🔍 watch the RANSAC search</button>`;
     } else if(ctx.mode==="fusion"){
       line=`<span class="score accent">${fmt(r.score)}</span>`+
            `<span class="muted mono"> · img ${fmt(r.vis)} · txt ${fmt(r.txt)}</span>`;
@@ -578,6 +631,8 @@ function show(rows, ctx){
   });
   $("#results").innerHTML=out.join("");
   bindZoom();
+  $("#results").querySelectorAll("[data-inspect]").forEach(el=>
+    el.addEventListener("click",(e)=>{ e.stopPropagation(); inspectRansac(+el.dataset.inspect); }));
 }
 function card(im,{tag,line,qcard,win}={}){
   const dup=im.variant?`<span class="tag dup">near-dup · ${VLABEL[im.variant]}</span>`:"";
@@ -587,6 +642,114 @@ function card(im,{tag,line,qcard,win}={}){
     <img src="${im.file}" data-id="${im.id}" loading="lazy">
     <div class="meta">${qt||dup}${body}</div></div>`;
 }
+
+// ── RANSAC inspect: replay the real per-iteration search for one pair ──────
+const RINSPECT={trace:null,frame:0,playing:false,timer:null,matches:null,qData:null,cData:null};
+
+function idataToCanvas(idata){
+  const c=document.createElement("canvas"); c.width=idata.width; c.height=idata.height;
+  c.getContext("2d").putImageData(idata,0,0); return c;
+}
+function rLayout(cv){
+  const gap=10, halfW=(cv.width-gap)/2;
+  const s=Math.min(halfW/WORK, cv.height/WORK);
+  const w=WORK*s, h=WORK*s;
+  return {s, ax:(halfW-w)/2, ay:(cv.height-h)/2, bx:halfW+gap+(halfW-w)/2, by:(cv.height-h)/2, w, h};
+}
+function drawRInspectFrame(){
+  const cv=$("#rCanvas"), ctx=cv.getContext("2d");
+  ctx.fillStyle="#000"; ctx.fillRect(0,0,cv.width,cv.height);
+  const L=rLayout(cv);
+  ctx.drawImage(idataToCanvas(RINSPECT.qData),L.ax,L.ay,L.w,L.h);
+  ctx.drawImage(idataToCanvas(RINSPECT.cData),L.bx,L.by,L.w,L.h);
+  const A2c=(x,y)=>[L.ax+x*L.s, L.ay+y*L.s], B2c=(x,y)=>[L.bx+x*L.s, L.by+y*L.s];
+  const t=RINSPECT.trace[RINSPECT.frame];
+  const matches=RINSPECT.matches;
+  // all tentative matches, faint
+  ctx.lineWidth=0.5; ctx.strokeStyle="rgba(154,163,178,.3)";
+  matches.forEach(([p,q])=>{ const a=A2c(p[0],p[1]), b=B2c(q[0],q[1]);
+    ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke(); });
+  // best-so-far inliers, green
+  const bestA = (RINSPECT.frame>=RINSPECT.trace.length-1) ? RINSPECT.finalInl : t.bestA;
+  if(bestA){
+    ctx.lineWidth=1.2; ctx.strokeStyle="rgba(90,200,140,.9)";
+    bestA.forEach(mi=>{ const [p,q]=matches[mi]; const a=A2c(p[0],p[1]), b=B2c(q[0],q[1]);
+      ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
+      ctx.fillStyle="#5ac88c"; ctx.beginPath(); ctx.arc(a[0],a[1],2.2,0,7); ctx.fill();
+      ctx.beginPath(); ctx.arc(b[0],b[1],2.2,0,7); ctx.fill(); });
+  }
+  // this iteration's random 3-point sample
+  const sampleColor = t.degenerate ? "#e0685f" : (t.isBest ? "#e0b341" : "#5b8cff");
+  ctx.lineWidth=2; ctx.strokeStyle=sampleColor;
+  t.idx.forEach(mi=>{ const [p,q]=matches[mi]; const a=A2c(p[0],p[1]), b=B2c(q[0],q[1]);
+    ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
+    ctx.fillStyle=sampleColor;
+    ctx.beginPath(); ctx.arc(a[0],a[1],4,0,7); ctx.fill();
+    ctx.beginPath(); ctx.arc(b[0],b[1],4,0,7); ctx.fill(); });
+}
+function drawRChart(){
+  const cv=$("#rChart"), ctx=cv.getContext("2d");
+  const W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  const trace=RINSPECT.trace, upTo=RINSPECT.frame+1;
+  const maxN=Math.max(1,...trace.slice(0,upTo).map(t=>t.bestCount));
+  const px=i=>4+(W-8)*(i/Math.max(1,trace.length-1));
+  const py=v=>H-4-(H-8)*(v/maxN);
+  ctx.beginPath(); ctx.moveTo(px(0),H-4);
+  for(let i=0;i<upTo;i++) ctx.lineTo(px(i),py(trace[i].bestCount));
+  ctx.lineTo(px(upTo-1),H-4); ctx.closePath();
+  const grad=ctx.createLinearGradient(0,0,0,H); grad.addColorStop(0,"rgba(91,140,255,.35)"); grad.addColorStop(1,"rgba(91,140,255,0)");
+  ctx.fillStyle=grad; ctx.fill();
+  ctx.strokeStyle="#5b8cff"; ctx.lineWidth=1.8; ctx.beginPath();
+  for(let i=0;i<upTo;i++){ const x=px(i),y=py(trace[i].bestCount); i?ctx.lineTo(x,y):ctx.moveTo(x,y); } ctx.stroke();
+}
+function renderRInspect(){
+  const t=RINSPECT.trace[RINSPECT.frame], isLast=RINSPECT.frame>=RINSPECT.trace.length-1;
+  drawRInspectFrame(); drawRChart();
+  const bestNow = isLast ? RINSPECT.finalBest : t.bestCount;
+  $("#rStat").textContent=`iter ${RINSPECT.frame+1} / ${RINSPECT.trace.length} · this sample ${t.degenerate?"—":t.curInl} inliers · best ${bestNow} / ${RINSPECT.matches.length}`;
+  let msg;
+  if(t.degenerate) msg=`Iteration ${RINSPECT.frame+1} — the 3 sampled points were near-collinear, no affine fit possible — skipped.`;
+  else if(t.isBest) msg=`Iteration ${RINSPECT.frame+1} — new best: this random 3-point affine fit earns ${t.curInl} inliers, beating the previous best.`;
+  else msg=`Iteration ${RINSPECT.frame+1} — ${t.curInl} inliers, fewer than the current best (${t.bestCount}) — discarded.`;
+  if(isLast) msg+=` Search done — ${RINSPECT.finalBest} inliers is what "watch RANSAC search" reported.`;
+  $("#rNarration").textContent=msg;
+}
+function stopRInspect(){ RINSPECT.playing=false; clearTimeout(RINSPECT.timer); const b=$("#rPlay"); b.classList.remove("playing"); b.innerHTML="&#9654;"; }
+function playRInspect(){
+  if(RINSPECT.playing||RINSPECT.frame>=RINSPECT.trace.length-1) return;
+  RINSPECT.playing=true; const b=$("#rPlay"); b.classList.add("playing"); b.innerHTML="&#10074;&#10074;";
+  tickRInspect();
+}
+function tickRInspect(){
+  clearTimeout(RINSPECT.timer);
+  RINSPECT.timer=setTimeout(()=>{
+    if(!RINSPECT.playing) return;
+    RINSPECT.frame=Math.min(RINSPECT.frame+1,RINSPECT.trace.length-1);
+    renderRInspect();
+    if(RINSPECT.frame>=RINSPECT.trace.length-1){ stopRInspect(); return; }
+    tickRInspect();
+  }, RINSPECT.trace.length>150?25:90);
+}
+function inspectRansac(candId){
+  if(!RANSAC_CTX||!RANSAC_CTX.qf) return alert("Run a VLAD + RANSAC search first.");
+  const im=IMAGES.find(i=>i.id===candId); if(!im) return;
+  const cf=getFeatures(im);
+  const matches=match(RANSAC_CTX.qf,cf);
+  const {best,trace}=ransacInliersTraced(matches);
+  if(!trace.length){ alert("Too few tentative matches to run RANSAC on this pair."); return; }
+  stopRInspect();
+  RINSPECT.trace=trace; RINSPECT.frame=0; RINSPECT.matches=matches;
+  RINSPECT.qData=RANSAC_CTX.qData; RINSPECT.cData=im._idata;
+  RINSPECT.finalBest=best; RINSPECT.finalInl=trace[trace.length-1].bestA;
+  $("#rName").textContent=`${RANSAC_CTX.qName} ↔ ${im.name}`;
+  $("#ransacInspect").showModal();
+  renderRInspect();
+}
+$("#rPlay").addEventListener("click",()=>{ if(RINSPECT.playing) stopRInspect(); else playRInspect(); });
+$("#rStep").addEventListener("click",()=>{ stopRInspect(); if(!RINSPECT.trace) return; RINSPECT.frame=Math.min(RINSPECT.frame+1,RINSPECT.trace.length-1); renderRInspect(); });
+$("#rRestart").addEventListener("click",()=>{ stopRInspect(); if(!RINSPECT.trace) return; RINSPECT.frame=0; renderRInspect(); });
+$("#rClose").addEventListener("click",()=>{ stopRInspect(); $("#ransacInspect").close(); });
 
 // ── Modal zoom ─────────────────────────────────────────────────────────────
 function bindZoom(){
