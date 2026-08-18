@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ecommerce — GilCaplan/ecommerce</title>
+<style>
+  :root{
+    --bg:#0B1220; --surface:#0F172A; --panel:#1E293B; --panel-hi:#24324A; --border:#243044;
+    --text:#E2E8F0; --muted:#94A3B8; --faint:#4B5872; --teal:#14B8A6; --teal-soft:#2DD4BF; --teal-dim:#0E8C81;
+    --blue:#60A5FA; --red:#F87171; --amber:#FBBF24;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    line-height:1.55;font-size:15px;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 20px 60px;}
+  code,kbd,.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;}
+  h1{font-size:24px;margin:0 0 4px;letter-spacing:-0.01em;}
+  h2{font-size:17px;margin:0 0 4px;color:var(--text);}
+  h3{font-size:13.5px;margin:0 0 4px;color:var(--text);}
+  .sub{color:var(--muted);font-size:14px;margin:6px 0 0;max-width:70ch;}
+  .badge{display:inline-block;font-size:11px;padding:2px 9px;border-radius:999px;
+    border:1px solid var(--border);color:var(--muted);background:var(--surface);
+    margin-right:6px;font-family:"JetBrains Mono",ui-monospace,monospace;}
+  .badge.teal{color:var(--teal-soft);border-color:var(--teal-dim);}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 14px;border-bottom:1px solid var(--border);padding-bottom:10px;}
+  .tab{padding:7px 14px;border-radius:9px;border:1px solid var(--border);background:var(--surface);
+    color:var(--muted);cursor:pointer;font-size:13px;transition:.15s;}
+  .tab:hover{color:var(--text);border-color:var(--teal);}
+  .tab.active{background:var(--panel);color:var(--teal-soft);border-color:var(--teal);}
+  .view{display:none;animation:fade .25s ease;}
+  .view.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin:12px 0;}
+  .panel.surface{background:var(--surface);}
+  .muted{color:var(--muted);}
+  .note{font-size:12px;color:var(--faint);border-left:2px solid var(--teal);padding-left:10px;margin:12px 0;line-height:1.6;}
+  .cols{display:flex;gap:14px;flex-wrap:wrap;}
+  .kvs{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0;}
+  .kv{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;}
+  .kv b{color:var(--teal-soft);font-family:"JetBrains Mono",monospace;}
+
+  /* ── sub-tabs (Greedy / Genetic) ── */
+  .subtabs{display:inline-flex;border:1px solid var(--border);border-radius:12px;padding:3px;background:var(--surface);gap:2px;}
+  .subtab{appearance:none;border:none;background:transparent;color:var(--muted);font-size:13px;font-weight:500;
+    padding:7px 14px;border-radius:9px;cursor:pointer;transition:.15s;}
+  .subtab:hover{color:var(--text);}
+  .subtab.active{background:var(--panel-hi);color:#fff;}
+
+  .controls-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin:14px 0 12px;}
+  .transport{display:inline-flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:12px;padding:6px 10px 6px 6px;background:var(--surface);}
+  .transport button{appearance:none;border:1px solid transparent;background:var(--panel);color:var(--text);
+    width:32px;height:32px;border-radius:9px;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;justify-content:center;transition:.15s;}
+  .transport button:hover{border-color:var(--teal);color:var(--teal-soft);}
+  .transport button:disabled{opacity:.4;cursor:default;}
+  .transport button#playBtn.playing{background:var(--teal-dim);color:#04211d;border-color:var(--teal);}
+  .speed{display:inline-flex;align-items:center;gap:7px;font-size:11px;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.06em;padding-left:6px;border-left:1px solid var(--border);margin-left:2px;}
+  .speed input[type=range]{width:70px;accent-color:var(--teal);}
+
+  .stage{display:grid;grid-template-columns:1.5fr 1fr;gap:14px;align-items:stretch;}
+  @media(max-width:760px){.stage{grid-template-columns:1fr;}}
+  .graph-card{position:relative;display:flex;flex-direction:column;gap:8px;min-height:400px;}
+  .graph-card canvas{width:100%;height:360px;display:block;border-radius:10px;cursor:crosshair;}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11px;color:var(--muted);}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .legend i{width:8px;height:8px;border-radius:999px;display:inline-block;}
+
+  .tooltip{position:absolute;pointer-events:none;z-index:5;max-width:210px;padding:9px 11px;border-radius:10px;
+    border:1px solid var(--border);background:var(--panel-hi);box-shadow:0 12px 28px rgba(0,0,0,.4);
+    opacity:0;transform:translateY(2px);transition:opacity .12s ease,transform .12s ease;}
+  .tooltip.visible{opacity:1;transform:translateY(0);}
+  .tooltip .tt-name{font-size:13px;font-weight:600;color:#fff;display:flex;align-items:baseline;gap:6px;}
+  .tooltip .tt-role{font-size:10px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+  .tooltip .tt-stat{margin-top:4px;font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--muted);}
+  .tooltip .tt-stat b{color:var(--text);}
+  .tooltip .tt-status{margin-top:6px;padding-top:6px;border-top:1px solid var(--border);font-size:11px;line-height:1.4;}
+  .tooltip .tt-status.good{color:var(--teal-soft);}
+  .tooltip .tt-status.warn{color:var(--blue);}
+  .tooltip .tt-status.bad{color:var(--red);}
+  .tooltip .tt-status.neutral{color:var(--muted);}
+
+  .stats-card{display:flex;flex-direction:column;gap:12px;}
+  .stat-row{display:flex;justify-content:space-between;align-items:baseline;}
+  .stat-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);}
+  .stat-value{font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums;font-size:14px;color:var(--text);}
+  .stat-value.big{font-size:23px;color:#fff;font-weight:600;}
+  .stat-value.accent{color:var(--teal-soft);}
+  .delta{font-family:"JetBrains Mono",monospace;font-size:11px;padding:1px 7px;border-radius:999px;}
+  .delta.up{color:var(--teal-soft);background:rgba(45,212,191,.12);}
+  .delta.down{color:var(--red);background:rgba(248,113,113,.1);}
+  .delta.flat{color:var(--muted);background:rgba(148,163,184,.08);}
+  .divider{height:1px;background:var(--border);margin:2px 0;}
+  #scoreCanvas{width:100%;height:90px;display:block;}
+  .live-flag{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);}
+  .live-dot{width:6px;height:6px;border-radius:999px;background:var(--faint);}
+  .live-dot.on{background:var(--red);animation:pulseDot 1.4s ease-in-out infinite;}
+  @keyframes pulseDot{0%,100%{opacity:1}50%{opacity:.35}}
+
+  .narration{margin-top:12px;padding:11px 15px;border:1px solid var(--border);border-radius:12px;background:var(--surface);
+    font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--muted);min-height:18px;}
+  .narration b{color:var(--text);font-weight:600;}
+  .narration .kept{color:var(--teal-soft);}
+  .narration .rejected{color:var(--red);}
+
+  .pop-rows{display:flex;flex-direction:column;gap:4px;max-height:280px;overflow-y:auto;}
+  .pop-row{display:flex;align-items:center;gap:10px;}
+  .pop-rank{width:24px;font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--faint);text-align:right;}
+  .pop-bar-track{flex:1;height:11px;border-radius:6px;background:var(--surface);overflow:hidden;}
+  .pop-bar-fill{height:100%;border-radius:6px;transition:width .25s ease,background .25s ease;}
+  .pop-score{width:48px;font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--muted);}
+
+  .loading{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px;padding:30px 0;}
+  .spinner{width:14px;height:14px;border-radius:999px;border:2px solid var(--border);border-top-color:var(--teal);animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .spread-btn{appearance:none;border:1px solid var(--teal-dim);background:rgba(20,184,166,.1);color:var(--teal-soft);
+    padding:8px 14px;border-radius:9px;font-size:12.5px;font-weight:500;cursor:pointer;transition:.15s;}
+  .spread-btn:hover{background:rgba(20,184,166,.18);}
+  .spread-btn:disabled{opacity:.4;cursor:default;}
+  .spread-counter{font-family:"JetBrains Mono",monospace;font-size:26px;color:#fff;font-weight:600;}
+  .spread-bar-track{height:10px;border-radius:6px;background:var(--surface);overflow:hidden;margin-top:8px;}
+  .spread-bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--teal-dim),var(--teal-soft));width:0%;transition:width .4s ease;}
+
+  /* HW02 / HW03 */
+  .belief-rows{display:flex;flex-direction:column;gap:6px;}
+  .belief-row{display:flex;align-items:center;gap:10px;}
+  .belief-label{width:78px;font-size:12px;color:var(--muted);font-family:"JetBrains Mono",monospace;}
+  .belief-track{flex:1;height:16px;border-radius:6px;background:var(--surface);overflow:hidden;}
+  .belief-fill{height:100%;border-radius:6px;transition:width .3s ease,background .3s ease;}
+  .belief-pct{width:52px;font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--muted);text-align:right;}
+  .belief-row.true .belief-label{color:var(--amber);}
+
+  #priceCanvas{width:100%;height:220px;display:block;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin:6px 0;}
+  th,td{text-align:left;padding:6px 9px;border-bottom:1px solid var(--border);}
+  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em;}
+  td.mono,th.mono{font-family:"JetBrains Mono",monospace;}
+
+  button:focus-visible,input:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
+  @media(prefers-reduced-motion:reduce){.live-dot.on,.spinner{animation:none;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>ecommerce — HW01 / HW02 / HW03</h1>
+  <p class="sub">
+    Technion e-commerce course, three assignments. HW01 is the flagship: pick a seed set to maximize
+    a product launch's spread across a real 4,039-person friendship network, solved with a greedy
+    hill-climb and a genetic algorithm — running live below, on the real graph. HW02 and HW03 are
+    lighter live demos of the other two assignments' core algorithms.
+  </p>
+  <div class="kvs">
+    <span class="badge teal">real data</span>
+    <span class="badge">4,039 people · 88,234 friendships</span>
+    <span class="badge">github.com/GilCaplan/ecommerce</span>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-view="hw01">HW01 — Seed Set Search</button>
+    <button class="tab" data-view="hw02">HW02 — Bayesian Recommender</button>
+    <button class="tab" data-view="hw03">HW03 — Adaptive Pricing</button>
+  </div>
+
+  <!-- ══════════════════════════ HW01 ══════════════════════════ -->
+  <div class="view active" id="view-hw01">
+    <p class="sub">
+      Two solvers compete for the same job: <b style="color:var(--text)">greedy</b> fills the ten seed
+      slots one at a time, always taking the best available person for the slot it's currently
+      filling; <b style="color:var(--text)">genetic</b> evolves a population of whole seed sets across
+      generations — selection, crossover, mutation. Both run for real against the real graph below;
+      nothing here is a canned animation.
+    </p>
+
+    <div id="hw01Loading" class="loading"><span class="spinner"></span> loading the real graph — 4,039 people, 88,234 friendships, 1,000-person candidate pool…</div>
+
+    <div id="hw01App" style="display:none">
+      <div class="controls-row">
+        <div class="subtabs" role="tablist">
+          <button class="subtab active" data-phase="greedy">Greedy search</button>
+          <button class="subtab" data-phase="genetic">Genetic algorithm</button>
+        </div>
+        <div class="transport">
+          <button id="restartBtn" title="Restart run" aria-label="Restart run">&#8635;</button>
+          <button id="stepBtn" title="Step forward" aria-label="Step forward">&#9197;</button>
+          <button id="playBtn" title="Play / pause" aria-label="Play or pause">&#9654;</button>
+          <label class="speed"><span>speed</span>
+            <input type="range" id="speedSlider" min="1" max="5" value="3" step="1" aria-label="Playback speed">
+          </label>
+        </div>
+      </div>
+
+      <main class="stage">
+        <section class="panel graph-card">
+          <canvas id="graphCanvas" role="img" aria-label="Candidate pool network, seed and testing nodes highlighted"></canvas>
+          <div class="tooltip" id="graphTooltip"></div>
+          <div class="legend">
+            <span><i style="background:var(--teal-soft)"></i>seed (current best)</span>
+            <span><i style="background:var(--blue)"></i>candidate under test</span>
+            <span><i style="background:var(--muted)"></i>candidate pool</span>
+          </div>
+        </section>
+
+        <aside class="panel stats-card">
+          <div class="stat-row">
+            <span class="stat-label" id="iterLabel">Round · candidate</span>
+            <span class="live-flag"><span class="live-dot" id="liveDot"></span><span id="liveText">idle</span></span>
+          </div>
+          <div class="stat-value big" id="iterValue">—</div>
+          <div class="divider"></div>
+          <div class="stat-row"><span class="stat-label">Tested reach</span><span class="stat-value" id="testedScore">—</span></div>
+          <div class="stat-row"><span class="stat-label">Best so far</span><span class="stat-value accent" id="bestScore">—</span></div>
+          <div class="stat-row"><span class="stat-label">Result</span><span class="delta flat" id="deltaBadge">—</span></div>
+          <div class="divider"></div>
+          <div class="stat-row"><span class="stat-label">Best reach over time</span></div>
+          <canvas id="scoreCanvas" role="img" aria-label="Best reach found so far, over time"></canvas>
+        </aside>
+      </main>
+
+      <div class="narration" id="narration">Ready — press play to watch the greedy search run on the real graph.</div>
+
+      <section class="panel" id="populationCard" style="display:none">
+        <h3>Population — sorted by reach <span class="muted mono" id="genLabel" style="font-size:11px"></span></h3>
+        <p class="muted" style="font-size:11.5px;margin:2px 0 10px">Each row is one 10-person candidate seed set (real people, real graph). Top half survives each generation; the rest are bred by crossover, some mutated.</p>
+        <div class="pop-rows" id="popRows"></div>
+      </section>
+
+      <section class="panel">
+        <div class="cols" style="align-items:center;justify-content:space-between">
+          <div>
+            <h3>Preview the spread</h3>
+            <p class="muted" style="font-size:12px;margin:2px 0 0">Runs one real 6-round cascade from the current best seed set, across the <b style="color:var(--text)">full</b> 4,039-person graph (not just the visible pool).</p>
+          </div>
+          <button class="spread-btn" id="spreadBtn" disabled>▶ preview spread</button>
+        </div>
+        <div id="spreadResult" style="display:none;margin-top:12px">
+          <div class="spread-counter" id="spreadCounter">0</div>
+          <div class="muted mono" id="spreadPct" style="font-size:11.5px">0% of the network reached</div>
+          <div class="spread-bar-track"><div class="spread-bar-fill" id="spreadBar"></div></div>
+        </div>
+      </section>
+
+      <p class="note">
+        Simplifications, disclosed: the visible/candidate pool is the real top-1,000 people by real degree
+        centrality (cost = 100 only) — matching the real assignment's ~800–1,000-node pool size. The real
+        pool ranked by degree <i>and</i> betweenness centrality; betweenness is a multi-minute computation
+        even offline, so it's omitted here to keep this a live in-browser build (degree centrality alone
+        gets very similar top candidates on a network this size). Each reach estimate averages 5
+        Monte&nbsp;Carlo trials instead of the real 20–33, to stay responsive — same graph, same costs,
+        same diffusion formulas (<code>buy_products</code> / <code>product_exposure_score</code>), same
+        greedy and genetic mechanics (population 20, 50 generations, exactly as submitted).
+      </p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════ HW02 ══════════════════════════ -->
+  <div class="view" id="view-hw02">
+    <p class="sub">
+      HW02's <code>Recommender</code> class doesn't know the user's type — it maintains a posterior
+      belief over which of several viewer types it's talking to, and sharpens that belief after every
+      recommendation using the same likelihood-ratio update the real <code>update()</code> method runs:
+      multiply by <code>L</code> (probability of a like) on a like, or by <code>(1−L)·S</code> (probability
+      of a dislike <i>and staying</i>) on a dislike, then renormalize. Below, a live run against one
+      hidden true type — every belief bar moves by that exact formula.
+    </p>
+    <div class="panel">
+      <div class="controls-row" style="margin:0 0 10px">
+        <span class="muted" style="font-size:12px">Round <span class="mono" id="hw02Round" style="color:var(--text)">0</span> / 20</span>
+        <div class="transport">
+          <button id="hw02RestartBtn" title="Restart">&#8635;</button>
+          <button id="hw02PlayBtn" title="Play / pause">&#9654;</button>
+        </div>
+      </div>
+      <div class="belief-rows" id="hw02Bars"></div>
+      <div class="narration" id="hw02Narration" style="margin-top:12px">Ready — press play to start recommending.</div>
+    </div>
+    <p class="note">
+      A representative 4-genre × 4-type <code>L</code>/<code>S</code> scenario stands in for the course's
+      randomly-generated test matrices (those aren't public data) — the update rule and recommendation
+      logic are the real ones from <code>solution_part2.py</code>.
+    </p>
+  </div>
+
+  <!-- ══════════════════════════ HW03 ══════════════════════════ -->
+  <div class="view" id="view-hw03">
+    <p class="sub">
+      HW03's <code>PriceSetter1</code> discovers a hidden customer value with no prior — post a price,
+      see sold/not-sold, and adapt: a sale nudges the price <i>up</i> toward a shrinking ceiling
+      (<code>scaling_factor = 1.4 − 0.4·t/(t+1)</code>), a pass halves the gap down to a new ceiling.
+      Below is the real <code>set_price()</code> / <code>update()</code> logic, run live against a
+      freshly sampled hidden value each restart.
+    </p>
+    <div class="panel">
+      <div class="controls-row" style="margin:0 0 10px">
+        <span class="muted" style="font-size:12px">Round <span class="mono" id="hw03Round" style="color:var(--text)">0</span> / 60</span>
+        <div class="transport">
+          <button id="hw03RestartBtn" title="Restart">&#8635;</button>
+          <button id="hw03PlayBtn" title="Play / pause">&#9654;</button>
+        </div>
+      </div>
+      <canvas id="priceCanvas"></canvas>
+      <div class="kvs" style="margin-top:10px">
+        <span class="kv">price now: <b id="hw03Price">—</b></span>
+        <span class="kv">hidden value: <b id="hw03Value">?</b></span>
+        <span class="kv">revenue so far: <b id="hw03Revenue">$0.00</b></span>
+      </div>
+      <div class="narration" id="hw03Narration" style="margin-top:12px">Ready — press play to start posting prices.</div>
+    </div>
+    <p class="note">Logic ported 1:1 from <code>PriceSetter1_id1_id2.py</code>. The customer's hidden value is resampled uniformly on [0,1] each restart, exactly as <code>simulate()</code> does.</p>
+  </div>
+
+  <p class="muted" style="font-size:11.5px;margin-top:28px">
+    Full source: <span class="mono">github.com/GilCaplan/ecommerce</span>
+  </p>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ════════════════════════ shared helpers ════════════════════════ */
+  var NAMES = ['Maya','Liam','Noa','Ethan','Zoe','Omar','Ava','Kai','Priya','Leo',
+    'Yara','Finn','Mia','Theo','Sana','Jonah','Elin','Rami','Nora','Diego',
+    'Ines','Arjun','Lucia','Milo','Aya','Felix','Tara','Hugo','Nina','Sami',
+    'Ruby','Adrian','Lena','Kofi','Isla','Ravi','Talia','Owen','Meera','Jasper',
+    'Freya','Amos','Dana','Igor','Skye','Boris','Wren','Yuki','Kian','Anaya',
+    'Dov','Layla','Piers','Rosa','Bram','Fatima','Silas','Nadia','Tobin','Elio',
+    'Camila','Otis','Selin','Rowan','Amara','Jude','Naomi','Cyrus','Vera','Emeka',
+    'Iris','Baxter','Suri','Callum','Halle','Ezra','Mira','Gideon','Petra','Amir',
+    'Coral','Rhys','Sadie','Toby','Marit','Levi','Junia','Otto','Bea','Farah',
+    'Cato','Yasmin','Neo','Ola'];
+
+  function fmt1(v) { return v.toFixed(1); }
+  function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  function sizeCanvas(canvas, cssHeight) {
+    var dpr = window.devicePixelRatio || 1;
+    var w = canvas.clientWidth || canvas.parentElement.clientWidth;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(cssHeight * dpr);
+    var ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { w: w, h: cssHeight };
+  }
+  function drawScoreLine(canvas, history, color) {
+    var dims = sizeCanvas(canvas, canvas === document.getElementById('scoreCanvas') ? 90 : 90);
+    var ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, dims.w, dims.h);
+    if (history.length < 2) return;
+    var pad = 6;
+    var min = Math.min.apply(null, history), max = Math.max.apply(null, history);
+    if (max - min < 1) { max += 1; min -= 1; }
+    var xStep = (dims.w - pad * 2) / (history.length - 1);
+    function px(i) { return pad + i * xStep; }
+    function py(v) { return dims.h - pad - ((v - min) / (max - min)) * (dims.h - pad * 2); }
+    ctx.beginPath();
+    ctx.moveTo(px(0), dims.h - pad);
+    for (var i = 0; i < history.length; i++) ctx.lineTo(px(i), py(history[i]));
+    ctx.lineTo(px(history.length - 1), dims.h - pad);
+    ctx.closePath();
+    var grad = ctx.createLinearGradient(0, 0, 0, dims.h);
+    grad.addColorStop(0, color + '48');
+    grad.addColorStop(1, color + '00');
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.beginPath();
+    for (var j = 0; j < history.length; j++) {
+      var X = px(j), Y = py(history[j]);
+      if (j === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+    }
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.stroke();
+    var lx = px(history.length - 1), ly = py(history[history.length - 1]);
+    ctx.beginPath(); ctx.arc(lx, ly, 3.2, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
+  }
+
+  /* top-level tabs */
+  document.querySelectorAll('.tabs .tab').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.tabs .tab').forEach(function (b) { b.classList.toggle('active', b === btn); });
+      var view = btn.getAttribute('data-view');
+      document.querySelectorAll('.view').forEach(function (v) { v.classList.toggle('active', v.id === 'view-' + view); });
+    });
+  });
+
+  /* ════════════════════════ HW01 — seed set search ════════════════════════ */
+  fetch('data.json').then(function (r) { return r.json(); }).then(function (data) { initHW01(data); });
+
+  function initHW01(data) {
+    var N = data.n;
+
+    // Full-graph adjacency as CSR (offsets + flat neighbor array) instead of
+    // Array<Set> — Set.forEach in the hot diffusion loop was ~45ms/candidate
+    // (10,000 candidates x 10 rounds would be 7+ minutes); flat typed-array
+    // indexing is roughly an order of magnitude faster for this access pattern.
+    var deg = new Int32Array(N);
+    for (var e0 = 0; e0 < data.edges.length; e0 += 2) { deg[data.edges[e0]]++; deg[data.edges[e0 + 1]]++; }
+    var offsets = new Int32Array(N + 1);
+    for (var i0 = 0; i0 < N; i0++) offsets[i0 + 1] = offsets[i0] + deg[i0];
+    var neighbors = new Int32Array(offsets[N]);
+    var cursor = offsets.slice();
+    for (var e1 = 0; e1 < data.edges.length; e1 += 2) {
+      var uu = data.edges[e1], vv = data.edges[e1 + 1];
+      neighbors[cursor[uu]++] = vv;
+      neighbors[cursor[vv]++] = uu;
+    }
+    var degree = deg;
+
+    var costs = data.costs;
+    var poolIds = data.poolIds; // already sorted desc by real degree centrality
+    var poolSet = new Set(poolIds);
+
+    var TRIALS = 5, ROUNDS = 6, K = 10, POP = 20, GENS = 50;
+
+    /* real diffusion mechanics, ported 1:1 from solution code.py's buy_products /
+       product_exposure_score — scans ALL real nodes each round, not just the pool,
+       to match the real algorithm's full-network cascade. */
+    var activeBuf = new Uint8Array(N); // reused scratch buffer; read synchronously before reuse
+    function cascade(seeds) {
+      activeBuf.fill(0);
+      for (var s0 = 0; s0 < seeds.length; s0++) activeBuf[seeds[s0]] = 1;
+      var additions = [];
+      for (var r = 0; r < ROUNDS; r++) {
+        additions.length = 0;
+        for (var u = 0; u < N; u++) {
+          if (activeBuf[u]) continue;
+          var start = offsets[u], end = offsets[u + 1];
+          var n = end - start;
+          if (n === 0) continue;
+          var b = 0;
+          for (var k = start; k < end; k++) { if (activeBuf[neighbors[k]]) b++; }
+          if ((b / n) >= Math.random()) additions.push(u);
+        }
+        if (additions.length === 0) break;
+        for (var a = 0; a < additions.length; a++) activeBuf[additions[a]] = 1;
+      }
+      return activeBuf;
+    }
+    function exposureScore(purchased) {
+      var exposure = 0;
+      for (var u = 0; u < N; u++) {
+        if (purchased[u]) { exposure++; continue; }
+        var start = offsets[u], end = offsets[u + 1];
+        var b = 0;
+        for (var k = start; k < end; k++) { if (purchased[neighbors[k]]) b++; }
+        if (b !== 0 && Math.random() < 1 / (1 + 10 * Math.exp(-b / 2))) exposure++;
+      }
+      return exposure;
+    }
+    function runSimulation(seeds, trials) {
+      var total = 0;
+      for (var j = 0; j < trials; j++) total += exposureScore(cascade(seeds));
+      return total / trials;
+    }
+
+    /* induced subgraph among the pool (real edges only), for rendering */
+    var poolEdges = [];
+    var poolAdj = {};
+    poolIds.forEach(function (u) { poolAdj[u] = []; });
+    poolIds.forEach(function (u) {
+      var start = offsets[u], end = offsets[u + 1];
+      for (var k = start; k < end; k++) {
+        var v = neighbors[k];
+        if (!poolSet.has(v)) continue;
+        if (v > u) poolEdges.push([u, v]);
+        poolAdj[u].push(v);
+      }
+    });
+
+    var LOGICAL_W = 1000, LOGICAL_H = 600;
+    var positions = layoutPool(poolIds, LOGICAL_W, LOGICAL_H);
+
+    // Phyllotaxis (sunflower) spiral, O(n): since poolIds is already sorted by
+    // real degree centrality descending, index order alone puts hubs at the
+    // center and the long tail toward the rim — no O(n^2) force relaxation
+    // needed even at pool sizes in the hundreds-to-low-thousands.
+    function layoutPool(ids, W, H) {
+      var n = ids.length;
+      var cx = W / 2, cy = H / 2;
+      var maxR = Math.min(W, H) / 2 - 24;
+      var golden = Math.PI * (3 - Math.sqrt(5));
+      var out = {};
+      ids.forEach(function (id, i) {
+        var r = maxR * Math.sqrt(i / Math.max(1, n - 1));
+        var theta = i * golden;
+        out[id] = { x: cx + r * Math.cos(theta), y: cy + r * Math.sin(theta) };
+      });
+      return out;
+    }
+
+    var roleOf = {};
+    poolIds.forEach(function (id, rank) {
+      var pct = rank / poolIds.length;
+      roleOf[id] = pct < 0.15 ? 'hub' : (pct < 0.5 ? 'connector' : 'fringe');
+    });
+
+    /* ── state machines ── */
+    var activePhase = 'greedy';
+    var playing = false, timer = null;
+    var scoreHistory = { greedy: [], genetic: [] };
+    var currentFrameObj = null;
+    var overallBest = { greedy: { score: -Infinity, seeds: [] }, genetic: { score: -Infinity, seeds: [] } };
+
+    var greedyState = null, geneticState = null;
+
+    function initGreedy() {
+      greedyState = { round: 0, candIdx: 0, seeds: [], bestScoreThisRound: -Infinity, bestCandThisRound: null, lastCand: null, lastScore: null, lastKept: null, done: false };
+      overallBest.greedy = { score: -Infinity, seeds: [] };
+      scoreHistory.greedy = [];
+    }
+    function stepGreedy() {
+      var s = greedyState;
+      if (s.done) return;
+      var cand = poolIds[s.candIdx];
+      if (s.seeds.indexOf(cand) === -1) {
+        var trial = s.seeds.concat([cand]);
+        var score = runSimulation(trial, TRIALS);
+        var kept = score > s.bestScoreThisRound;
+        if (kept) { s.bestScoreThisRound = score; s.bestCandThisRound = cand; }
+        s.lastCand = cand; s.lastScore = score; s.lastKept = kept;
+        if (score > overallBest.greedy.score) overallBest.greedy = { score: score, seeds: trial };
+      }
+      s.candIdx++;
+      if (s.candIdx >= poolIds.length) {
+        if (s.bestCandThisRound !== null) s.seeds.push(s.bestCandThisRound);
+        s.round++; s.candIdx = 0; s.bestScoreThisRound = -Infinity; s.bestCandThisRound = null;
+        if (s.round >= K) s.done = true;
+      }
+    }
+
+    function initGenetic() {
+      var initialPop = [];
+      for (var i = 0; i < POP; i++) initialPop.push(shuffle(poolIds).slice(0, K));
+      geneticState = { gen: 0, population: initialPop, bestScore: -Infinity, bestSeeds: null, lastPopulationScored: null, done: false };
+      overallBest.genetic = { score: -Infinity, seeds: [] };
+      scoreHistory.genetic = [];
+    }
+    function stepGenetic() {
+      var s = geneticState;
+      if (s.done) return;
+      var scored = s.population.map(function (chrom) { return { chrom: chrom, score: runSimulation(chrom, TRIALS) }; });
+      scored.sort(function (a, b) { return b.score - a.score; });
+      if (scored[0].score > s.bestScore) { s.bestScore = scored[0].score; s.bestSeeds = scored[0].chrom.slice(); }
+      s.lastPopulationScored = scored;
+      overallBest.genetic = { score: s.bestScore, seeds: s.bestSeeds };
+
+      var nSurvive = Math.floor(0.5 * POP);
+      var survivors = scored.slice(0, nSurvive).map(function (x) { return x.chrom; });
+      var next = survivors.slice();
+      while (next.length < POP) {
+        var pa = survivors[Math.floor(Math.random() * survivors.length)];
+        var pb = survivors[Math.floor(Math.random() * survivors.length)];
+        var union = Array.from(new Set(pa.concat(pb)));
+        next.push(shuffle(union).slice(0, K));
+      }
+      var nMutate = Math.floor(0.25 * POP);
+      var mutateIdx = new Set();
+      while (mutateIdx.size < nMutate) mutateIdx.add(Math.floor(Math.random() * POP));
+      mutateIdx.forEach(function (idx) {
+        var chrom = next[idx].slice();
+        var gi = Math.floor(Math.random() * chrom.length);
+        chrom[gi] = poolIds[Math.floor(Math.random() * poolIds.length)];
+        next[idx] = chrom;
+      });
+
+      s.population = next;
+      s.gen++;
+      if (s.gen >= GENS) s.done = true;
+    }
+
+    /* ── rendering ── */
+    var graphCanvas = document.getElementById('graphCanvas');
+    var gctx = graphCanvas.getContext('2d');
+    var lastScale = { sx: 1, sy: 1 };
+    var hoveredNode = null;
+
+    function drawGraph() {
+      var dims = sizeCanvas(graphCanvas, 360);
+      var sx = dims.w / LOGICAL_W, sy = dims.h / LOGICAL_H;
+      lastScale.sx = sx; lastScale.sy = sy;
+      gctx.clearRect(0, 0, dims.w, dims.h);
+
+      var seedsSet, testingId = null;
+      if (activePhase === 'greedy') {
+        seedsSet = new Set(greedyState.seeds.concat(greedyState.bestCandThisRound !== null ? [greedyState.bestCandThisRound] : []));
+        testingId = greedyState.lastCand;
+      } else {
+        seedsSet = new Set(geneticState.bestSeeds || []);
+      }
+
+      // At pool sizes in the hundreds+, drawing every real induced edge is a
+      // hairball. Instead: draw real edges only where they touch a current
+      // seed or the node under test — still every line is a real friendship,
+      // just scoped to what's relevant to the current answer.
+      var highlighted = new Set(seedsSet);
+      if (testingId !== null) highlighted.add(testingId);
+      gctx.lineWidth = 1;
+      highlighted.forEach(function (u) {
+        (poolAdj[u] || []).forEach(function (v) {
+          var both = seedsSet.has(u) && seedsSet.has(v);
+          gctx.strokeStyle = both ? 'rgba(45,212,191,.30)' : 'rgba(96,165,250,.14)';
+          gctx.beginPath();
+          gctx.moveTo(positions[u].x * sx, positions[u].y * sy);
+          gctx.lineTo(positions[v].x * sx, positions[v].y * sy);
+          gctx.stroke();
+        });
+      });
+
+      var dotR = poolIds.length > 400 ? 1.5 : (poolIds.length > 200 ? 2.1 : 3.2);
+      poolIds.forEach(function (n) {
+        var x = positions[n].x * sx, y = positions[n].y * sy;
+        var r = dotR, fill = '#94A3B8', alpha = poolIds.length > 400 ? 0.55 : 0.85;
+        if (n === testingId) { fill = '#60A5FA'; r = 5.6; alpha = 1; }
+        if (seedsSet.has(n)) { fill = '#2DD4BF'; r = 6.2; alpha = 1; }
+        gctx.globalAlpha = alpha;
+        if (seedsSet.has(n) || n === testingId) { gctx.shadowBlur = 9; gctx.shadowColor = fill; } else { gctx.shadowBlur = 0; }
+        gctx.beginPath(); gctx.arc(x, y, r, 0, Math.PI * 2); gctx.fillStyle = fill; gctx.fill();
+        gctx.shadowBlur = 0; gctx.globalAlpha = 1;
+        if (n === testingId) { gctx.beginPath(); gctx.arc(x, y, r + 3.5, 0, Math.PI * 2); gctx.strokeStyle = '#60A5FA'; gctx.lineWidth = 1.3; gctx.stroke(); }
+      });
+    }
+
+    function describeNode(n) {
+      var name = NAMES[n % NAMES.length];
+      var role = roleOf[n];
+      var statusText = 'candidate pool — considered, not chosen (yet)', statusClass = 'neutral';
+      if (activePhase === 'greedy' && greedyState) {
+        var s = greedyState;
+        if (s.seeds.indexOf(n) !== -1 || n === s.bestCandThisRound) {
+          statusText = 'current seed — part of the best set found so far'; statusClass = 'good';
+        } else if (n === s.lastCand) {
+          statusText = s.lastKept
+            ? 'just took the lead for this slot — reach ' + fmt1(s.lastScore)
+            : 'tested — reach ' + fmt1(s.lastScore) + ', below the current best for this slot';
+          statusClass = s.lastKept ? 'good' : 'bad';
+        }
+      } else if (activePhase === 'genetic' && geneticState) {
+        var g = geneticState;
+        if (g.bestSeeds && g.bestSeeds.indexOf(n) !== -1) { statusText = 'in the current best seed set'; statusClass = 'good'; }
+        else if (g.lastPopulationScored) {
+          var count = 0;
+          g.lastPopulationScored.forEach(function (m) { if (m.chrom.indexOf(n) !== -1) count++; });
+          if (count > 0) { statusText = 'in ' + count + ' of ' + g.lastPopulationScored.length + ' seed sets this generation'; statusClass = 'warn'; }
+        }
+      }
+      return { name: name, role: role, degree: degree[n], id: n, statusText: statusText, statusClass: statusClass };
+    }
+
+    function refreshTooltip() {
+      if (hoveredNode === null) return;
+      var d = describeNode(hoveredNode);
+      var tt = document.getElementById('graphTooltip');
+      tt.innerHTML =
+        '<div class="tt-name">' + d.name + ' <span class="tt-role">' + d.role + '</span></div>' +
+        '<div class="tt-stat">real id #' + d.id + ' · friends: <b>' + d.degree + '</b></div>' +
+        '<div class="tt-status ' + d.statusClass + '">' + d.statusText + '</div>';
+    }
+    function positionTooltip(x, y) {
+      var tt = document.getElementById('graphTooltip');
+      var card = graphCanvas.parentElement;
+      var maxX = Math.max(8, card.clientWidth - tt.offsetWidth - 8);
+      var maxY = Math.max(8, card.clientHeight - tt.offsetHeight - 8);
+      tt.style.left = Math.min(Math.max(8, x + 14), maxX) + 'px';
+      tt.style.top = Math.min(Math.max(8, y - 10), maxY) + 'px';
+    }
+    function findNearestNode(mx, my) {
+      var best = null, bestDist = 14 * 14;
+      poolIds.forEach(function (n) {
+        var x = positions[n].x * lastScale.sx, y = positions[n].y * lastScale.sy;
+        var dx = mx - x, dy = my - y, d2 = dx * dx + dy * dy;
+        if (d2 < bestDist) { bestDist = d2; best = n; }
+      });
+      return best;
+    }
+    graphCanvas.addEventListener('mousemove', function (e) {
+      var rect = graphCanvas.getBoundingClientRect();
+      var n = findNearestNode(e.clientX - rect.left, e.clientY - rect.top);
+      var tt = document.getElementById('graphTooltip');
+      if (n === null) { hoveredNode = null; tt.classList.remove('visible'); return; }
+      hoveredNode = n; refreshTooltip(); positionTooltip(e.clientX - rect.left, e.clientY - rect.top); tt.classList.add('visible');
+    });
+    graphCanvas.addEventListener('mouseleave', function () { hoveredNode = null; document.getElementById('graphTooltip').classList.remove('visible'); });
+
+    function renderStats() {
+      var best = overallBest[activePhase];
+      document.getElementById('bestScore').textContent = best.score > -Infinity ? fmt1(best.score) : '—';
+      document.getElementById('spreadBtn').disabled = !(best.seeds && best.seeds.length === K);
+
+      if (activePhase === 'greedy') {
+        var s = greedyState;
+        document.getElementById('iterLabel').textContent = 'Slot ' + (Math.min(s.round + 1, K)) + ' / ' + K + ' · testing';
+        document.getElementById('iterValue').textContent = s.lastCand !== null ? (NAMES[s.lastCand % NAMES.length] + ' #' + s.lastCand) : '—';
+        document.getElementById('testedScore').textContent = s.lastScore !== null ? fmt1(s.lastScore) : '—';
+        var badge = document.getElementById('deltaBadge');
+        if (s.lastKept === null) { badge.className = 'delta flat'; badge.textContent = 'starting'; }
+        else if (s.lastKept) { badge.className = 'delta up'; badge.textContent = 'new best for this slot'; }
+        else { badge.className = 'delta down'; badge.textContent = 'below current best'; }
+        var narr = document.getElementById('narration');
+        if (s.lastCand === null) narr.innerHTML = '<b>Slot 1</b> — sweeping all ' + poolIds.length + ' candidates to fill the first seed.';
+        else narr.innerHTML = '<b>Slot ' + (s.round + 1) + '</b> — tested <b>' + NAMES[s.lastCand % NAMES.length] + ' #' + s.lastCand + '</b>: reach ' +
+          (s.lastKept ? '<span class="kept">' + fmt1(s.lastScore) + ' — new best for this slot</span>' : '<span class="rejected">' + fmt1(s.lastScore) + ' — not an improvement</span>') + '.';
+        document.getElementById('populationCard').style.display = 'none';
+      } else {
+        var g = geneticState;
+        document.getElementById('iterLabel').textContent = 'Generation';
+        document.getElementById('iterValue').textContent = 'gen ' + g.gen + ' / ' + GENS;
+        var topScore = g.lastPopulationScored ? g.lastPopulationScored[0].score : null;
+        document.getElementById('testedScore').textContent = topScore !== null ? fmt1(topScore) + ' (top of gen)' : '—';
+        var badge2 = document.getElementById('deltaBadge');
+        badge2.className = 'delta flat'; badge2.textContent = g.gen === 0 ? 'starting' : 'gen ' + g.gen + ' scored';
+        document.getElementById('narration').innerHTML = g.lastPopulationScored
+          ? '<b>Generation ' + g.gen + '</b> — 20 seed sets scored on the real graph; top half survive, rest bred by crossover with 25% mutation. Best reach so far: <b>' + fmt1(g.bestScore) + '</b>.'
+          : 'Ready — press play to evolve the population.';
+        document.getElementById('genLabel').textContent = g.lastPopulationScored ? ('gen ' + g.gen + ' / ' + GENS) : '';
+        document.getElementById('populationCard').style.display = g.lastPopulationScored ? '' : 'none';
+        if (g.lastPopulationScored) renderPopulation(g.lastPopulationScored);
+      }
+      drawScoreLine(document.getElementById('scoreCanvas'), scoreHistory[activePhase], '#2DD4BF');
+      refreshTooltip();
+    }
+
+    function renderPopulation(scored) {
+      var container = document.getElementById('popRows');
+      container.innerHTML = '';
+      var max = scored[0].score || 1;
+      scored.forEach(function (member, idx) {
+        var row = document.createElement('div'); row.className = 'pop-row';
+        var rank = document.createElement('span'); rank.className = 'pop-rank'; rank.textContent = '#' + (idx + 1);
+        var track = document.createElement('div'); track.className = 'pop-bar-track';
+        var fill = document.createElement('div'); fill.className = 'pop-bar-fill';
+        fill.style.width = Math.max(4, (member.score / max) * 100) + '%';
+        fill.style.background = idx === 0 ? '#2DD4BF' : (idx < scored.length / 2 ? 'rgba(96,165,250,.65)' : 'rgba(148,163,184,.35)');
+        track.appendChild(fill);
+        var score = document.createElement('span'); score.className = 'pop-score'; score.textContent = fmt1(member.score);
+        row.appendChild(rank); row.appendChild(track); row.appendChild(score);
+        container.appendChild(row);
+      });
+    }
+
+    function render() {
+      if (activePhase === 'greedy') scoreHistory.greedy.push(overallBest.greedy.score > -Infinity ? overallBest.greedy.score : 0);
+      else scoreHistory.genetic.push(overallBest.genetic.score > -Infinity ? overallBest.genetic.score : 0);
+      drawGraph();
+      renderStats();
+    }
+
+    function isDone() { return activePhase === 'greedy' ? greedyState.done : geneticState.done; }
+    function doStep() { if (activePhase === 'greedy') stepGreedy(); else stepGenetic(); }
+
+    var DELAY = { 1: 650, 2: 400, 3: 220, 4: 100, 5: 20 };
+    var BATCH = { 1: 1, 2: 1, 3: 2, 4: 4, 5: 10 };
+    function speedVal() { return parseInt(document.getElementById('speedSlider').value, 10); }
+
+    function tick() {
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        if (!playing) return;
+        var batch = BATCH[speedVal()];
+        for (var i = 0; i < batch && !isDone(); i++) doStep();
+        render();
+        if (isDone()) { stop(); return; }
+        tick();
+      }, DELAY[speedVal()]);
+    }
+    function setLive(on) {
+      document.getElementById('liveDot').classList.toggle('on', on);
+      document.getElementById('liveText').textContent = on ? 'computing' : 'paused';
+    }
+    function play() {
+      if (playing || isDone()) return;
+      playing = true;
+      document.getElementById('playBtn').classList.add('playing');
+      document.getElementById('playBtn').innerHTML = '&#10074;&#10074;';
+      setLive(true); tick();
+    }
+    function stop() {
+      playing = false; clearTimeout(timer);
+      document.getElementById('playBtn').classList.remove('playing');
+      document.getElementById('playBtn').innerHTML = '&#9654;';
+      setLive(false);
+    }
+    function restart() {
+      stop();
+      if (activePhase === 'greedy') initGreedy(); else initGenetic();
+      document.getElementById('spreadResult').style.display = 'none';
+      render();
+    }
+    function setPhase(phase) {
+      activePhase = phase; stop();
+      document.querySelectorAll('.subtab').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-phase') === phase); });
+      if (phase === 'greedy' && !greedyState) initGreedy();
+      if (phase === 'genetic' && !geneticState) initGenetic();
+      document.getElementById('spreadResult').style.display = 'none';
+      render();
+    }
+
+    document.querySelectorAll('.subtab').forEach(function (b) { b.addEventListener('click', function () { setPhase(b.getAttribute('data-phase')); }); });
+    document.getElementById('playBtn').addEventListener('click', function () { if (playing) stop(); else play(); });
+    document.getElementById('stepBtn').addEventListener('click', function () { stop(); if (!isDone()) { doStep(); render(); } });
+    document.getElementById('restartBtn').addEventListener('click', restart);
+    window.addEventListener('resize', function () { if (greedyState || geneticState) drawGraph(); });
+
+    /* preview spread */
+    document.getElementById('spreadBtn').addEventListener('click', function () {
+      var best = overallBest[activePhase];
+      if (!best.seeds || best.seeds.length !== K) return;
+      var btn = document.getElementById('spreadBtn'); btn.disabled = true;
+      var resultBox = document.getElementById('spreadResult'); resultBox.style.display = '';
+      var counter = document.getElementById('spreadCounter'), pctEl = document.getElementById('spreadPct'), bar = document.getElementById('spreadBar');
+      var active = new Uint8Array(N);
+      var activeCount = 0;
+      best.seeds.forEach(function (s0) { active[s0] = 1; activeCount++; });
+      counter.textContent = activeCount; pctEl.textContent = ((activeCount / N) * 100).toFixed(1) + '% of the network reached'; bar.style.width = ((activeCount / N) * 100) + '%';
+      var round = 0;
+      function stepSpread() {
+        if (round >= ROUNDS) { btn.disabled = false; return; }
+        var additions = [];
+        for (var u = 0; u < N; u++) {
+          if (active[u]) continue;
+          var start = offsets[u], end = offsets[u + 1];
+          var n = end - start; if (n === 0) continue;
+          var b = 0;
+          for (var k = start; k < end; k++) { if (active[neighbors[k]]) b++; }
+          if ((b / n) >= Math.random()) additions.push(u);
+        }
+        additions.forEach(function (u) { active[u] = 1; activeCount++; });
+        round++;
+        counter.textContent = activeCount.toLocaleString();
+        pctEl.textContent = 'round ' + round + '/' + ROUNDS + ' — ' + ((activeCount / N) * 100).toFixed(1) + '% of the network reached';
+        bar.style.width = ((activeCount / N) * 100) + '%';
+        drawGraph(); // real pool nodes among 'active' will light up via seedsSet next render if desired
+        setTimeout(stepSpread, 550);
+      }
+      setTimeout(stepSpread, 400);
+    });
+
+    /* init */
+    initGreedy();
+    document.getElementById('hw01Loading').style.display = 'none';
+    document.getElementById('hw01App').style.display = '';
+    render();
+  }
+
+  /* ════════════════════════ HW02 — Bayesian recommender ════════════════════════ */
+  (function () {
+    var GENRES = ['Comedy', 'Drama', 'Action', 'Doc'];
+    var TYPES = ['Casual', 'Binge', 'Critic', 'Lurker'];
+    // representative L (like-prob) / S (stay-after-dislike-prob) matrices — genres x types
+    var L = [
+      [0.75, 0.20, 0.35, 0.55],
+      [0.30, 0.70, 0.25, 0.60],
+      [0.45, 0.15, 0.80, 0.20],
+      [0.15, 0.40, 0.20, 0.65],
+    ];
+    var S = [
+      [0.85, 0.60, 0.70, 0.80],
+      [0.65, 0.85, 0.55, 0.75],
+      [0.70, 0.50, 0.85, 0.60],
+      [0.55, 0.70, 0.60, 0.85],
+    ];
+    var prior = [0.25, 0.25, 0.25, 0.25];
+    var ROUNDS = 20;
+
+    var state = null;
+    function dot(matRow, vec) { var s = 0; for (var i = 0; i < vec.length; i++) s += matRow[i] * vec[i]; return s; }
+
+    function init() {
+      var trueType = Math.floor(Math.random() * TYPES.length);
+      state = { t: 0, curr_p: prior.slice(), trueType: trueType, lastGenre: null, lastSignal: null, done: false };
+    }
+    function recommend() {
+      // real logic: score each genre by dot(L[genre], curr_p), pick argmax
+      var best = 0, bestScore = -1;
+      for (var g = 0; g < GENRES.length; g++) {
+        var score = dot(L[g], state.curr_p);
+        if (score > bestScore) { bestScore = score; best = g; }
+      }
+      return best;
+    }
+    function step() {
+      if (state.done) return;
+      var genre = recommend();
+      var likeProb = L[genre][state.trueType];
+      var liked = Math.random() < likeProb;
+      // real update() formula
+      var next = new Array(TYPES.length);
+      for (var j = 0; j < TYPES.length; j++) {
+        next[j] = liked ? state.curr_p[j] * L[genre][j] : state.curr_p[j] * (1 - L[genre][j]) * S[genre][j];
+      }
+      var sum = next.reduce(function (a, b) { return a + b; }, 0) || 1e-9;
+      state.curr_p = next.map(function (v) { return v / sum; });
+      state.lastGenre = genre; state.lastSignal = liked; state.t++;
+      if (state.t >= ROUNDS) state.done = true;
+    }
+
+    function render() {
+      document.getElementById('hw02Round').textContent = state.t;
+      var container = document.getElementById('hw02Bars');
+      container.innerHTML = '';
+      state.curr_p.forEach(function (p, j) {
+        var row = document.createElement('div');
+        row.className = 'belief-row' + (j === state.trueType ? ' true' : '');
+        var label = document.createElement('span'); label.className = 'belief-label'; label.textContent = TYPES[j] + (j === state.trueType ? ' ★' : '');
+        var track = document.createElement('div'); track.className = 'belief-track';
+        var fill = document.createElement('div'); fill.className = 'belief-fill';
+        fill.style.width = (p * 100) + '%';
+        fill.style.background = j === state.trueType ? 'linear-gradient(90deg,#0E8C81,#2DD4BF)' : 'rgba(96,165,250,.5)';
+        track.appendChild(fill);
+        var pct = document.createElement('span'); pct.className = 'belief-pct'; pct.textContent = (p * 100).toFixed(1) + '%';
+        row.appendChild(label); row.appendChild(track); row.appendChild(pct);
+        container.appendChild(row);
+      });
+      var narr = document.getElementById('hw02Narration');
+      if (state.lastGenre === null) narr.textContent = 'Ready — press play. ★ marks the hidden true viewer type (unknown to the recommender).';
+      else narr.innerHTML = 'Recommended <b>' + GENRES[state.lastGenre] + '</b> — viewer ' + (state.lastSignal ? '<span class="kept">liked it</span>' : '<span class="rejected">passed</span>') + '. Belief renormalized.';
+    }
+
+    var playing = false, timer = null;
+    function tick() {
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        if (!playing) return;
+        step(); render();
+        if (state.done) { stopPlay(); return; }
+        tick();
+      }, 550);
+    }
+    function stopPlay() {
+      playing = false; clearTimeout(timer);
+      document.getElementById('hw02PlayBtn').innerHTML = '&#9654;';
+    }
+    document.getElementById('hw02PlayBtn').addEventListener('click', function () {
+      if (playing) { stopPlay(); return; }
+      if (state.done) return;
+      playing = true; document.getElementById('hw02PlayBtn').innerHTML = '&#10074;&#10074;'; tick();
+    });
+    document.getElementById('hw02RestartBtn').addEventListener('click', function () { stopPlay(); init(); render(); });
+    init(); render();
+  })();
+
+  /* ════════════════════════ HW03 — adaptive pricing ════════════════════════ */
+  (function () {
+    var ROUNDS = 60;
+    var state = null;
+
+    function init() {
+      state = {
+        t: 0, minPrice: 0, maxPrice: 0.5, threshold: 1, flag: false,
+        value: Math.random(), revenue: 0, history: [], done: false,
+      };
+    }
+    function step() {
+      if (state.done) return;
+      var price = state.maxPrice; // set_price(t)
+      var sold = state.value >= price;
+      if (sold) state.revenue += price;
+      // real update()
+      var scalingFactor = 1.4 - (0.4 * (state.t / (state.t + 1)));
+      if (sold) {
+        state.minPrice = state.maxPrice;
+        state.maxPrice = Math.min(state.threshold, scalingFactor * state.maxPrice);
+      } else {
+        state.threshold = state.maxPrice;
+        state.maxPrice = (state.minPrice + state.maxPrice) / 2;
+      }
+      if (state.threshold - state.minPrice < 0.001 && !state.flag) state.flag = true;
+      state.history.push({ t: state.t, price: price, sold: sold, minPrice: state.minPrice, maxPrice: state.maxPrice, threshold: state.threshold });
+      state.t++;
+      if (state.t >= ROUNDS) state.done = true;
+    }
+
+    function drawChart() {
+      var canvas = document.getElementById('priceCanvas');
+      var dims = sizeCanvas(canvas, 220);
+      var ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, dims.w, dims.h);
+      var pad = { l: 8, r: 8, t: 10, b: 20 };
+      var innerW = dims.w - pad.l - pad.r, innerH = dims.h - pad.t - pad.b;
+      function px(t) { return pad.l + (t / Math.max(1, ROUNDS - 1)) * innerW; }
+      function py(v) { return pad.t + (1 - v) * innerH; }
+
+      // gridlines
+      ctx.strokeStyle = 'rgba(148,163,184,.12)'; ctx.lineWidth = 1;
+      [0, 0.25, 0.5, 0.75, 1].forEach(function (v) { ctx.beginPath(); ctx.moveTo(pad.l, py(v)); ctx.lineTo(dims.w - pad.r, py(v)); ctx.stroke(); });
+
+      // true value line
+      ctx.strokeStyle = '#FBBF24'; ctx.setLineDash([3, 3]); ctx.lineWidth = 1.3;
+      ctx.beginPath(); ctx.moveTo(pad.l, py(state.value)); ctx.lineTo(dims.w - pad.r, py(state.value)); ctx.stroke();
+      ctx.setLineDash([]);
+
+      if (state.history.length > 1) {
+        // bounds band
+        ctx.beginPath();
+        state.history.forEach(function (h, i) { var x = px(h.t); if (i === 0) ctx.moveTo(x, py(h.maxPrice)); else ctx.lineTo(x, py(h.maxPrice)); });
+        for (var i = state.history.length - 1; i >= 0; i--) { var h = state.history[i]; ctx.lineTo(px(h.t), py(h.minPrice)); }
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(96,165,250,.12)'; ctx.fill();
+
+        // price line
+        ctx.beginPath();
+        state.history.forEach(function (h, i) { var x = px(h.t), y = py(h.price); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
+        ctx.strokeStyle = '#2DD4BF'; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
+
+        // sale markers
+        state.history.forEach(function (h) {
+          ctx.beginPath(); ctx.arc(px(h.t), py(h.price), 2.4, 0, Math.PI * 2);
+          ctx.fillStyle = h.sold ? '#2DD4BF' : '#F87171'; ctx.fill();
+        });
+      }
+    }
+
+    function render() {
+      document.getElementById('hw03Round').textContent = state.t;
+      document.getElementById('hw03Price').textContent = state.maxPrice.toFixed(4);
+      document.getElementById('hw03Value').textContent = state.t > 0 ? state.value.toFixed(4) : '?';
+      document.getElementById('hw03Revenue').textContent = '$' + state.revenue.toFixed(4);
+      drawChart();
+      var narr = document.getElementById('hw03Narration');
+      var last = state.history[state.history.length - 1];
+      if (!last) narr.textContent = 'Ready — press play. Yellow dashed line is the hidden value (revealed after round 1).';
+      else narr.innerHTML = 'Round ' + last.t + ' — posted <b>$' + last.price.toFixed(4) + '</b>: ' +
+        (last.sold ? '<span class="kept">sold</span> — pushing the ceiling up' : '<span class="rejected">passed</span> — bisecting down') + '.';
+    }
+
+    var playing = false, timer = null;
+    function tick() {
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        if (!playing) return;
+        step(); render();
+        if (state.done) { stopPlay(); return; }
+        tick();
+      }, 90);
+    }
+    function stopPlay() { playing = false; clearTimeout(timer); document.getElementById('hw03PlayBtn').innerHTML = '&#9654;'; }
+    document.getElementById('hw03PlayBtn').addEventListener('click', function () {
+      if (playing) { stopPlay(); return; }
+      if (state.done) return;
+      playing = true; document.getElementById('hw03PlayBtn').innerHTML = '&#10074;&#10074;'; tick();
+    });
+    document.getElementById('hw03RestartBtn').addEventListener('click', function () { stopPlay(); init(); render(); });
+    init(); render();
+  })();
+})();
+</script>
+</body>
+</html>
