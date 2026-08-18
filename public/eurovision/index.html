@@ -57,6 +57,12 @@ a{color:var(--blue);}
 .respwrap{text-align:center;}
 #respCanvas{border:1px solid var(--border);border-radius:8px;image-rendering:pixelated;width:160px;height:130px;background:#0a0f1c;}
 .ctrlgrid{display:grid;grid-template-columns:1fr;gap:10px;}
+.transport{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:10px;padding:5px 8px 5px 5px;background:#0a0f1c;margin-left:auto;}
+.transport button{appearance:none;border:1px solid transparent;background:var(--panel);color:var(--text);width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:.78rem;display:inline-flex;align-items:center;justify-content:center;transition:.15s;}
+.transport button:hover{border-color:var(--accent);color:var(--accent);}
+.transport button:disabled{opacity:.35;cursor:default;}
+.transport button.playing{background:var(--accent);color:#04201c;border-color:var(--accent);}
+.ransac-play .row{justify-content:space-between;}
 .kpi{display:flex;justify-content:space-between;border-bottom:1px dashed var(--border);padding:4px 0;font-family:'JetBrains Mono',monospace;font-size:.8rem;}
 .kpi span:last-child{color:var(--text);}
 .classchips span{display:inline-block;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:4px 9px;margin:0 5px 5px 0;font-size:.78rem;}
@@ -349,6 +355,20 @@ p  += (dpx, dpy)                      <span class="c"># refine shift until conve
             <span><span class="swatch" style="background:#FBBF24"></span>keypoint</span>
           </div>
           <div class="statline" style="margin-top:8px">kpts A/B <b id="corrKp">—</b> · tentatives <b id="corrTent">—</b> · inliers <b id="corrInl">—</b> · iters <b id="corrIter">—</b> · <b id="corrMs">—</b></div>
+
+          <div class="ransac-play" id="ransacPlay" style="display:none">
+            <div class="row" style="align-items:center;margin:10px 0 6px">
+              <span style="font-size:.82rem;color:var(--muted);font-weight:600">Watch RANSAC search</span>
+              <div class="transport">
+                <button id="rpRestart" title="Restart from iteration 1">&#8635;</button>
+                <button id="rpStep" title="Step one iteration">&#9197;</button>
+                <button id="rpPlay" title="Play / pause">&#9654;</button>
+              </div>
+            </div>
+            <canvas id="rpChart" width="690" height="70"></canvas>
+            <div class="statline" id="rpStat" style="margin-top:6px">—</div>
+            <div class="note" id="rpNarration" style="margin-top:6px">Press play to replay the search, one random 4-point sample at a time.</div>
+          </div>
         </div>
         <div class="ctrlgrid">
           <div>
@@ -1429,23 +1449,27 @@ function corrDegenerate(s){
 /* ---- ransac_h: minimal-sample DLT, inlier count by reprojection, refit on inliers ---- */
 function corrRansac(pairs,thPx,conf,maxIter){
   const N=pairs.length, th2=thPx*thPx;
-  if(N<4) return {H:null,inliers:[],iters:0};
+  if(N<4) return {H:null,inliers:[],iters:0,trace:[]};
   let bestH=null,bestInl=[],bestN=0,curMax=maxIter,it=0;
+  const trace=[]; // per-iteration record for the "watch RANSAC search" playback
   while(it<curMax){ it++;
     // random 4-sample
     const idx=[]; while(idx.length<4){ const r=(Math.random()*N)|0; if(!idx.includes(r)) idx.push(r); }
     const s=idx.map(i=>pairs[i]);
-    if(corrDegenerate(s)) continue;
-    const H=corrGetH(s); if(!H) continue;
+    if(corrDegenerate(s)){ trace.push({sampleIdx:idx,degenerate:true,curCount:0,isBest:false,bestCount:bestN,bestInl:bestInl.slice()}); continue; }
+    const H=corrGetH(s);
+    if(!H){ trace.push({sampleIdx:idx,degenerate:true,curCount:0,isBest:false,bestCount:bestN,bestInl:bestInl.slice()}); continue; }
     const inl=[];
     for(let i=0;i<N;i++){ const p=pairs[i]; if(corrHdist(H,p[0],p[1],p[2],p[3])<th2) inl.push(i); }
-    if(inl.length>bestN){ bestN=inl.length; bestH=H; bestInl=inl;
+    let isBest=false;
+    if(inl.length>bestN){ bestN=inl.length; bestH=H; bestInl=inl; isBest=true;
       // adaptive nsamples()
       const r=bestN/N;
       if(r>=1) curMax=1;
       else { const denom=Math.log(Math.max(1e-10,1-Math.pow(r,4)));
         curMax=Math.min(maxIter, Math.floor(Math.log(Math.max(1e-10,1-conf))/denom)+1); }
     }
+    trace.push({sampleIdx:idx,degenerate:false,curCount:inl.length,isBest,bestCount:bestN,bestInl:bestInl.slice()});
   }
   // refit (least-squares DLT) on all inliers
   if(bestH && bestInl.length>=4){
@@ -1455,7 +1479,7 @@ function corrRansac(pairs,thPx,conf,maxIter){
       if(inl2.length>=bestInl.length){ bestH=Href; bestInl=inl2; }
     }
   }
-  return {H:bestH,inliers:bestInl,iters:it};
+  return {H:bestH,inliers:bestInl,iters:it,trace};
 }
 
 function runCorr(){
@@ -1473,7 +1497,7 @@ function runCorr(){
     const rr=corrRansac(pairs,thPx,0.99,1500);
     const ms=(performance.now()-t0).toFixed(0);
     // res.A/res.B = grayscale images (for drawing); locsA/locsB = detected keypoints
-    const res={A:CORR.A,B:CORR.B,locsA:dA.locs,locsB:dB.locs,m,pairs,inliers:rr.inliers,H:rr.H,iters:rr.iters,thPx};
+    const res={A:CORR.A,B:CORR.B,locsA:dA.locs,locsB:dB.locs,m,pairs,inliers:rr.inliers,H:rr.H,iters:rr.iters,trace:rr.trace,thPx};
     CORR.last=res;
     document.getElementById('corrKp').textContent=dA.locs.length+'/'+dB.locs.length;
     document.getElementById('corrTent').textContent=m.length;
@@ -1485,6 +1509,7 @@ function runCorr(){
       : 'no consensus (need ≥4 inliers)';
     drawCorr(res);
     document.getElementById('corrRun').disabled=false;
+    initRansacPlayback(res);
   },20);
 }
 
@@ -1548,6 +1573,99 @@ function drawCorr(res){
     ctx.fillStyle='#14B8A6'; ctx.beginPath(); ctx.arc(a[0],a[1],2,0,7); ctx.fill();
     ctx.beginPath(); ctx.arc(b[0],b[1],2,0,7); ctx.fill(); }
 }
+
+/* ---- RANSAC search playback: replay the real recorded trace, one 4-point sample at a time ---- */
+const RPLAY={res:null,frame:0,playing:false,timer:null};
+
+function drawRansacFrame(res,frameIdx){
+  const cv=document.getElementById('corrCanvas'), ctx=cv.getContext('2d');
+  ctx.fillStyle='#000'; ctx.fillRect(0,0,cv.width,cv.height);
+  const L=corrLayout(res,cv);
+  ctx.drawImage(grayToCanvas(res.A),L.ax,L.ay,L.aw,L.ah);
+  ctx.drawImage(grayToCanvas(res.B),L.bx,L.by,L.bw,L.bh);
+  const A2c=(x,y)=>[L.ax+x*L.sA, L.ay+y*L.sA], B2c=(x,y)=>[L.bx+x*L.sB, L.by+y*L.sB];
+  const t=res.trace[frameIdx];
+  // all tentative matches, faint (context)
+  ctx.lineWidth=0.5; ctx.strokeStyle='rgba(148,163,184,.28)';
+  for(let k=0;k<res.pairs.length;k++){ const p=res.pairs[k]; const a=A2c(p[0],p[1]), b=B2c(p[2],p[3]);
+    ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke(); }
+  // best-consensus-so-far inliers, teal (the running answer)
+  ctx.lineWidth=1.1; ctx.strokeStyle='rgba(20,184,166,.85)';
+  for(const k of t.bestInl){ const p=res.pairs[k]; const a=A2c(p[0],p[1]), b=B2c(p[2],p[3]);
+    ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
+    ctx.fillStyle='#14B8A6'; ctx.beginPath(); ctx.arc(a[0],a[1],2,0,7); ctx.fill();
+    ctx.beginPath(); ctx.arc(b[0],b[1],2,0,7); ctx.fill(); }
+  // this iteration's random 4-point sample, highlighted
+  const sampleColor = t.degenerate ? '#F87171' : (t.isBest ? '#FBBF24' : '#60A5FA');
+  ctx.lineWidth=2; ctx.strokeStyle=sampleColor;
+  t.sampleIdx.forEach(k=>{ const p=res.pairs[k]; const a=A2c(p[0],p[1]), b=B2c(p[2],p[3]);
+    ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
+    ctx.fillStyle=sampleColor;
+    ctx.beginPath(); ctx.arc(a[0],a[1],4.5,0,7); ctx.fill();
+    ctx.beginPath(); ctx.arc(b[0],b[1],4.5,0,7); ctx.fill(); });
+}
+
+function drawRpChart(){
+  const cv=document.getElementById('rpChart'), ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height, pad={l:6,r:6,t:6,b:6};
+  ctx.clearRect(0,0,W,H);
+  const res=RPLAY.res, upTo=RPLAY.frame+1;
+  const maxN=Math.max(1,...res.trace.slice(0,upTo).map(t=>t.bestCount));
+  const px=i=>pad.l+(W-pad.l-pad.r)*(i/(Math.max(1,res.trace.length-1)));
+  const py=v=>H-pad.b-(H-pad.t-pad.b)*(v/maxN);
+  ctx.beginPath(); ctx.moveTo(px(0),H-pad.b);
+  for(let i=0;i<upTo;i++) ctx.lineTo(px(i),py(res.trace[i].bestCount));
+  ctx.lineTo(px(upTo-1),H-pad.b); ctx.closePath();
+  const grad=ctx.createLinearGradient(0,0,0,H); grad.addColorStop(0,'rgba(20,184,166,.35)'); grad.addColorStop(1,'rgba(20,184,166,0)');
+  ctx.fillStyle=grad; ctx.fill();
+  ctx.strokeStyle='#14B8A6'; ctx.lineWidth=1.8; ctx.beginPath();
+  for(let i=0;i<upTo;i++){ const x=px(i),y=py(res.trace[i].bestCount); i?ctx.lineTo(x,y):ctx.moveTo(x,y); } ctx.stroke();
+}
+
+function renderRpFrame(){
+  const res=RPLAY.res, i=RPLAY.frame, t=res.trace[i];
+  // last frame: show the TRUE final result (the loop's own best plus the
+  // least-squares refit on all its inliers, which can pick up a few more)
+  // rather than the raw last-iteration state, so the picture matches the
+  // reported final inlier count exactly.
+  if(i>=res.trace.length-1) drawCorr(res); else drawRansacFrame(res,i);
+  drawRpChart();
+  const isLast=i>=res.trace.length-1;
+  const bestNow=isLast?res.inliers.length:t.bestCount;
+  document.getElementById('rpStat').innerHTML =
+    `iteration <b>${i+1}</b> / ${res.trace.length} · this sample <b>${t.degenerate?'—':t.curCount}</b> inliers · best so far <b>${bestNow}</b> / ${res.pairs.length}`;
+  const narr=document.getElementById('rpNarration');
+  if(t.degenerate) narr.textContent=`Iteration ${i+1} — sampled 4 correspondences, but 3 were near-collinear (degenerate DLT) — skipped, no homography fit.`;
+  else if(t.isBest) narr.textContent=`Iteration ${i+1} — new best: this random 4-point homography earns ${t.curCount} inliers within threshold, beating the previous best.`;
+  else narr.textContent=`Iteration ${i+1} — this random sample's homography gets ${t.curCount} inliers, fewer than the current best (${t.bestCount}) — discarded.`;
+  if(isLast){ stopRp(); document.getElementById('rpNarration').textContent+=` Search settled — a final least-squares refit on all ${t.bestCount} inliers picked up ${bestNow-t.bestCount>0?('+'+(bestNow-t.bestCount)+' more, '):''}${bestNow} total. This is the answer drawn above.`; }
+}
+function stopRp(){ RPLAY.playing=false; clearTimeout(RPLAY.timer); const b=document.getElementById('rpPlay'); b.classList.remove('playing'); b.innerHTML='&#9654;'; }
+function playRp(){
+  if(RPLAY.playing || !RPLAY.res || RPLAY.frame>=RPLAY.res.trace.length-1) return;
+  RPLAY.playing=true; const b=document.getElementById('rpPlay'); b.classList.add('playing'); b.innerHTML='&#10074;&#10074;';
+  tickRp();
+}
+function tickRp(){
+  clearTimeout(RPLAY.timer);
+  RPLAY.timer=setTimeout(()=>{
+    if(!RPLAY.playing) return;
+    RPLAY.frame=Math.min(RPLAY.frame+1,RPLAY.res.trace.length-1);
+    renderRpFrame();
+    if(RPLAY.frame>=RPLAY.res.trace.length-1){ stopRp(); return; }
+    tickRp();
+  }, RPLAY.res.trace.length>200 ? 30 : 110);
+}
+function initRansacPlayback(res){
+  if(!res.trace || !res.trace.length){ document.getElementById('ransacPlay').style.display='none'; return; }
+  stopRp();
+  RPLAY.res=res; RPLAY.frame=0;
+  document.getElementById('ransacPlay').style.display='';
+  renderRpFrame();
+}
+document.getElementById('rpPlay').onclick=()=>{ if(RPLAY.playing) stopRp(); else playRp(); };
+document.getElementById('rpStep').onclick=()=>{ stopRp(); if(!RPLAY.res) return; RPLAY.frame=Math.min(RPLAY.frame+1,RPLAY.res.trace.length-1); renderRpFrame(); };
+document.getElementById('rpRestart').onclick=()=>{ stopRp(); if(!RPLAY.res) return; RPLAY.frame=0; renderRpFrame(); };
 
 /* ============================ CNN data + chart ============================ */
 // Real logged values parsed from results.html (AdamW + OneCycle, 20 epochs).
