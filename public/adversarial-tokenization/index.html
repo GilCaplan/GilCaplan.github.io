@@ -28,6 +28,33 @@
   ul{margin:6px 0 0 18px}
   li{margin:4px 0;font-size:.9rem}
   .note{border-left:3px solid var(--spice);background:rgba(248,113,113,.06);border-radius:8px;padding:10px 12px;font-size:.82rem;color:var(--muted)}
+
+  /* live demo */
+  .btn{appearance:none;border:1px solid var(--accent);background:rgba(20,184,166,.1);color:#5eead4;padding:9px 16px;border-radius:9px;font-size:.85rem;font-weight:500;cursor:pointer;transition:.15s}
+  .btn:hover{background:rgba(20,184,166,.2)}
+  .btn:disabled{opacity:.4;cursor:default}
+  .btn.ghost{background:transparent;border-color:var(--line);color:var(--muted)}
+  .btn.ghost:hover{border-color:var(--accent);color:#5eead4}
+  .preset-row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .preset{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:9px;padding:8px 12px;font-size:.8rem;cursor:pointer;text-align:left;transition:.15s}
+  .preset:hover{border-color:var(--accent);color:var(--text)}
+  .preset.active{border-color:var(--accent);color:#5eead4;background:rgba(20,184,166,.08)}
+  .progress-track{height:8px;border-radius:6px;background:var(--surface);overflow:hidden;margin-top:8px}
+  .progress-fill{height:100%;background:linear-gradient(90deg,#0E8C81,#2DD4BF);width:0%;transition:width .2s ease}
+  .token-strip{display:flex;flex-wrap:wrap;gap:4px;align-items:center;padding:14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;min-height:44px}
+  .token-chip{display:inline-flex;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:3px 8px;font-size:.85rem;font-family:"JetBrains Mono",ui-monospace,monospace;white-space:pre;transition:.2s}
+  .token-chip.win{border-color:var(--ocean);color:#93c5fd;background:rgba(96,165,250,.1)}
+  .token-arrow{color:var(--muted);font-size:.8rem;padding:0 4px}
+  .transport{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:5px 8px 5px 5px;background:var(--surface)}
+  .transport button{appearance:none;border:1px solid transparent;background:var(--panel);color:var(--text);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:.8rem;display:inline-flex;align-items:center;justify-content:center;transition:.15s}
+  .transport button:hover{border-color:var(--accent);color:#5eead4}
+  .transport button:disabled{opacity:.35;cursor:default}
+  .transport button.playing{background:#0E8C81;color:#04211d;border-color:var(--accent)}
+  .live-stats{display:flex;gap:18px;flex-wrap:wrap;margin:12px 0}
+  .live-stat .l{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .live-stat .v{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:1.15rem;color:var(--text)}
+  .live-stat .v.accent{color:#5eead4}
+  #scoreCanvas{width:100%;height:80px;display:block;margin-top:6px}
 </style>
 </head>
 <body>
@@ -41,6 +68,7 @@
   <div class="tabs">
     <div class="tab active" data-tab="overview">Overview</div>
     <div class="tab" data-tab="method">Method</div>
+    <div class="tab" data-tab="live">Live Demo</div>
     <div class="tab" data-tab="findings">Findings</div>
     <div class="tab" data-tab="poster">Poster</div>
   </div>
@@ -91,6 +119,46 @@
     </div>
   </section>
 
+  <!-- LIVE DEMO -->
+  <section id="live" class="hidden">
+    <div class="panel">
+      <h2>Watch the real search run — live</h2>
+      <p>The real MDD-based greedy search, reimplemented in JS and running <b>live in your browser</b> — with one substitution. The paper scores candidates with <b>Llama&nbsp;3&nbsp;8B</b>, which can't run in a browser; this demo swaps in <b>DistilGPT-2</b> (82M params, no safety training) so the real forward-pass scoring is genuinely live. Since DistilGPT-2 has nothing to "jailbreak," this is reframed as what the technique actually measures underneath the safety framing: <b>tokenization sensitivity</b> — does re-segmenting a fixed string, with the string itself unchanged, shift how likely the model is to continue it with an exact target phrase?</p>
+      <p class="muted" style="font-size:.82rem;margin-top:8px">Each step: enumerate every local re-segmentation of a 2–3-token window across the whole sequence (real windowed neighbor search), batch-score every candidate with one real model forward pass, keep whichever improves the target's log-likelihood most (greedy argmax) — same loop as <span class="mono">advtok/search.py</span>'s <span class="mono">greedy()</span>, simplified from the paper's exact-edit-distance-2 MDD to a windowed local search.</p>
+      <div class="note">Small models are noisy: what actually moves the needle here is often fragmenting a word into smaller, unusual pieces rather than a clean subword swap — which is itself the real, honest finding (non-canonical BPE segmentation shifting model behavior), just visibly blunter on an 82M-parameter model than on Llama 3 8B.</div>
+    </div>
+
+    <div class="panel" id="liveSetup">
+      <h3>Pick an example</h3>
+      <div class="preset-row" id="presetRow"></div>
+      <button class="btn" id="loadModelBtn">▶ Load the real model (~85MB, one-time) &amp; run</button>
+      <div id="loadProgressWrap" class="hidden">
+        <p class="muted" id="loadStatus" style="font-size:.8rem">Loading…</p>
+        <div class="progress-track"><div class="progress-fill" id="loadFill"></div></div>
+      </div>
+    </div>
+
+    <div class="panel hidden" id="liveApp">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <h3 style="margin:0">Current best tokenization</h3>
+        <div class="transport">
+          <button id="restartBtn" title="Restart">&#8635;</button>
+          <button id="stepBtn" title="Step">&#9197;</button>
+          <button id="playBtn" title="Play / pause">&#9654;</button>
+        </div>
+      </div>
+      <div class="token-strip" id="tokenStrip"></div>
+
+      <div class="live-stats">
+        <div class="live-stat"><div class="l">Step</div><div class="v" id="stepValue">0 / 0</div></div>
+        <div class="live-stat"><div class="l">Target log-likelihood</div><div class="v" id="scoreValue">—</div></div>
+        <div class="live-stat"><div class="l">vs. canonical</div><div class="v accent" id="deltaValue">—</div></div>
+      </div>
+      <canvas id="scoreCanvas"></canvas>
+      <div class="note" id="narration" style="margin-top:12px">Ready.</div>
+    </div>
+  </section>
+
   <!-- FINDINGS -->
   <section id="findings" class="hidden">
     <div class="panel">
@@ -128,10 +196,314 @@
   document.querySelectorAll('.tab').forEach(tab=>{
     tab.onclick=()=>{
       document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); tab.classList.add('active');
-      ['overview','method','findings','poster'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+      ['overview','method','live','findings','poster'].forEach(id=>document.getElementById(id).classList.add('hidden'));
       document.getElementById(tab.dataset.tab).classList.remove('hidden');
     };
   });
+</script>
+<script>
+(function () {
+  'use strict';
+  var TRANSFORMERS_CDN = 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
+  var MODEL_ID = 'Xenova/distilgpt2';
+
+  var PRESETS = [
+    { prefix: 'In the future, artificial intelligence will', target: ' transform how we live and work' },
+    { prefix: 'The best way to learn a new skill is', target: ' consistent daily practice' },
+    { prefix: 'My favorite programming language is', target: ' definitely Python' },
+  ];
+  var activePreset = 0;
+
+  var presetRow = document.getElementById('presetRow');
+  PRESETS.forEach(function (p, i) {
+    var btn = document.createElement('button');
+    btn.className = 'preset' + (i === 0 ? ' active' : '');
+    btn.innerHTML = '<b>' + p.prefix + '</b><br><span class="muted">target: "' + p.target.trim() + '"</span>';
+    btn.addEventListener('click', function () {
+      activePreset = i;
+      document.querySelectorAll('.preset').forEach(function (b, bi) { b.classList.toggle('active', bi === i); });
+      if (window.__advtokReady) startSearch();
+    });
+    presetRow.appendChild(btn);
+  });
+
+  var tokenizer, model, vocab, trie, PAD_ID;
+
+  function normTok(raw) { return raw.replace(/Ġ/g, ' ').replace(/Ċ/g, '\n'); }
+
+  function buildTrie() {
+    trie = {};
+    for (var id = 0; id < vocab.length; id++) {
+      var raw = vocab[id];
+      if (raw == null) continue;
+      var str = normTok(raw);
+      if (!str.length) continue;
+      var node = trie;
+      for (var ci = 0; ci < str.length; ci++) { var ch = str[ci]; node = node[ch] || (node[ch] = {}); }
+      (node.__end || (node.__end = [])).push(id);
+    }
+  }
+  function prefixMatches(text, start) {
+    var node = trie, results = [];
+    for (var i = start; i < text.length; i++) {
+      node = node[text[i]];
+      if (!node) break;
+      if (node.__end) for (var k = 0; k < node.__end.length; k++) results.push({ id: node.__end[k], len: i - start + 1 });
+    }
+    return results;
+  }
+  function enumerateSegmentations(window, cap) {
+    cap = cap || 12;
+    var n = window.length;
+    var memo = new Array(n + 1);
+    memo[n] = [[]];
+    function solve(i) {
+      if (memo[i]) return memo[i];
+      var out = [];
+      var matches = prefixMatches(window, i);
+      for (var m = 0; m < matches.length; m++) {
+        if (out.length > cap) break;
+        var rest = solve(i + matches[m].len);
+        for (var r = 0; r < rest.length; r++) { out.push([matches[m].id].concat(rest[r])); if (out.length > cap) break; }
+      }
+      memo[i] = out;
+      return out;
+    }
+    return solve(0);
+  }
+
+  async function scoreBatch(prefixIdsList, targetIds) {
+    var tf = window.__tf;
+    var seqs = prefixIdsList.map(function (p) { return p.concat(targetIds); });
+    var prefixLens = prefixIdsList.map(function (p) { return p.length; });
+    var maxLen = Math.max.apply(null, seqs.map(function (s) { return s.length; }));
+    var input_ids = seqs.map(function (s) { return s.concat(new Array(maxLen - s.length).fill(PAD_ID)); });
+    var attention_mask = seqs.map(function (s) { return new Array(s.length).fill(1).concat(new Array(maxLen - s.length).fill(0)); });
+    var idsTensor = new tf.Tensor('int64', BigInt64Array.from(input_ids.flat().map(BigInt)), [seqs.length, maxLen]);
+    var maskTensor = new tf.Tensor('int64', BigInt64Array.from(attention_mask.flat().map(BigInt)), [seqs.length, maxLen]);
+    var out = await model({ input_ids: idsTensor, attention_mask: maskTensor });
+    var logits = out.logits;
+    var S = logits.dims[1], V = logits.dims[2];
+    var data = logits.data;
+    var scores = [];
+    for (var b = 0; b < seqs.length; b++) {
+      var targetStart = prefixLens[b];
+      var ll = 0;
+      for (var t = 0; t < targetIds.length; t++) {
+        var pos = targetStart + t - 1;
+        var base = (b * S + pos) * V;
+        var maxLogit = -Infinity;
+        for (var v = 0; v < V; v++) { var val = data[base + v]; if (val > maxLogit) maxLogit = val; }
+        var sumExp = 0;
+        for (var v2 = 0; v2 < V; v2++) sumExp += Math.exp(data[base + v2] - maxLogit);
+        var logZ = Math.log(sumExp) + maxLogit;
+        ll += data[base + targetIds[t]] - logZ;
+      }
+      scores.push(ll / targetIds.length);
+    }
+    return scores;
+  }
+
+  var searchState = null;
+
+  async function initSearchState(prefixText, targetText) {
+    var prefixEnc = await tokenizer(prefixText, { return_tensor: false });
+    var targetEnc = await tokenizer(targetText, { return_tensor: false });
+    var X = prefixEnc.input_ids.slice();
+    var targetIds = targetEnc.input_ids;
+    var canonicalScore = (await scoreBatch([X], targetIds))[0];
+    return {
+      X: X, targetIds: targetIds, prefixText: prefixText, targetText: targetText,
+      canonicalScore: canonicalScore, bestScore: canonicalScore, step: 0, maxSteps: 20, stale: 0, done: false,
+      history: [canonicalScore], lastWinStart: null, lastWinEnd: null, lastImproved: null,
+    };
+  }
+
+  async function stepSearch(s) {
+    if (s.done) return;
+    if (s.X.length < 2) { s.done = true; return; }
+    var allCandidates = [{ ids: s.X, win: null }];
+    for (var winLen = 2; winLen <= 3; winLen++) {
+      for (var winStart = 0; winStart + winLen <= s.X.length; winStart++) {
+        var winTokIds = s.X.slice(winStart, winStart + winLen);
+        var windowStr = winTokIds.map(function (id) { return normTok(vocab[id] || ''); }).join('');
+        if (!windowStr.length) continue;
+        var segs = enumerateSegmentations(windowStr, 12).filter(function (seg) {
+          if (seg.length === 0 || seg.length > winLen + 2) return false;
+          if (seg.length !== winLen) return true;
+          for (var i = 0; i < seg.length; i++) if (seg[i] !== winTokIds[i]) return true;
+          return false;
+        });
+        for (var si = 0; si < segs.length; si++) {
+          var seg = segs[si];
+          allCandidates.push({ ids: s.X.slice(0, winStart).concat(seg, s.X.slice(winStart + winLen)), win: [winStart, winStart + winLen] });
+        }
+      }
+    }
+    var capped = allCandidates;
+    if (allCandidates.length > 200) {
+      var rest = allCandidates.slice(1).sort(function () { return Math.random() - 0.5; }).slice(0, 199);
+      capped = [allCandidates[0]].concat(rest);
+    }
+    var scores = await scoreBatch(capped.map(function (c) { return c.ids; }), s.targetIds);
+    var bi = 0, bs = scores[0];
+    for (var i2 = 1; i2 < scores.length; i2++) if (scores[i2] > bs) { bs = scores[i2]; bi = i2; }
+    var improved = bi !== 0 && bs > s.bestScore + 1e-6;
+    if (improved) { s.bestScore = bs; s.X = capped[bi].ids; s.stale = 0; s.lastWinStart = capped[bi].win[0]; s.lastWinEnd = capped[bi].win[1]; }
+    else { s.stale++; s.lastWinStart = null; s.lastWinEnd = null; }
+    s.lastImproved = improved;
+    s.history.push(s.bestScore);
+    s.step++;
+    if (s.step >= s.maxSteps || s.stale > 10) s.done = true;
+  }
+
+  function drawScoreChart(history) {
+    var canvas = document.getElementById('scoreCanvas');
+    var dpr = window.devicePixelRatio || 1;
+    var w = canvas.clientWidth, h = 80;
+    canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+    var ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    if (history.length < 2) return;
+    var pad = 6;
+    var min = Math.min.apply(null, history), max = Math.max.apply(null, history);
+    if (max - min < 0.02) { max += 0.02; min -= 0.02; }
+    function px(i) { return pad + (i * (w - pad * 2)) / (history.length - 1); }
+    function py(v) { return h - pad - ((v - min) / (max - min)) * (h - pad * 2); }
+    ctx.beginPath(); ctx.moveTo(px(0), h - pad);
+    for (var i = 0; i < history.length; i++) ctx.lineTo(px(i), py(history[i]));
+    ctx.lineTo(px(history.length - 1), h - pad); ctx.closePath();
+    var grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, 'rgba(45,212,191,.35)'); grad.addColorStop(1, 'rgba(45,212,191,0)');
+    ctx.fillStyle = grad; ctx.fill();
+    ctx.beginPath();
+    for (var j = 0; j < history.length; j++) { var X = px(j), Y = py(history[j]); if (j === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y); }
+    ctx.strokeStyle = '#2DD4BF'; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke();
+    var lx = px(history.length - 1), ly = py(history[history.length - 1]);
+    ctx.beginPath(); ctx.arc(lx, ly, 3, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
+  }
+
+  function renderTokens(s) {
+    var strip = document.getElementById('tokenStrip');
+    strip.innerHTML = '';
+    s.X.forEach(function (id, i) {
+      var chip = document.createElement('span');
+      var inWin = s.lastWinStart !== null && i >= s.lastWinStart && i < s.lastWinEnd;
+      chip.className = 'token-chip' + (inWin ? ' win' : '');
+      var text = normTok(vocab[id] || '');
+      chip.textContent = /^\s+$/.test(text) ? '·'.repeat(text.length) : text;
+      chip.title = JSON.stringify(text);
+      strip.appendChild(chip);
+    });
+    var arrow = document.createElement('span');
+    arrow.className = 'token-arrow'; arrow.textContent = '→ "' + s.targetText.trim() + '"';
+    strip.appendChild(arrow);
+  }
+
+  function renderStats(s) {
+    document.getElementById('stepValue').textContent = s.step + ' / ' + s.maxSteps;
+    document.getElementById('scoreValue').textContent = s.bestScore.toFixed(4);
+    var delta = s.bestScore - s.canonicalScore;
+    var deltaEl = document.getElementById('deltaValue');
+    deltaEl.textContent = (delta >= 0 ? '+' : '') + delta.toFixed(4);
+    deltaEl.style.color = delta > 0.001 ? '#5eead4' : '#94A3B8';
+    drawScoreChart(s.history);
+    var narr = document.getElementById('narration');
+    if (s.step === 0) {
+      narr.innerHTML = 'Canonical tokenization scores <b>' + s.canonicalScore.toFixed(4) + '</b> nats/token toward the target. Searching for a re-segmentation that scores higher…';
+    } else if (s.lastImproved) {
+      narr.innerHTML = '<b>Step ' + s.step + '</b> — re-segmenting the highlighted window improved the target likelihood to <b>' + s.bestScore.toFixed(4) + '</b> (+' + delta.toFixed(4) + ' vs. canonical).';
+    } else {
+      narr.innerHTML = '<b>Step ' + s.step + '</b> — no re-segmentation beat the current best this round' + (s.done ? ' — search settled.' : '.');
+    }
+    if (s.done && delta <= 0.001) {
+      narr.innerHTML += ' No improving re-tokenization was found for this example within the search budget — a real, expected outcome (the real algorithm early-stops the same way). Try Restart or another example.';
+    }
+  }
+
+  var playing = false, timer = null;
+  function tick() {
+    clearTimeout(timer);
+    timer = setTimeout(async function () {
+      if (!playing || !searchState) return;
+      await stepSearch(searchState);
+      renderTokens(searchState); renderStats(searchState);
+      if (searchState.done) { stopPlay(); return; }
+      tick();
+    }, 90);
+  }
+  function stopPlay() {
+    playing = false; clearTimeout(timer);
+    var btn = document.getElementById('playBtn');
+    btn.classList.remove('playing'); btn.innerHTML = '&#9654;';
+  }
+  function startPlay() {
+    if (playing || !searchState || searchState.done) return;
+    playing = true;
+    var btn = document.getElementById('playBtn');
+    btn.classList.add('playing'); btn.innerHTML = '&#10074;&#10074;';
+    tick();
+  }
+
+  async function startSearch() {
+    stopPlay();
+    document.getElementById('liveApp').classList.remove('hidden');
+    var preset = PRESETS[activePreset];
+    searchState = await initSearchState(preset.prefix, preset.target);
+    renderTokens(searchState); renderStats(searchState);
+  }
+
+  document.getElementById('playBtn').addEventListener('click', function () { if (playing) stopPlay(); else startPlay(); });
+  document.getElementById('stepBtn').addEventListener('click', async function () {
+    stopPlay();
+    if (!searchState || searchState.done) return;
+    await stepSearch(searchState);
+    renderTokens(searchState); renderStats(searchState);
+  });
+  document.getElementById('restartBtn').addEventListener('click', function () { startSearch(); });
+
+  document.getElementById('loadModelBtn').addEventListener('click', async function () {
+    var btn = document.getElementById('loadModelBtn');
+    btn.disabled = true;
+    var wrap = document.getElementById('loadProgressWrap');
+    wrap.classList.remove('hidden');
+    var statusEl = document.getElementById('loadStatus');
+    var fillEl = document.getElementById('loadFill');
+    statusEl.textContent = 'Fetching @xenova/transformers…';
+    try {
+      var tf = await import(/* @vite-ignore */ TRANSFORMERS_CDN);
+      window.__tf = tf;
+      tf.env.allowLocalModels = false;
+      tf.env.useBrowserCache = true;
+      var progress_callback = function (p) {
+        if (p.status === 'progress' && p.total) {
+          var pct = Math.round((p.loaded / p.total) * 100);
+          fillEl.style.width = pct + '%';
+          statusEl.textContent = 'Downloading ' + (p.file || 'model') + '… ' + pct + '%';
+        } else if (p.status === 'ready' || p.status === 'done') {
+          statusEl.textContent = 'Ready.';
+        }
+      };
+      statusEl.textContent = 'Loading tokenizer…';
+      tokenizer = await tf.AutoTokenizer.from_pretrained(MODEL_ID);
+      PAD_ID = tokenizer.pad_token_id != null ? tokenizer.pad_token_id : 0;
+      vocab = tokenizer.model.vocab;
+      buildTrie();
+      statusEl.textContent = 'Downloading DistilGPT-2 (~85MB, cached after first load)…';
+      model = await tf.AutoModelForCausalLM.from_pretrained(MODEL_ID, { dtype: 'q8', progress_callback: progress_callback });
+      fillEl.style.width = '100%';
+      statusEl.textContent = 'Model loaded — running search…';
+      window.__advtokReady = true;
+      document.getElementById('liveSetup').style.opacity = '0.6';
+      btn.textContent = '✓ Model loaded';
+      await startSearch();
+    } catch (err) {
+      statusEl.textContent = 'Could not load the model (' + (err && err.message ? err.message : 'unknown error') + '). Your browser/network may be blocking the CDN.';
+      btn.disabled = false;
+    }
+  });
+})();
 </script>
 </body>
 </html>
