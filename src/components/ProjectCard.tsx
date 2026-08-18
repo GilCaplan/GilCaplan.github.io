@@ -15,7 +15,10 @@ export default function ProjectCard({ project }: { project: Project }) {
       className="card card-glow group flex flex-col p-5 transition duration-300 hover:-translate-y-1 hover:border-accent/60 hover:shadow-[0_12px_40px_-16px_rgba(20,184,166,0.45)]"
     >
       <div className="mb-3 flex items-center justify-between gap-2">
-        <span className="pill">{TYPE_LABELS[project.type]}</span>
+        <span className="inline-flex items-center gap-2">
+          <span className="pill">{TYPE_LABELS[project.type]}</span>
+          {project.year && <span className="font-mono text-xs text-muted">{project.year}</span>}
+        </span>
         <span className="inline-flex items-center gap-1.5 text-xs text-muted" title={meta.hint}>
           <span
             className={`inline-block h-2 w-2 rounded-full ${meta.dot} ${

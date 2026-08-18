@@ -202,6 +202,26 @@ export const projects: Project[] = [
     tech: ['Python', 'OpenCV', 'SIFT/VLAD', 'CLIP', 'RANSAC', 'FastAPI'],
     embed: 'imgretrieval/index.html',
   },
+  {
+    slug: 'ecommerce',
+    title: 'ecommerce — Seed Set Search',
+    type: 'coursework',
+    interactivity: 'live',
+    highlight: true,
+    year: 2024,
+    tagline: 'Greedy + genetic search for the best seed set, running live on a real 4,039-person graph.',
+    description:
+      'Technion e-commerce course, three assignments. HW01 (the flagship demo) picks a seed set to ' +
+      'maximize a product launch’s spread across a real 4,039-person / 88,234-edge friendship network ' +
+      '— a greedy hill-climb and a genetic algorithm both run live in-browser against the real graph, ' +
+      'real costs, and the real diffusion formulas, with a step-by-step view of the search itself, not ' +
+      'just the final answer. HW02 (a Bayesian sequential recommender that sharpens its belief about a ' +
+      'viewer’s type after every recommendation) and HW03 (adaptive posted-pricing against a hidden ' +
+      'customer value) get lighter live treatments of the same idea.',
+    repo: `${GH}/ecommerce`,
+    tech: ['Python', 'Graph Algorithms', 'Genetic Algorithm', 'Bayesian Inference', 'Game Theory'],
+    embed: 'ecommerce/index.html',
+  },
 
   // ── Standard projects ─────────────────────────────────────────────────────
   {
@@ -400,7 +420,7 @@ export const projects: Project[] = [
     title: 'Operating Systems — xv6 kernel',
     type: 'coursework',
     interactivity: 'live',
-    year: 2022,
+    year: 2023,
     tagline:
       'Hacking MIT’s xv6 kernel: a 3-level MLQ scheduler, new syscalls, and a signals layer — with a live scheduler visualizer.',
     description:
@@ -456,21 +476,21 @@ export const projects: Project[] = [
     tech: ['Python', 'Information Retrieval', 'Active Learning', 'GNN', 'Entity Resolution'],
     embed: 'lab-data-viz/index.html',
   },
-  course('hagorem', 'The Human Factor in Data Collection', '960275', 'HaGorem_960275', ['A/B Testing', 'Webscraping'], true),
-  course('nlp', 'NLP', '970215', 'NLP_970215', ['Python', 'NLP'], true),
-  course('safa', 'Language & Computation', '960222', 'Safa_960222', ['NLP'], true),
-  course('genai-diffusion', 'Generative AI & Diffusion', '960236', 'GenerativeAI_Diffusion_960236', ['Diffusion'], true),
-  course('ml01', 'Statistical Machine Learning', '096411', 'ML01_096411', ['Python', 'ML'], true),
-  course('ml02', 'ML with Transformers & NN', '970209', 'ML02_970209', ['Transformers', 'ML'], true),
-  course('intro-ai', 'Intro to AI', '096210', 'intro_to_ai_096210', ['AI', 'Search'], true, { playground: true }),
-  course('optimization', 'Optimization', '096237', 'Optimization_096237', ['Optimization'], true),
-  course('algebraic', 'Algebraic Methods', '095296', 'Algebraic_Methods_095296', ['Math'], true),
-  course('sql', 'SQL', '094241', 'SQL_094241', ['SQL', 'Databases'], true),
-  course('statistics', 'Statistics', '970414', 'statistics_970414', ['Statistics'], true),
-  course('distributed', 'Distributed Systems', '096224', 'Distributed_Systems_096224', ['Systems'], true),
-  course('ds-algo', 'Data Structures & Algorithms', '', 'Mibnei', ['Java', 'Algorithms'], true, { playground: true }),
-  course('se-java', 'Software Engineering (Java OOP)', '094219', 'SE_course_Technion', ['Java', 'OOP'], true, { playground: true }),
-  course('intro-ds-python', 'Intro to Data Science in Python', '', 'Python_IntroToDS', ['Python', 'Data'], true),
+  course('hagorem', 'The Human Factor in Data Collection', '960275', 'HaGorem_960275', ['A/B Testing', 'Webscraping'], true, { year: 2025 }),
+  course('nlp', 'NLP', '970215', 'NLP_970215', ['Python', 'NLP'], true, { year: 2025 }),
+  course('safa', 'Language & Computation', '960222', 'Safa_960222', ['NLP'], true, { year: 2025 }),
+  course('genai-diffusion', 'Generative AI & Diffusion', '960236', 'GenerativeAI_Diffusion_960236', ['Diffusion'], true, { year: 2025 }),
+  course('ml01', 'Statistical Machine Learning', '096411', 'ML01_096411', ['Python', 'ML'], true, { year: 2024 }),
+  course('ml02', 'ML with Transformers & NN', '970209', 'ML02_970209', ['Transformers', 'ML'], true, { year: 2025 }),
+  course('intro-ai', 'Intro to AI', '096210', 'intro_to_ai_096210', ['AI', 'Search'], true, { playground: true, year: 2024 }),
+  course('optimization', 'Optimization', '096237', 'Optimization_096237', ['Optimization'], true, { year: 2024 }),
+  course('algebraic', 'Algebraic Methods', '095296', 'Algebraic_Methods_095296', ['Math'], true, { year: 2024 }),
+  course('sql', 'SQL', '094241', 'SQL_094241', ['SQL', 'Databases'], true, { year: 2025 }),
+  course('statistics', 'Statistics', '970414', 'statistics_970414', ['Statistics'], true, { year: 2025 }),
+  course('distributed', 'Distributed Systems', '096224', 'Distributed_Systems_096224', ['Systems'], true, { year: 2024 }),
+  course('ds-algo', 'Data Structures & Algorithms', '', 'Mibnei', ['Java', 'Algorithms'], true, { playground: true, year: 2024 }),
+  course('se-java', 'Software Engineering (Java OOP)', '094219', 'SE_course_Technion', ['Java', 'OOP'], true, { playground: true, year: 2023 }),
+  course('intro-ds-python', 'Intro to Data Science in Python', '', 'Python_IntroToDS', ['Python', 'Data'], true, { year: 2023 }),
 ];
 
 function course(
