@@ -1,27 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Under the Lid — MACalendar</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&display=swap">
 <style>
+  /* Locked to the site's own dark/teal palette (see gilcaplan.dev DESIGN.md) —
+     this page is embedded on a dark-only site, so it doesn't follow OS light/dark. */
   :root{
-    --bg:#e8ebee; --panel:#f6f7f8; --screen:#eef1f3; --ink:#1b222b; --muted:#5b6673;
-    --line:#b9c2cc; --faint:#d6dce2; --amber:#8f6407; --amber-soft:rgba(158,113,10,.10);
-    --model:#116e83; --good:#20714a; --codebg:#dfe3e8; --shadow:rgba(20,28,38,.16);
-  }
-  @media (prefers-color-scheme: dark){
-    :root:not([data-theme="light"]){
-      --bg:#0b0f14; --panel:#141a22; --screen:#0f141b; --ink:#dde4eb; --muted:#8a96a3;
-      --line:#33404f; --faint:#1c2530; --amber:#e3aa3d; --amber-soft:rgba(227,170,61,.09);
-      --model:#5cc3d6; --good:#54b183; --codebg:#1a222d; --shadow:rgba(0,0,0,.55);
-    }
-  }
-  :root[data-theme="dark"]{
-    --bg:#0b0f14; --panel:#141a22; --screen:#0f141b; --ink:#dde4eb; --muted:#8a96a3;
-    --line:#33404f; --faint:#1c2530; --amber:#e3aa3d; --amber-soft:rgba(227,170,61,.09);
-    --model:#5cc3d6; --good:#54b183; --codebg:#1a222d; --shadow:rgba(0,0,0,.55);
+    color-scheme: dark;
+    --bg:#0B1220; --panel:#1E293B; --screen:#0F172A; --ink:#E2E8F0; --muted:#94A3B8;
+    --line:#243044; --faint:#1A2434; --amber:#14B8A6; --amber-soft:rgba(20,184,166,.12);
+    --model:#60A5FA; --good:#0E8C81; --codebg:#16202E; --shadow:rgba(0,0,0,.45);
   }
   *{box-sizing:border-box}
   body{background:var(--bg); color:var(--ink);
