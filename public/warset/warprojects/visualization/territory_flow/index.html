@@ -299,10 +299,10 @@ svg#map {
   </div>
 
   <div class="controls">
-    <button class="ctrl layer-toggle active" id="t-territory" title="Country fills colored by controlling actor">🗺️ Territory</button>
-    <button class="ctrl layer-toggle" id="t-heatmap" title="Country fills colored by aggregated conflict density up to selected year">🔥 Heatmap</button>
-    <button class="ctrl layer-toggle" id="t-historical" title="Use historical-era borders (aourednik basemaps) instead of modern country shapes">🏛️ Historical</button>
-    <button class="ctrl layer-toggle" id="t-bubbles" title="Conflict bubbles (active wars in selected year)">⚫ Conflicts</button>
+    <button class="ctrl layer-toggle active" id="t-territory" title="Country fills colored by controlling actor"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M9 4 4 6v14l5-2 6 2 5-2V4l-5 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg> Territory</button>
+    <button class="ctrl layer-toggle" id="t-heatmap" title="Country fills colored by aggregated conflict density up to selected year"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" stroke="none" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M12 2c1 3-3 4-3 7.5A3.5 3.5 0 0 0 12 13a3.5 3.5 0 0 0 3-5c1.5 1 2.5 3 2.5 5a5.5 5.5 0 1 1-11 0C6.5 8 9 6 12 2z"/></svg> Heatmap</button>
+    <button class="ctrl layer-toggle" id="t-historical" title="Use historical-era borders (aourednik basemaps) instead of modern country shapes"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M4 10 12 4l8 6"/><path d="M4 10h16M5 10v9M19 10v9M9 10v9M15 10v9M3 20h18"/></svg> Historical</button>
+    <button class="ctrl layer-toggle" id="t-bubbles" title="Conflict bubbles (active wars in selected year)"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" stroke="none" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><circle cx="12" cy="12" r="5"/></svg> Conflicts</button>
     <button class="ctrl layer-toggle" id="t-arrows" title="Aggressor→theater arrows for active wars">➤ Arrows</button>
     <span style="width:1px;height:24px;background:var(--border);margin:0 6px"></span>
     <button class="ctrl" id="btn-step-back">◀</button>
@@ -356,7 +356,7 @@ svg#map {
 
   <aside class="side">
     <div class="section" id="heatmap-options" style="display:none; padding:8px; background:rgba(245,166,35,0.05); border:1px solid rgba(245,166,35,0.2); border-radius:6px; margin-bottom:16px;">
-      <h2 style="color:var(--accent); margin-bottom:8px;">🔥 Heatmap Options</h2>
+      <h2 style="color:var(--accent); margin-bottom:8px;"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" stroke="none" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M12 2c1 3-3 4-3 7.5A3.5 3.5 0 0 0 12 13a3.5 3.5 0 0 0 3-5c1.5 1 2.5 3 2.5 5a5.5 5.5 0 1 1-11 0C6.5 8 9 6 12 2z"/></svg> Heatmap Options</h2>
       <label style="color:var(--muted); font-size:0.74rem; display:block; margin-bottom:4px;">Aggregated up to current timeline year.</label>
       <label style="color:var(--muted); font-size:0.74rem;">Metric
         <select id="heatmap-metric" style="width:100%;margin-top:2px;padding:5px 7px;background:#0a0c10;color:var(--text);border:1px solid var(--border);border-radius:4px;font-size:0.74rem">
@@ -1356,8 +1356,8 @@ function renderBubbles() {
     .attr('r', w => rScale(w.cas || 1000))
     .attr('fill', bubbleColor)
     .on('mouseover', (ev, w) => {
-      const aggCmd = w.agg_commander ? `<div class="meta">🗡 Commander: ${w.agg_commander}</div>` : '';
-      const defCmd = w.def_commander ? `<div class="meta">🛡 Commander: ${w.def_commander}</div>` : '';
+      const aggCmd = w.agg_commander ? `<div class="meta"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M6.5 17.5 17 7M14.5 4.5l5 5-2 2-5-5zM4 20l2.5-2.5M9 15l2 2"/></svg> Commander: ${w.agg_commander}</div>` : '';
+      const defCmd = w.def_commander ? `<div class="meta"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M12 3l7 3v5.5C19 17 16 20 12 21c-4-1-7-4-7-9.5V6z"/></svg> Commander: ${w.def_commander}</div>` : '';
       const termInfo = w.termination ? `<div class="meta" style="margin-top:4px;">End: ${w.termination}${w.treaty ? ` (${w.treaty})` : ''}</div>` : '';
       tooltip.innerHTML = `
         <div class="name">${w.name}</div>
@@ -1460,7 +1460,7 @@ function setupActorFilter() {
           <span style="color:var(--text)">${x.name}</span>
           <span style="color:var(--muted);font-size:0.66rem"> ${x.type ? '· ' + x.type : ''}</span>
         </span>
-        <span style="color:var(--muted);font-size:0.66rem">${x.n}🗺</span>
+        <span style="color:var(--muted);font-size:0.66rem">${x.n}<svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M9 4 4 6v14l5-2 6 2 5-2V4l-5 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg></span>
       </div>`).join('') +
       (matched.length > list.length ? `<div style="color:var(--muted);font-size:0.66rem;padding:4px 6px">…and ${matched.length - list.length} more — refine search</div>` : '');
     results.querySelectorAll('.filter-item').forEach(el => {

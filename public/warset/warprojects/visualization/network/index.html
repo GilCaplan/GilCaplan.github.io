@@ -155,7 +155,7 @@ try {
 } catch (err) {
   document.getElementById("network-container").innerHTML = `
     <div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111318;padding:30px;border-radius:12px;border:1px solid #e8453c;color:#e8eaf0;text-align:center">
-      <h2 style="color:#e8453c;margin-bottom:10px">⚠ Data Load Error</h2>
+      <h2 style="color:#e8453c;margin-bottom:10px"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M12 3 2 20h20z"/><path d="M12 9.5v5"/><circle cx="12" cy="17.2" r="0.6" fill="currentColor" stroke="none"/></svg> Data Load Error</h2>
       <p style="color:#6b7280;font-size:.85rem">Make sure wars.js is generated.<br>${err.message}</p>
     </div>`;
 }

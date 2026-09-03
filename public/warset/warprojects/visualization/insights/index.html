@@ -90,8 +90,8 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
 <body>
 
 <div class="tabs">
-  <div class="tab active" data-tab="analytics">📊 Analytics</div>
-  <div class="tab" data-tab="ml">🤖 ML Insights</div>
+  <div class="tab active" data-tab="analytics"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M4 20V10M11 20V4M18 20v-7"/><path d="M3 20h18"/></svg> Analytics</div>
+  <div class="tab" data-tab="ml"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><rect x="5" y="9" width="14" height="10" rx="2.5"/><path d="M12 6v3"/><circle cx="12" cy="4.2" r="1" fill="currentColor" stroke="none"/><circle cx="9" cy="14" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.1" fill="currentColor" stroke="none"/><path d="M2 12h3M19 12h3"/></svg> ML Insights</div>
 </div>
 
 <!-- ── ANALYTICS TAB ────────────────────────────────────────────── -->
@@ -136,7 +136,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
 <div class="dashboard-grid">
 
   <div class="panel">
-    <h2>🤖 NLP Similarity Engine</h2>
+    <h2><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><rect x="5" y="9" width="14" height="10" rx="2.5"/><path d="M12 6v3"/><circle cx="12" cy="4.2" r="1" fill="currentColor" stroke="none"/><circle cx="9" cy="14" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.1" fill="currentColor" stroke="none"/><path d="M2 12h3M19 12h3"/></svg> NLP Similarity Engine</h2>
     <p style="font-size:0.85rem; color:var(--muted); margin-bottom:16px;">Search a conflict to find its closest historical matches based on contextual embedding vectors.</p>
     <div class="ml-controls" style="position:relative">
       <input id="war-search" type="text" placeholder="🔍 Search a conflict by name…" autocomplete="off" style="width:100%;padding:9px 11px;background:#0a0c10;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.9rem;box-sizing:border-box">
@@ -146,12 +146,12 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
   </div>
 
   <div class="panel">
-    <h2>🔮 AI Casualty Imputation</h2>
+    <h2><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><circle cx="12" cy="10.5" r="6.5"/><path d="M6 20h12"/><path d="M9 20a3 3 0 0 1 6 0"/><path d="m16.5 6 1.7-1"/></svg> AI Casualty Imputation</h2>
     <p style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">These conflicts historically lack casualty data. The Regression model mathematically imputed these estimates.</p>
     <input id="impute-search" type="text" placeholder="🔍 Filter conflicts by name…" autocomplete="off" style="width:100%;padding:8px 11px;margin-bottom:12px;background:#0a0c10;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.88rem;box-sizing:border-box">
     <div class="impute-grid" id="impute-results"></div>
     <div style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px">
-      <div style="font-size:0.8rem;color:var(--accent);font-weight:600;letter-spacing:0.05em;margin-bottom:4px">🧮 ESTIMATE CASUALTIES FROM FEATURES</div>
+      <div style="font-size:0.8rem;color:var(--accent);font-weight:600;letter-spacing:0.05em;margin-bottom:4px"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><rect x="4" y="4" width="16" height="16" rx="1.5"/><path d="M4 9.5h16M4 14.5h16"/><circle cx="9" cy="6.7" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="17.3" r="1" fill="currentColor" stroke="none"/></svg> ESTIMATE CASUALTIES FROM FEATURES</div>
       <p style="font-size:0.76rem;color:var(--muted);margin-bottom:10px">Enter a conflict profile to estimate casualties from the most structurally similar historical wars that do have recorded figures.</p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
         <select id="mp-type" class="mp-field"></select>
@@ -160,28 +160,28 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
         <select id="mp-casus" class="mp-field"></select>
       </div>
       <input id="mp-duration" type="number" min="0" placeholder="Duration in years (optional)" style="width:100%;padding:8px 11px;margin-bottom:8px;background:#0a0c10;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.85rem;box-sizing:border-box">
-      <button onclick="predictCasualties()" style="width:100%;padding:10px;background:linear-gradient(90deg,#3ecf8e,#0dcaf0);color:#04130d;border:none;border-radius:6px;font-weight:700;font-size:0.9rem;cursor:pointer">⚡ Estimate Casualties</button>
+      <button onclick="predictCasualties()" style="width:100%;padding:10px;background:linear-gradient(90deg,#3ecf8e,#0dcaf0);color:#04130d;border:none;border-radius:6px;font-weight:700;font-size:0.9rem;cursor:pointer"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" stroke="none" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M13 2 3.5 14h6.7l-1.2 8L20 9.5h-6.7z"/></svg> Estimate Casualties</button>
       <div id="mp-result" style="margin-top:12px;min-height:20px"></div>
     </div>
   </div>
 
   <div class="panel full-width" id="insights-banner" style="background:linear-gradient(135deg,#0d1a14,#0a1220); border-color:#3ecf8e44;">
-    <h2 style="color:#3ecf8e;">💡 Key Model Insights</h2>
+    <h2 style="color:#3ecf8e;"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1.1 2.1h4.8c.1-.9.5-1.6 1.1-2.1A6 6 0 0 0 12 3z"/></svg> Key Model Insights</h2>
     <div id="insights-content" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;"></div>
   </div>
 
   <div class="panel full-width">
-    <h2>📊 What Wins Wars? <span style="font-size:0.8rem; color:var(--muted); font-weight:400;">(XGBoost · 109 features · 68.4% accuracy)</span></h2>
+    <h2><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M4 20V10M11 20V4M18 20v-7"/><path d="M3 20h18"/></svg> What Wins Wars? <span style="font-size:0.8rem; color:var(--muted); font-weight:400;">(XGBoost · 109 features · 68.4% accuracy)</span></h2>
     <p style="font-size:0.85rem; color:var(--muted); margin-bottom:16px;">Feature gain importance from the XGBoost outcome classifier, trained on all historical conflicts with certainty-weighted samples.</p>
     <div class="ml-chart-container" style="height:420px;"><canvas id="featureChart"></canvas></div>
   </div>
 
   <div class="panel">
-    <h2>⚔️ What-If Conflict Simulator</h2>
+    <h2><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M4 4 20 20M20 4 4 20"/><path d="M4 4h3M4 4v3M20 4h-3M20 4v3M4 20h3M4 20v-3M20 20h-3M20 20v-3"/></svg> What-If Conflict Simulator</h2>
     <p style="font-size:0.85rem; color:var(--muted); margin-bottom:16px;">Set troops and technology for each side. The model estimates the historical probability of each outcome.</p>
     <div style="display:grid; grid-template-columns:1fr 4px 1fr; margin-bottom:14px;">
       <div style="background:#180e14; border:1px solid rgba(232,62,140,0.3); border-radius:8px 0 0 8px; padding:14px;">
-        <div style="color:#e83e8c; font-weight:700; font-size:0.78rem; letter-spacing:0.1em; margin-bottom:12px;">🗡 AGGRESSOR</div>
+        <div style="color:#e83e8c; font-weight:700; font-size:0.78rem; letter-spacing:0.1em; margin-bottom:12px;"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M6.5 17.5 17 7M14.5 4.5l5 5-2 2-5-5zM4 20l2.5-2.5M9 15l2 2"/></svg> AGGRESSOR</div>
         <label style="font-size:0.73rem; color:var(--muted); display:block; margin-bottom:3px;">Peak Troops</label>
         <input type="number" id="agg-troops" value="100000" style="width:100%; padding:7px 9px; margin-bottom:10px; background:#0d080d; color:#e83e8c; border:1px solid rgba(232,62,140,0.4); border-radius:4px; font-size:0.95rem; box-sizing:border-box;">
         <label style="font-size:0.73rem; color:var(--muted); display:block; margin-bottom:3px;">Tech Generation</label>
@@ -194,7 +194,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
         <span style="color:#f5a623; font-size:0.7rem; font-weight:800; writing-mode:vertical-rl; letter-spacing:0.15em;">VS</span>
       </div>
       <div style="background:#0a0e18; border:1px solid rgba(13,202,240,0.3); border-radius:0 8px 8px 0; padding:14px;">
-        <div style="color:#0dcaf0; font-weight:700; font-size:0.78rem; letter-spacing:0.1em; margin-bottom:12px;">🛡 DEFENDER</div>
+        <div style="color:#0dcaf0; font-weight:700; font-size:0.78rem; letter-spacing:0.1em; margin-bottom:12px;"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M12 3l7 3v5.5C19 17 16 20 12 21c-4-1-7-4-7-9.5V6z"/></svg> DEFENDER</div>
         <label style="font-size:0.73rem; color:var(--muted); display:block; margin-bottom:3px;">Peak Troops</label>
         <input type="number" id="def-troops" value="80000" style="width:100%; padding:7px 9px; margin-bottom:10px; background:#080d0d; color:#0dcaf0; border:1px solid rgba(13,202,240,0.4); border-radius:4px; font-size:0.95rem; box-sizing:border-box;">
         <label style="font-size:0.73rem; color:var(--muted); display:block; margin-bottom:3px;">Tech Generation</label>
@@ -205,7 +205,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
       </div>
     </div>
     <div style="background:#111318; border:1px solid var(--border); border-radius:8px; padding:14px; margin-bottom:14px;">
-      <div style="font-size:0.75rem; color:var(--muted); font-weight:600; letter-spacing:0.08em; margin-bottom:10px;">⚙️ CONFLICT CONTEXT</div>
+      <div style="font-size:0.75rem; color:var(--muted); font-weight:600; letter-spacing:0.08em; margin-bottom:10px;"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.5M12 18.5V21M4.9 7l2.2 1.2M16.9 15.8l2.2 1.2M3 12h2.5M18.5 12H21M4.9 17l2.2-1.2M16.9 8.2l2.2-1.2M7 4.9 8.2 7.1M15.8 16.9l1.2 2.2M7 19.1 8.2 16.9M15.8 7.1 17 4.9"/></svg> CONFLICT CONTEXT</div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
         <div><label style="font-size:0.73rem; color:var(--muted); display:block; margin-bottom:3px;">Approximate Year</label>
           <input type="number" id="sim-year" value="1500" style="width:100%; padding:7px 9px; background:#0a0c10; color:var(--text); border:1px solid var(--border); border-radius:4px; font-size:0.9rem; box-sizing:border-box;"></div>
@@ -219,19 +219,19 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
       </div>
     </div>
     <p style="font-size:0.78rem; color:#f5a623; margin-bottom:10px; text-align:center;" id="tech-equiv-display"></p>
-    <button onclick="runSimulator()" style="width:100%; padding:11px; background:linear-gradient(90deg,#e83e8c,#9b59b6,#0dcaf0); color:white; border:none; border-radius:6px; font-weight:700; font-size:0.95rem; cursor:pointer; letter-spacing:0.04em;">⚡ Simulate Conflict</button>
+    <button onclick="runSimulator()" style="width:100%; padding:11px; background:linear-gradient(90deg,#e83e8c,#9b59b6,#0dcaf0); color:white; border:none; border-radius:6px; font-weight:700; font-size:0.95rem; cursor:pointer; letter-spacing:0.04em;"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" stroke="none" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M13 2 3.5 14h6.7l-1.2 8L20 9.5h-6.7z"/></svg> Simulate Conflict</button>
     <div id="sim-result" style="margin-top:14px; min-height:44px;"></div>
   </div>
 
   <div class="panel">
-    <h2>🔍 Hidden Causes of War (LDA)</h2>
+    <h2><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.8-4.8"/></svg> Hidden Causes of War (LDA)</h2>
     <p style="font-size:0.85rem; color:var(--muted); margin-bottom:16px;">Organic topics discovered by the algorithm reading the raw text of historical summaries.</p>
     <div class="similar-wars-list" id="lda-results"></div>
   </div>
 
   <div class="panel full-width">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:12px;">
-      <h2 style="border-bottom:none; margin-bottom:0; padding-bottom:0;">🌌 Archetypes of War (Unified Vector Embeddings)</h2>
+      <h2 style="border-bottom:none; margin-bottom:0; padding-bottom:0;"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M12 12c4-4 8-3 9 0-1 4-5 5-9 3-4 2-8 1-9-3 1-3 5-4 9 0z"/><circle cx="6" cy="6" r="0.6" fill="currentColor" stroke="none"/><circle cx="19" cy="7" r="0.6" fill="currentColor" stroke="none"/><circle cx="17" cy="18" r="0.6" fill="currentColor" stroke="none"/></svg> Archetypes of War (Unified Vector Embeddings)</h2>
       <select id="cluster-mode" style="padding:6px 12px; background:#1a1f2e; color:var(--text); border:1px solid var(--border); border-radius:4px; font-size:0.85rem;">
         <option value="kmeans">K-Means Clustering</option>
         <option value="hierarch">Hierarchical Clustering</option>
@@ -285,7 +285,7 @@ try {
   initFilters();
   updateDashboard();
 } catch (err) {
-  document.querySelector('#panel-analytics .container').innerHTML = `<div class="error-msg"><h2>⚠ Data Load Error</h2><p>${err.message}</p></div>`;
+  document.querySelector('#panel-analytics .container').innerHTML = `<div class="error-msg"><h2><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M12 3 2 20h20z"/><path d="M12 9.5v5"/><circle cx="12" cy="17.2" r="0.6" fill="currentColor" stroke="none"/></svg> Data Load Error</h2><p>${err.message}</p></div>`;
 }
 
 function fmtNum(n){if(n==null)return"—";if(n>=1e9)return(n/1e9).toFixed(1)+"B";if(n>=1e6)return(n/1e6).toFixed(1)+"M";if(n>=1e3)return Math.round(n/1e3)+"K";return n.toLocaleString();}
@@ -500,18 +500,18 @@ if (xgbFeats.length) {
   });
 
   const insights = [
-    {icon:'🏅', title:'Top Predictor of Victory', value:cleanLabel(xgbFeats[0].name), detail:`Importance score: ${(xgbFeats[0].importance*100).toFixed(1)}% — the single strongest historical signal.`, color:'#f5a623'},
-    {icon:'⚔️', title:'Aggressor Base Win Rate', value:`${((mlSimulatorData.base_win_rate||0.39)*100).toFixed(1)}% historically`, detail:'Defenders win the majority of conflicts in the dataset — attacking is inherently risky.', color:'#e83e8c'},
+    {icon:'<svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M8 3 4 10l3.5 1.5L11 6zM16 3l4 7-3.5 1.5L13 6z"/><circle cx="12" cy="15" r="5.5"/><path d="M9.7 13.3h4.6l-1 4.7-1.3-1-1.3 1z" fill="currentColor" stroke="none"/></svg>', title:'Top Predictor of Victory', value:cleanLabel(xgbFeats[0].name), detail:`Importance score: ${(xgbFeats[0].importance*100).toFixed(1)}% — the single strongest historical signal.`, color:'#f5a623'},
+    {icon:'<svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M4 4 20 20M20 4 4 20"/><path d="M4 4h3M4 4v3M20 4h-3M20 4v3M4 20h3M4 20v-3M20 20h-3M20 20v-3"/></svg>', title:'Aggressor Base Win Rate', value:`${((mlSimulatorData.base_win_rate||0.39)*100).toFixed(1)}% historically`, detail:'Defenders win the majority of conflicts in the dataset — attacking is inherently risky.', color:'#e83e8c'},
     (() => {
       const techPP  = mlSimulatorData.tech_slope_pp_per_tier;
       const troopPP = mlSimulatorData.troop_slope_pp_per_logratio;
       const share   = mlSimulatorData.tech_gap_share;
       if (techPP == null || troopPP == null) {
-        return {icon:'🔬', title:'Tech vs Troops', value:'Inconclusive', detail:'Not enough wars with tech-tier data.', color:'#3ecf8e'};
+        return {icon:'<svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M9 20h9"/><path d="M11 20a4 4 0 0 1 0-8h1"/><path d="M12 12V4l3 1.5"/><path d="M9.5 8.5h3"/><path d="M14 20l2-4"/><circle cx="15.5" cy="4" r="1.3"/></svg>', title:'Tech vs Troops', value:'Inconclusive', detail:'Not enough wars with tech-tier data.', color:'#3ecf8e'};
       }
       const value = `+${techPP.toFixed(1)} pp / tech tier`;
       const detail = `When tech tiers differ (${(share*100).toFixed(0)}% of wars), each tier of aggressor advantage shifts the win rate by ~${techPP.toFixed(1)} points. Raw numerical advantage shifts it ~${troopPP.toFixed(1)} pp per e-fold troop ratio — i.e. rifles beat spears far more than 10× more spears do.`;
-      return {icon:'🔬', title:'Tech vs Troops', value, detail, color:'#3ecf8e'};
+      return {icon:'<svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M9 20h9"/><path d="M11 20a4 4 0 0 1 0-8h1"/><path d="M12 12V4l3 1.5"/><path d="M9.5 8.5h3"/><path d="M14 20l2-4"/><circle cx="15.5" cy="4" r="1.3"/></svg>', title:'Tech vs Troops', value, detail, color:'#3ecf8e'};
     })()
   ];
   const container = document.getElementById('insights-content');
@@ -529,9 +529,9 @@ if (simData && !simData.error) {
   const acc = simData.accuracy ? `(CV accuracy: ${(simData.accuracy*100).toFixed(1)}%)` : '';
   const techPP = simData.tech_slope_pp_per_tier;
   const equiv = (techPP != null)
-    ? `💡 When tech tiers differ, each tier of advantage = <strong>${techPP > 0 ? '+' : ''}${techPP.toFixed(1)} pp</strong> aggressor win rate`
-    : `💡 Tech-tier data too sparse to measure`;
-  document.getElementById('tech-equiv-display').innerHTML = `🤖 <strong>XGBoost</strong> ${acc} &nbsp;|&nbsp; ${equiv}`;
+    ? `<svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1.1 2.1h4.8c.1-.9.5-1.6 1.1-2.1A6 6 0 0 0 12 3z"/></svg> When tech tiers differ, each tier of advantage = <strong>${techPP > 0 ? '+' : ''}${techPP.toFixed(1)} pp</strong> aggressor win rate`
+    : `<svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1.1 2.1h4.8c.1-.9.5-1.6 1.1-2.1A6 6 0 0 0 12 3z"/></svg> Tech-tier data too sparse to measure`;
+  document.getElementById('tech-equiv-display').innerHTML = `<svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><rect x="5" y="9" width="14" height="10" rx="2.5"/><path d="M12 6v3"/><circle cx="12" cy="4.2" r="1" fill="currentColor" stroke="none"/><circle cx="9" cy="14" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.1" fill="currentColor" stroke="none"/><path d="M2 12h3M19 12h3"/></svg> <strong>XGBoost</strong> ${acc} &nbsp;|&nbsp; ${equiv}`;
 }
 function runSimulator() {
   if (!simData || simData.error) { document.getElementById('sim-result').innerHTML = `<span style="color:var(--muted)">Model not ready yet.</span>`; return; }
@@ -559,8 +559,8 @@ function runSimulator() {
   let prob = baseRate + (1-baseRate)*(1/(1+Math.exp(-z))) - (1-baseRate)*0.5;
   prob = Math.max(0.05, Math.min(0.95, prob));
   const aggPct=(prob*100).toFixed(1); const defPct=((1-prob)*100).toFixed(1);
-  const mods=[]; if(religious)mods.push('⛪ Religious'); if(ethnic)mods.push('🏴 Ethnic'); if(proxy)mods.push('🎭 Proxy');
-  document.getElementById('sim-result').innerHTML = `<div style="display:flex; gap:4px; align-items:center; margin-bottom:8px;"><div style="flex:${aggPct}; background:linear-gradient(90deg,#e83e8c,#9b59b6); height:32px; border-radius:4px 0 0 4px; display:flex; align-items:center; padding:0 10px; font-size:0.85rem; font-weight:700; color:white; min-width:70px;">🗡 ${aggPct}%</div><div style="flex:${defPct}; background:linear-gradient(90deg,#2980b9,#0dcaf0); height:32px; border-radius:0 4px 4px 0; display:flex; align-items:center; justify-content:flex-end; padding:0 10px; font-size:0.85rem; font-weight:700; color:white; min-width:70px;">${defPct}% 🛡</div></div><div style="font-size:0.75rem; color:var(--muted); text-align:center; line-height:1.7;">${techDiff>0?`🔬 Aggressor <strong style="color:#3ecf8e">+${techDiff}</strong> tech tier`:techDiff<0?`🔬 Defender <strong style="color:#0dcaf0">+${Math.abs(techDiff)}</strong> tech tier`:'🔬 Equal technology'} &nbsp;|&nbsp; ⚖️ Troop log-ratio: <strong style="color:#f5a623">${troopRatio.toFixed(2)}</strong>${mods.length?`<br>Modifiers: ${mods.join(' · ')}`:''}</div>`;
+  const mods=[]; if(religious)mods.push('<svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M12 3v3M10.5 4.5h3"/><path d="M12 6 20 12v9H4v-9z"/><path d="M9.5 21v-5a2.5 2.5 0 0 1 5 0v5"/></svg> Religious'); if(ethnic)mods.push('<svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M6 21V4"/><path d="M6 4h12l-3 4 3 4H6"/></svg> Ethnic'); if(proxy)mods.push('<svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M4 6a5 5 0 0 0 6 8 5 5 0 1 0-6-8z"/><path d="M14 10a5 5 0 1 0 6 8 5 5 0 0 0-6-8z"/><circle cx="7" cy="9.5" r="0.6" fill="currentColor" stroke="none"/><circle cx="17" cy="13.5" r="0.6" fill="currentColor" stroke="none"/></svg> Proxy');
+  document.getElementById('sim-result').innerHTML = `<div style="display:flex; gap:4px; align-items:center; margin-bottom:8px;"><div style="flex:${aggPct}; background:linear-gradient(90deg,#e83e8c,#9b59b6); height:32px; border-radius:4px 0 0 4px; display:flex; align-items:center; padding:0 10px; font-size:0.85rem; font-weight:700; color:white; min-width:70px;"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M6.5 17.5 17 7M14.5 4.5l5 5-2 2-5-5zM4 20l2.5-2.5M9 15l2 2"/></svg> ${aggPct}%</div><div style="flex:${defPct}; background:linear-gradient(90deg,#2980b9,#0dcaf0); height:32px; border-radius:0 4px 4px 0; display:flex; align-items:center; justify-content:flex-end; padding:0 10px; font-size:0.85rem; font-weight:700; color:white; min-width:70px;">${defPct}% <svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M12 3l7 3v5.5C19 17 16 20 12 21c-4-1-7-4-7-9.5V6z"/></svg></div></div><div style="font-size:0.75rem; color:var(--muted); text-align:center; line-height:1.7;">${techDiff>0?`<svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M9 20h9"/><path d="M11 20a4 4 0 0 1 0-8h1"/><path d="M12 12V4l3 1.5"/><path d="M9.5 8.5h3"/><path d="M14 20l2-4"/><circle cx="15.5" cy="4" r="1.3"/></svg> Aggressor <strong style="color:#3ecf8e">+${techDiff}</strong> tech tier`:techDiff<0?`<svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M9 20h9"/><path d="M11 20a4 4 0 0 1 0-8h1"/><path d="M12 12V4l3 1.5"/><path d="M9.5 8.5h3"/><path d="M14 20l2-4"/><circle cx="15.5" cy="4" r="1.3"/></svg> Defender <strong style="color:#0dcaf0">+${Math.abs(techDiff)}</strong> tech tier`:'<svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M9 20h9"/><path d="M11 20a4 4 0 0 1 0-8h1"/><path d="M12 12V4l3 1.5"/><path d="M9.5 8.5h3"/><path d="M14 20l2-4"/><circle cx="15.5" cy="4" r="1.3"/></svg> Equal technology'} &nbsp;|&nbsp; <svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M12 3v16"/><path d="M7 20h10"/><path d="M5 7h6M13 7h6"/><path d="M5 7 2.5 12a2.5 2.5 0 0 0 5 0zM19 7l-2.5 5a2.5 2.5 0 0 0 5 0z"/></svg> Troop log-ratio: <strong style="color:#f5a623">${troopRatio.toFixed(2)}</strong>${mods.length?`<br>Modifiers: ${mods.join(' · ')}`:''}</div>`;
 }
 
 // --- LDA Topics ---

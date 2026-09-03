@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import ApiKeyBar, { type KeyState } from '../components/ApiKeyBar';
+import Icon from '../components/Icon';
 import { chat, PROVIDERS, type ChatMessage } from '../lib/chat';
 import type { Project } from '../data/types';
 
@@ -243,7 +244,8 @@ export default function ChatbotTemplate({ project }: { project: Project }) {
           {won && (
             <div className="card border-accent/60 bg-accent/10 p-4 text-center">
               <p className="text-lg font-semibold text-accent">
-                🎉 You won in {attempts} {attempts === 1 ? 'attempt' : 'attempts'}!
+                <Icon name="celebrate" /> You won in {attempts}{' '}
+                {attempts === 1 ? 'attempt' : 'attempts'}!
               </p>
               <p className="text-sm text-muted">
                 The AI said "{target}". Try another with <strong>New round</strong>.
@@ -349,7 +351,7 @@ export default function ChatbotTemplate({ project }: { project: Project }) {
               {scriptComplete && (
                 <div className="card border-accent/60 bg-accent/10 p-3 text-center">
                   <p className="text-sm font-semibold text-accent">
-                    🎉 Tricked! The assistant wrote "{DEMO_TARGET}".
+                    <Icon name="celebrate" /> Tricked! The assistant wrote "{DEMO_TARGET}".
                   </p>
                 </div>
               )}
@@ -411,7 +413,8 @@ export default function ChatbotTemplate({ project }: { project: Project }) {
             </div>
             {mockWon && (
               <p className="mt-2 text-center text-sm font-semibold text-accent">
-                🎉 You tricked the mock! Use <strong>Reset</strong> to play again.
+                <Icon name="celebrate" /> You tricked the mock! Use <strong>Reset</strong> to play
+                again.
               </p>
             )}
             <div className="mt-3 flex gap-2">
