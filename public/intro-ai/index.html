@@ -137,7 +137,7 @@
       (<code>breadth_first_search</code> / <code>best_first_graph_search</code> &amp; <code>astar_search</code>).
       The boards are the real instances from <b>HW1/problems.py</b>. Pick a level, pick an algorithm, hit
       <b>Solve</b>: you'll see live expanded-node / frontier counts while it searches, then the returned plan is
-      animated step by step (wizards move, Death Eaters patrol, horcruxes 💎 destroyed, Voldemort killed).</p>
+      animated step by step (wizards move, Death Eaters patrol, horcruxes <svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M7 3h10l4 5-11 13L2 8z"/><path d="M2 8h20M9.5 3 7 8l5 13 5-13-2.5-5M7 8h10"/></svg> destroyed, Voldemort killed).</p>
 
       <div class="btns">
         <label class="fld">Level (problems.py):</label>
@@ -158,8 +158,8 @@
             <span><i class="sw" style="background:rgba(96,165,250,.20)"></i>frontier</span>
           </div>
           <div class="legend">
-            <span>⚡ Harry</span><span>🧙 other wizard</span><span>💀 Death Eater</span>
-            <span>💎 horcrux</span><span>💠 destroyed</span><span>🐍 Voldemort (V)</span>
+            <span><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" stroke="none" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M13 2 3.5 14h6.7l-1.2 8L20 9.5h-6.7z"/></svg> Harry</span><span><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M12 3 5 18h14z"/><path d="M4 19h16"/><path d="M12 6.5 12.9 8" /><circle cx="13.3" cy="6" r="0.6" fill="currentColor" stroke="none"/></svg> other wizard</span><span><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M12 3a7 7 0 0 0-4 12.7V18a2 2 0 0 0 2 2h.5v1.5h1v-1.5h1v1.5h1V20H14a2 2 0 0 0 2-2v-2.3A7 7 0 0 0 12 3z"/><circle cx="9.3" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="14.7" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg> Death Eater</span>
+            <span><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M7 3h10l4 5-11 13L2 8z"/><path d="M2 8h20M9.5 3 7 8l5 13 5-13-2.5-5M7 8h10"/></svg> horcrux</span><span><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M12 3 21 12 12 21 3 12z"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg> destroyed</span><span><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M5 8c0-2.5 2-4 4.5-4S14 5.5 14 8s-2 3.5-4.5 3.5S5 13 5 15.5 7 19 9.5 19 14 17.5 14 15"/><circle cx="9" cy="6" r="0.6" fill="currentColor" stroke="none"/></svg> Voldemort (V)</span>
           </div>
         </div>
         <div>
@@ -210,7 +210,7 @@
       <div style="font-size:.78rem;color:var(--purple);font-family:'JetBrains Mono',monospace;margin-bottom:6px;border-left:3px solid var(--purple);padding-left:9px">
         HW3 · MDP / value iteration &nbsp;—&nbsp; <span class="muted">Harry Potter MDP: Nagini &amp; Death Eaters under uncertainty — optimal policy by value iteration</span></div>
       <h2>Live: MDP / finite-horizon Value Iteration — running my real HW3 code</h2>
-      <p style="font-size:.92rem;color:var(--gold);margin:0 0 10px"><b>🐍 Harry vs. Nagini &amp; the Death Eaters under uncertainty.</b>
+      <p style="font-size:.92rem;color:var(--gold);margin:0 0 10px"><b><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M5 8c0-2.5 2-4 4.5-4S14 5.5 14 8s-2 3.5-4.5 3.5S5 13 5 15.5 7 19 9.5 19 14 17.5 14 15"/><circle cx="9" cy="6" r="0.6" fill="currentColor" stroke="none"/></svg> Harry vs. Nagini &amp; the Death Eaters under uncertainty.</b>
       Nagini (the horcrux) teleports between hiding spots and the Death Eater patrols randomly; Harry's policy must
       destroy Nagini while avoiding collisions.</p>
       <p class="muted" style="font-size:.88rem;margin:0 0 12px">A faithful port of
@@ -239,7 +239,7 @@
           <div class="legend" style="margin-top:10px">
             <span><i class="sw" style="background:#1b6b4f"></i>high V</span>
             <span><i class="sw" style="background:#3a2030"></i>low V</span>
-            <span>⚡ Harry</span><span>💀 Death Eater</span><span>🐍 Nagini (horcrux)</span>
+            <span><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" stroke="none" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M13 2 3.5 14h6.7l-1.2 8L20 9.5h-6.7z"/></svg> Harry</span><span><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M12 3a7 7 0 0 0-4 12.7V18a2 2 0 0 0 2 2h.5v1.5h1v-1.5h1v1.5h1V20H14a2 2 0 0 0 2-2v-2.3A7 7 0 0 0 12 3z"/><circle cx="9.3" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="14.7" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg> Death Eater</span><span><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M5 8c0-2.5 2-4 4.5-4S14 5.5 14 8s-2 3.5-4.5 3.5S5 13 5 15.5 7 19 9.5 19 14 17.5 14 15"/><circle cx="9" cy="6" r="0.6" fill="currentColor" stroke="none"/></svg> Nagini (horcrux)</span>
           </div>
         </div>
         <div>
@@ -297,7 +297,7 @@
       <b>fog</b>. Each turn Harry only senses his four neighbours — <code>("dragon",loc)</code>,
       <code>("vault",loc)</code>, or <code>("sulfur",)</code> (a trap is adjacent) — and the agent <i>deduces</i>
       which tiles are safe. Watch the knowledge base (known-safe / dragon / vault / potential-trap) update every
-      step until Harry collects the hollow vault 🏆 (the goal).</p>
+      step until Harry collects the hollow vault <svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M7 5H4a3 3 0 0 0 3 3.5M17 5h3a3 3 0 0 1-3 3.5"/><path d="M12 13v3"/><path d="M8 20h8"/><path d="M9.5 20a2.5 2.5 0 0 1 5 0"/></svg> (the goal).</p>
 
       <div class="btns">
         <label class="fld">Board (HW2_tests):</label>
@@ -320,8 +320,8 @@
             <span><i class="sw" style="background:rgba(167,139,250,.28)"></i>known-dragon</span>
           </div>
           <div class="legend">
-            <span>⚡ Harry</span><span>🏆 hollow vault (goal)</span><span>💰 vault</span>
-            <span>🐉 dragon</span><span>💥 trap (sulfur)</span><span>🌫 fogged</span>
+            <span><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" stroke="none" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M13 2 3.5 14h6.7l-1.2 8L20 9.5h-6.7z"/></svg> Harry</span><span><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M7 5H4a3 3 0 0 0 3 3.5M17 5h3a3 3 0 0 1-3 3.5"/><path d="M12 13v3"/><path d="M8 20h8"/><path d="M9.5 20a2.5 2.5 0 0 1 5 0"/></svg> hollow vault (goal)</span><span><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><ellipse cx="12" cy="7" rx="7" ry="3.2"/><path d="M5 7v6c0 1.8 3.1 3.2 7 3.2s7-1.4 7-3.2V7"/><path d="M5 13v3.5c0 1.8 3.1 3.2 7 3.2s7-1.4 7-3.2V13"/></svg> vault</span>
+            <span><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M4 15c2-6 6-9 11-9 1.5 0 2.5.5 2.5 1.5S16.5 9 15 9c2 1 4 3 4 6-1-1-2.5-1.5-4-1.5.8 1 1 2.5.5 4-1-2-2.5-3-4.5-3-2.5 0-5 1.5-6 4.5"/><circle cx="14.3" cy="7.6" r="0.6" fill="currentColor" stroke="none"/></svg> dragon</span><span><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" stroke="none" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M12 2 8 10l-6 1.5 5 3.5-2 7 7-4.5 7 4.5-2-7 5-3.5L16 10z"/></svg> trap (sulfur)</span><span><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M4 9h13M6 13h14M4 17h13"/></svg> fogged</span>
           </div>
         </div>
         <div>
@@ -856,7 +856,7 @@ document.querySelectorAll('.tab[data-v]').forEach(t=>{
               killed?'':null);
       // HP loss note
       for(const w in st.wizards){ const prev=anim.states[anim.idx-1].wizards[w][1], now=st.wizards[w][1];
-        if(now<prev) logLine(`&nbsp;&nbsp;<span class="de">⚠ ${w.split(' ')[0]} hit by Death Eater (HP ${prev}→${now})</span>`,'de'); }
+        if(now<prev) logLine(`&nbsp;&nbsp;<span class="de"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M12 3 2 20h20z"/><path d="M12 9.5v5"/><circle cx="12" cy="17.2" r="0.6" fill="currentColor" stroke="none"/></svg> ${w.split(' ')[0]} hit by Death Eater (HP ${prev}→${now})</span>`,'de'); }
       if(killed){ setStat('goal reached — Voldemort defeated ✓','var(--accent)'); stopTimer(); }
     } else { setStat('plan complete ✓','var(--accent)'); stopTimer(); }
   }
@@ -1479,7 +1479,7 @@ document.querySelectorAll('.tab[data-v]').forEach(t=>{
   function actText(a){
     if(a[0]==='move') return `move → (${a[1][0]},${a[1][1]})`;
     if(a[0]==='destroy') return `destroy trap (${a[1][0]},${a[1][1]})`;
-    if(a[0]==='collect') return 'collect 🏆';
+    if(a[0]==='collect') return 'collect <svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M7 5H4a3 3 0 0 0 3 3.5M17 5h3a3 3 0 0 1-3 3.5"/><path d="M12 13v3"/><path d="M8 20h8"/><path d="M9.5 20a2.5 2.5 0 0 1 5 0"/></svg>';
     return a[0];
   }
 
@@ -1500,7 +1500,7 @@ document.querySelectorAll('.tab[data-v]').forEach(t=>{
     llog(`<span class="mono">#${stepN}</span> <span class="a">${actText(action)}</span>`+
          (ded?` <span class="muted">— ${ded}</span>`:''));
     if(checker.atGoal()){ setStat(`goal! hollow vault collected in ${stepN} steps ✓`,'var(--accent)');
-      llog(`<span class="ok">🏆 hollow vault collected — goal achieved in ${stepN} steps</span>`,'ok'); stopTimer(); done=true; return; }
+      llog(`<span class="ok"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M7 5H4a3 3 0 0 0 3 3.5M17 5h3a3 3 0 0 1-3 3.5"/><path d="M12 13v3"/><path d="M8 20h8"/><path d="M9.5 20a2.5 2.5 0 0 1 5 0"/></svg> hollow vault collected — goal achieved in ${stepN} steps</span>`,'ok'); stopTimer(); done=true; return; }
     if(stepN>checker.turnLimit){ setStat('turn limit exceeded','var(--red)'); stopTimer(); done=true; return; }
     setStat('exploring under fog…','var(--blue)');
   }

@@ -83,7 +83,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>💬 WhatsApp Persona Bot</h1>
+    <h1><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M4 5h16v11H9l-4 4V5z"/><path d="M8 9.5h8M8 12.5h5"/></svg> WhatsApp Persona Bot</h1>
     <div class="sub">A Go bot that impersonates a custom persona on WhatsApp using a local LLM (Ollama / llama3.2). It connects as your own WhatsApp account via the <code>whatsmeow</code> library, watches a target individual or group chat, and replies in character — with natural group behaviour (doesn't answer every message) and anti-jailbreak defenses.</div>
     <div>
       <span class="pill teal">Go 1.25 · whatsmeow</span>
@@ -94,7 +94,7 @@
   </header>
 
   <div class="warn" style="margin-top:14px">
-    ⚠️ This bot is <b>auth-bound</b> — it needs a QR-scanned WhatsApp session and a running Ollama instance, so it cannot run live in a browser. This page is a faithful explainer of the real code in <code>bot.go</code> and <code>persona.go</code>.
+    <svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M12 3 2 20h20z"/><path d="M12 9.5v5"/><circle cx="12" cy="17.2" r="0.6" fill="currentColor" stroke="none"/></svg> This bot is <b>auth-bound</b> — it needs a QR-scanned WhatsApp session and a running Ollama instance, so it cannot run live in a browser. This page is a faithful explainer of the real code in <code>bot.go</code> and <code>persona.go</code>.
   </div>
 
   <div class="tabs" id="tabs">
@@ -472,7 +472,7 @@ const injIn=document.getElementById('injIn'),injOut=document.getElementById('inj
 function runInj(){
   const t=injIn.value.trim(); if(!t){injOut.textContent='';return;}
   const hit=checkInjection(t);
-  if(hit){injOut.innerHTML=`<span style="color:var(--red)">🚫 BLOCKED — matched pattern "<b>${hit}</b>". Message is silently ignored, no reply, not added to history.</span>`;}
+  if(hit){injOut.innerHTML=`<span style="color:var(--red)"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><circle cx="12" cy="12" r="9"/><path d="m5.5 5.5 13 13"/></svg> BLOCKED — matched pattern "<b>${hit}</b>". Message is silently ignored, no reply, not added to history.</span>`;}
   else{injOut.innerHTML=`<span style="color:var(--teal)">✅ PASSES the injection filter — would be cleaned, stored in history, and answered in character.</span>`;}
 }
 document.getElementById('injBtn').onclick=runInj;

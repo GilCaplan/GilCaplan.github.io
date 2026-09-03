@@ -45,7 +45,7 @@ code{background:#0a0c10;border:1px solid var(--border);border-radius:4px;padding
 </style>
 </head>
 <body>
-<h1>⚖ Causal Inference</h1>
+<h1><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M12 3v16"/><path d="M7 20h10"/><path d="M5 7h6M13 7h6"/><path d="M5 7 2.5 12a2.5 2.5 0 0 0 5 0zM19 7l-2.5 5a2.5 2.5 0 0 0 5 0z"/></svg> Causal Inference</h1>
 <div class="sub">Warset is observational data, so a raw correlation mixes the effect of a "treatment" with the reasons it occurred. Each question below is estimated three ways — <b>naive</b> (unadjusted), <b>regression / g-computation</b>, and <b>IPW</b> (propensity weighting) — with bootstrap 95% confidence intervals. Where the adjusted estimate moves away from the naive one, confounding was at work. Click a question.</div>
 
 <div class="qgrid" id="qgrid"></div>
@@ -125,7 +125,7 @@ function select(k){
       </div>
     </div>
     <div style="margin-top:14px"><b style="font-size:0.82rem">Adjusted for:</b> ${q.confounders.map(c=>`<span class="chip">${c}</span>`).join('')}</div>
-    <div class="caveat">⚠ ${q.caveat}</div>`;
+    <div class="caveat"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M12 3 2 20h20z"/><path d="M12 9.5v5"/><circle cx="12" cy="17.2" r="0.6" fill="currentColor" stroke="none"/></svg> ${q.caveat}</div>`;
   requestAnimationFrame(()=>{ drawForest(q); drawOverlap(q); });
 }
 

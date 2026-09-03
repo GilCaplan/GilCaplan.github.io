@@ -86,7 +86,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>🔎 imgRetrieval</h1>
+    <h1><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.8-4.8"/></svg> imgRetrieval</h1>
     <span class="muted" id="status"><span class="spin"></span>indexing demo images…</span>
   </header>
 
@@ -123,7 +123,7 @@
     <!-- image query -->
     <div id="imgQ" style="margin-top:14px">
       <label id="imgLabel">Query image — pick one below, or drop your own</label>
-      <div class="drop" id="drop">📎 Drop an image here / click to upload</div>
+      <div class="drop" id="drop"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><path d="M8 12.5 15 5a3.5 3.5 0 0 1 5 5l-9 9a5.5 5.5 0 0 1-8-8l8.5-8.5"/></svg> Drop an image here / click to upload</div>
       <input type="file" id="file" accept="image/*" style="display:none" />
       <div class="gallery" id="gallery"></div>
     </div>
@@ -620,7 +620,7 @@ function show(rows, ctx){
       const ver=r.inliers>=8;
       line=`<span class="score ${ver?'accent':'muted'}">${r.inliers} inliers</span>`+
            `<span class="muted mono"> · ${r.matches} matches · cos ${fmt(r.score)}</span>`+
-           `<br><button class="inspect-link" data-inspect="${im.id}">🔍 watch the RANSAC search</button>`;
+           `<br><button class="inspect-link" data-inspect="${im.id}"><svg class="ico" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.125em"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.8-4.8"/></svg> watch the RANSAC search</button>`;
     } else if(ctx.mode==="fusion"){
       line=`<span class="score accent">${fmt(r.score)}</span>`+
            `<span class="muted mono"> · img ${fmt(r.vis)} · txt ${fmt(r.txt)}</span>`;

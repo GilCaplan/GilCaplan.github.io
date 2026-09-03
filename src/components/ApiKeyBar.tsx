@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import { PROVIDERS, type Provider } from '../lib/chat';
 
 export interface KeyState {
@@ -17,7 +18,9 @@ export default function ApiKeyBar({
   return (
     <div className="card space-y-3 p-4">
       <div className="flex items-start gap-2 text-xs text-muted">
-        <span className="mt-0.5 text-accent">🔒</span>
+        <span className="mt-0.5 text-accent">
+          <Icon name="lock" />
+        </span>
         <p>
           Your API key is used <strong className="text-ink2">only in your browser</strong> to call
           the provider directly. It's never sent to, logged by, or stored on any server — this site
