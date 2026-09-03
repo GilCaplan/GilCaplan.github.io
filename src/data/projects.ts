@@ -99,14 +99,15 @@ export const projects: Project[] = [
     type: 'app',
     interactivity: 'showcase',
     year: 2026,
-    tagline: 'A native macOS voice assistant for your calendar — local-first, private.',
+    tagline: 'One local brain for your calendar, tasks and training — no accounts, no cloud, ever.',
     description:
-      'A native macOS voice assistant for your calendar. Uses local (Whisper/Ollama) or ' +
-      'cloud (GPT-4/Gemini/Claude) AI for natural-language event management. Privacy-focused ' +
-      'with hotkey triggers, a PyQt6 UI, and context memory ("delete it") — manage your ' +
-      'schedule with on-device logic and zero cloud leakage.',
+      'A native macOS assistant that turns speech or text into calendar events, tasks, workouts ' +
+      'and more. One process on the host Mac hears (Whisper), rule-parses (spaCy), and falls back ' +
+      'to a local Llama 3.1 8B via Ollama — 15 actions across ~100 REST endpoints, all reachable ' +
+      'from a SwiftUI iOS companion over Tailscale. No accounts or API keys, and nothing leaves ' +
+      'the machine unless you opt into a cloud model.',
     repo: `${GH}/MACalendar`,
-    tech: ['Python', 'PyQt6', 'Whisper', 'macOS'],
+    tech: ['Python', 'PyQt6', 'Ollama · Llama 3.1', 'Whisper', 'SwiftUI', 'Tailscale'],
     embed: 'macalendar/index.html',
   },
   {
