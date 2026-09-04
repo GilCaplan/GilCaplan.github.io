@@ -9,6 +9,7 @@ import ProjectDetail from './pages/ProjectDetail';
 import Playground from './pages/Playground';
 import Stack from './pages/Stack';
 import Blog from './pages/Blog';
+import BlogPost from './pages/BlogPost';
 import Contact from './pages/Contact';
 
 function ScrollToTop() {
@@ -33,6 +34,7 @@ export default function App() {
           <Route path="/playground" element={<Playground />} />
           <Route path="/stack" element={<Stack />} />
           <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="*" element={<About />} />
         </Routes>
