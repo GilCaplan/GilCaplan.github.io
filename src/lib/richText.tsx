@@ -1,36 +1,40 @@
 import type { ReactNode } from 'react';
 
-const LINK_RE = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+// The only "light markdown" this site supports: [label](url) links and
+// **bold** emphasis, applied left-to-right over one paragraph of plain text.
+const TOKEN_RE = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|\*\*([^*]+)\*\*/g;
 
-// Splits `[label](url)` out of a plain-text line into real <a> elements;
-// everything else stays as-is. The only "light markdown" this site supports.
 function renderLine(line: string, keyPrefix: string): ReactNode[] {
   const nodes: ReactNode[] = [];
   let last = 0;
   let match: RegExpExecArray | null;
   let i = 0;
-  LINK_RE.lastIndex = 0;
-  while ((match = LINK_RE.exec(line))) {
+  TOKEN_RE.lastIndex = 0;
+  while ((match = TOKEN_RE.exec(line))) {
     if (match.index > last) nodes.push(line.slice(last, match.index));
-    nodes.push(
-      <a
-        key={`${keyPrefix}-${i++}`}
-        href={match[2]}
-        target="_blank"
-        rel="noreferrer"
-        className="link"
-      >
-        {match[1]}
-      </a>,
-    );
+    if (match[1] !== undefined) {
+      nodes.push(
+        <a
+          key={`${keyPrefix}-${i++}`}
+          href={match[2]}
+          target="_blank"
+          rel="noreferrer"
+          className="link"
+        >
+          {match[1]}
+        </a>,
+      );
+    } else {
+      nodes.push(<strong key={`${keyPrefix}-${i++}`}>{match[3]}</strong>);
+    }
     last = match.index + match[0].length;
   }
   if (last < line.length) nodes.push(line.slice(last));
   return nodes;
 }
 
-// Renders plain text as paragraphs (split on blank lines), with `[label](url)`
-// turned into real links within each paragraph.
+// Renders plain text as paragraphs (split on blank lines), applying the
+// inline link/bold syntax above within each paragraph.
 export function renderRichText(text: string): ReactNode {
   return text
     .split(/\n\s*\n/)

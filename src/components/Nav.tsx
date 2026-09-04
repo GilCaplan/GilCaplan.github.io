@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import SpotlightToggle from './SpotlightToggle';
+import { posts } from '../data/blog';
 
 const links = [
   { to: '/', label: 'About', end: true },
@@ -31,7 +32,7 @@ export default function Nav() {
               }
             >
               {l.label}
-              {l.label === 'Blog' && (
+              {l.label === 'Blog' && posts.length === 0 && (
                 <span className="ml-1 align-super text-[9px] text-muted">soon</span>
               )}
             </NavLink>
