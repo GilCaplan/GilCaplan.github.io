@@ -55,6 +55,10 @@ export interface Project {
   embed?: string;
   // For `potential`: what it'd take to make it interactive (shown as a callout).
   interactivePlan?: string;
+  // An in-progress dev note shown as its own section below "About". `body` is
+  // plain text split on blank lines into paragraphs; supports one inline-link
+  // form, [label](https://url), rendered as a real link (see renderRichText).
+  updateNote?: { heading: string; body: string };
   // Type/template-specific config (e.g. chatbot game settings, viz options).
   config?: Record<string, unknown>;
   // Curates the Playground, independent of `interactivity`:

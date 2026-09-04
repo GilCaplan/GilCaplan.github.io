@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Project } from '../data/types';
+import { renderRichText } from '../lib/richText';
 
 // Embeds a self-contained visualization app (served from public/) in an iframe.
 // Used for `live` visualization projects that carry an `embed` path.
@@ -50,6 +51,17 @@ export default function VizTemplate({ project }: { project: Project }) {
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-accent">About</h2>
         <p className="leading-relaxed text-muted">{project.description}</p>
       </section>
+
+      {project.updateNote && (
+        <section>
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-accent">
+            {project.updateNote.heading}
+          </h2>
+          <div className="space-y-3 leading-relaxed text-muted">
+            {renderRichText(project.updateNote.body)}
+          </div>
+        </section>
+      )}
 
       <section>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-accent">Tech</h2>
