@@ -109,12 +109,6 @@ export const projects: Project[] = [
     repo: `${GH}/MACalendar`,
     tech: ['Python', 'PyQt6', 'Ollama · Llama 3.1', 'Whisper', 'SwiftUI', 'Tailscale'],
     embed: 'macalendar/index.html',
-    updateNote: {
-      heading: 'Thoughts',
-      body: `A design for working with Claude that I thought of on my own is not an innovative idea but rather a mixture of simple ideas on how to improve a system iteratively the right way. The idea is that for this project which is a calendar I want to integrate an AI system that takes prompts (that also by definition have timestamps) and outputs a .db file which is essentially the calendar being used.
-
-I went about this by pulling 3,000 real utterances from [HWU‑64](https://github.com/xliuhw/NLU-Evaluation-Data) (Liu, Eshghi, Swietojanski & Rieser, IWSDS 2019) which get replayed through the parser, against scratch databases that are never the real one. It's real crowdsourced "what would you tell your PDA" phrasing, not this system's own, ranked and timestamped so a slice of the pool can act like it accumulated over months instead of arriving all at once. I'm essentially synthetically creating a dataset to which I can compare the AI system built and be able to improve it. Part of this was also thinking of relevant metrics to measure success, which created multiple metrics to help improve and fine tune the system. The system design stays the same where I can only improve each component, that way Claude stays on track, because before, Claude was editing and changing everything, which ended up becoming very convoluted and messy.`,
-    },
   },
   {
     slug: 'agriculture-assistant',
