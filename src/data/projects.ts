@@ -102,12 +102,15 @@ export const projects: Project[] = [
     tagline: 'One local brain for your calendar, tasks and training — no accounts, no cloud, ever.',
     description:
       'A native macOS assistant that turns speech or text into calendar events, tasks, workouts ' +
-      'and more. One process on the host Mac hears (Whisper), rule-parses (spaCy), and falls back ' +
-      'to a local Llama 3.1 8B via Ollama — 15 actions across ~100 REST endpoints, all reachable ' +
-      'from a SwiftUI iOS companion over Tailscale. No accounts or API keys, and nothing leaves ' +
-      'the machine unless you opt into a cloud model.',
+      'and more. One brain on the Mac hears (Whisper), answers a clear ask by rules in ~50 ms, and ' +
+      'sends the rest down a deep track — segmentation, validation, and a code-first judge — with a ' +
+      'local Llama 3.1 8B via Ollama only for what the rules cannot build. 15 actions across ~150 ' +
+      'REST endpoints, reachable from SwiftUI iPhone and iPad apps (QR pairing, Wi-Fi at home, ' +
+      'Tailscale away) — and the phone can now run the engine on its own, with no Mac. A ' +
+      'self-improvement loop measures it against a 3,000-utterance ground truth. No accounts, no ' +
+      'API keys, no telemetry.',
     repo: `${GH}/MACalendar`,
-    tech: ['Python', 'PyQt6', 'Ollama · Llama 3.1', 'Whisper', 'SwiftUI', 'Tailscale'],
+    tech: ['Python', 'PyQt6', 'spaCy', 'Ollama · Llama 3.1', 'Whisper', 'SwiftUI', 'Tailscale'],
     embed: 'macalendar/index.html',
   },
   {
