@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { profile } from '../data/profile';
 
-// Formspree form (https://formspree.io/f/xpqezwgp) — submissions email .
-// Empty string would fall back to a mailto: link.
+// Formspree form (https://formspree.io/f/xpqezwgp).
 const FORMSPREE_ID = 'xpqezwgp';
 
 export default function Contact() {
@@ -10,7 +9,7 @@ export default function Contact() {
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!FORMSPREE_ID) return; // mailto fallback handles it
+    if (!FORMSPREE_ID) return; // LinkedIn fallback handles it
     const form = e.currentTarget;
     setStatus('sending');
     try {
@@ -31,9 +30,9 @@ export default function Contact() {
     <div className="container-x animate-fade-up py-14">
       <h1 className="text-3xl font-bold sm:text-4xl">Get in touch</h1>
       <p className="mt-2 max-w-xl text-muted">
-        Open to research and project collaborations. Drop a message, or reach me directly at{' '}
-        <a className="link" href={`mailto:${profile.email}`}>
-          {profile.email}
+        Open to research and project collaborations. Drop a message below, or reach me on{' '}
+        <a className="link" href={profile.linkedin} target="_blank" rel="noopener noreferrer">
+          LinkedIn
         </a>
         .
       </p>
@@ -41,7 +40,7 @@ export default function Contact() {
       {!FORMSPREE_ID && (
         <p className="mt-4 rounded-lg border border-line bg-app px-4 py-3 text-sm text-muted">
           Note: add a Formspree form ID in <span className="font-mono text-ink2">Contact.tsx</span>{' '}
-          to enable the form. For now, the button opens your email client.
+          to enable the form. For now, the button links to LinkedIn.
         </p>
       )}
 
@@ -63,14 +62,14 @@ export default function Contact() {
             {status === 'sending' ? 'Sending…' : 'Send message'}
           </button>
         ) : (
-          <a className="btn-accent" href={`mailto:${profile.email}`}>
-            Email me
+          <a className="btn-accent" href={profile.linkedin} target="_blank" rel="noopener noreferrer">
+            Message me on LinkedIn
           </a>
         )}
 
         {status === 'sent' && <p className="text-sm text-accent">Thanks — message sent!</p>}
         {status === 'error' && (
-          <p className="text-sm text-spice">Something went wrong. Please email me directly.</p>
+          <p className="text-sm text-spice">Something went wrong. Please try again or reach me on LinkedIn.</p>
         )}
       </form>
     </div>

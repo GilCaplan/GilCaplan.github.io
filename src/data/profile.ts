@@ -2,7 +2,6 @@ export const profile = {
   name: 'Gil Caplan',
   headline: 'B.Sc. Data Science & Engineering @ Technion',
   location: 'Tel Aviv District, Israel',
-  email: '',
   github: 'https://github.com/GilCaplan',
   linkedin: 'https://www.linkedin.com/in/gil-caplan-3120a4181/',
   photo: '/photos/profile.png', // drop your image here when ready
@@ -20,7 +19,6 @@ export const profile = {
 export const SOCIALS = [
   { label: 'GitHub', href: profile.github },
   { label: 'LinkedIn', href: profile.linkedin },
-  { label: 'Email', href: `mailto:${profile.email}` },
 ];
 
 export const experience = [
